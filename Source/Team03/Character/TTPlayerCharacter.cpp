@@ -1,34 +1,46 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿//TTPlyaerCharacter.cpp
 
 #include "TTPlayerCharacter.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
-// Sets default values
+
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
-}
-
-// Called when the game starts or when spawned
-void ATTPlayerCharacter::BeginPlay()
-{
-	Super::BeginPlay();
+	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
+	SpringArm->SetupAttachment ( GetRootComponent () );
+	SpringArm->TargetArmLength = 500.f;
+	SpringArm->bUsePawnControlRotation = true;	
 	
+	Camera = CreateDefaultSubobject<UCameraComponent> ( TEXT ( "Camera" ) );
+	Camera->SetupAttachment ( SpringArm );
+
+	bUseControllerRotationYaw = false;
+
+	GetCharacterMovement ()->bOrientRotationToMovement = true;
+	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 500.0f , 0.0f );
 }
 
-// Called every frame
-void ATTPlayerCharacter::Tick(float DeltaTime)
+void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInputComponent )
 {
-	Super::Tick(DeltaTime);
-
 }
 
-// Called to bind functionality to input
-void ATTPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ATTPlayerCharacter::BeginPlay ()
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
 
+void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
+{
+}
+
+void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
+{
+}
+
+void ATTPlayerCharacter::InputAttack ()
+{
 }
 
