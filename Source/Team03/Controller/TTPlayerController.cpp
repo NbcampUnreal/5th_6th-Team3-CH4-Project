@@ -9,6 +9,7 @@ ATTPlayerController::ATTPlayerController ()
 {
 }
 
+<<<<<<< HEAD
 void ATTPlayerController::BeginPlay ()
 {
 	Super::BeginPlay ();
@@ -28,3 +29,24 @@ void ATTPlayerController::BeginPlay ()
 		}
 	}
 }
+=======
+#include "TTPlayerController.h"
+#include "../InGameUI/TTInGameHUD.h"
+
+#pragma region ChatUI
+
+void ATTPlayerController::ActivateChatBox ()
+{
+
+}
+
+void ATTPlayerController::ServerSendChatMessage_Implementation ( const FString& Message )
+{
+
+}
+void ATTPlayerController::ClientAddChatMessage_Implementation ( const FString& Message )
+{
+
+}
+#pragma endregion
+>>>>>>> InGameUI_PCY

@@ -15,6 +15,7 @@ UCLASS()
 class TEAM03_API ATTPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+<<<<<<< HEAD
 
 public:
 	ATTPlayerController ();
@@ -31,4 +32,21 @@ public:
 
 	virtual void BeginPlay () override;
 	
+=======
+#pragma region ChatUI
+public:
+	UFUNCTION ()
+	void ActivateChatBox ();
+
+	UFUNCTION ( Server , Reliable )
+	void ServerSendChatMessage ( const FString& Message );
+
+	UFUNCTION ( Client , Reliable )
+	void ClientAddChatMessage ( const FString& Message );
+
+private:
+	UPROPERTY ()
+	TObjectPtr< class ATTInGameHUD >  TTInGameHUD;
+#pragma endregion
+>>>>>>> InGameUI_PCY
 };
