@@ -5,6 +5,7 @@
 #include "Components/EditableTextBox.h"
 #include "Components/ScrollBox.h"
 
+// 생성자
 void UTTChatUI::NativeConstruct ()
 {
 	Super::NativeConstruct ();
@@ -15,6 +16,7 @@ void UTTChatUI::NativeConstruct ()
 	ChatInputBox->SetIsEnabled ( false );
 }
 
+// 소멸자
 void UTTChatUI::NativeDestruct ()
 {
 	Super::NativeDestruct ();
@@ -24,13 +26,7 @@ void UTTChatUI::NativeDestruct ()
 	}
 }
 
-void UTTChatUI::SetChatMessage ( const FString& Message )
-{
-	if (IsValid(ChatInputBox))
-	{
-		ChatInputBox->SetText ( FText::FromString ( Message ) );
-	}
-}
+// 엔터시 진입할 함수이며 메세지입력
 void UTTChatUI::ActivateChat ()
 {
 	if (IsValid ( ChatInputBox ) )
@@ -39,13 +35,8 @@ void UTTChatUI::ActivateChat ()
 		ChatInputBox->SetKeyboardFocus ();
 	}
 }
-void UTTChatUI::ServerRPCPrintString_Implementation ( const FString& InMessage )
-{
-	MulticastRPCPrintString ( InMessage );
-}
-void UTTChatUI::MulticastRPCPrintString_Implementation ( const FString& InMessage )
-{
-}
+
+// 엔터로 커밋시 호출되는 함수
 void UTTChatUI::OnTextCommitted ( const FText& Text , ETextCommit::Type CommitMethod )
 {
 	if (CommitMethod == ETextCommit::OnEnter)
@@ -57,7 +48,9 @@ void UTTChatUI::OnTextCommitted ( const FText& Text , ETextCommit::Type CommitMe
 
 			if(!Message.IsEmpty())
 			{
-				ServerRPCPrintString( Message );
+
+				ChatInputBox->SetText ( FText::GetEmpty () );
+				ChatInputBox->SetIsEnabled ( false );
 			}
 		}
 	}

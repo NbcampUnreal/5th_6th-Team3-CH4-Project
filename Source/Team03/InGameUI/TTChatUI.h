@@ -22,10 +22,6 @@ public:
 	UFUNCTION()
 	void ActivateChat();
 
-	UFUNCTION ( Server , Reliable )
-	void ServerRPCPrintString ( const FString& InMessage );
-	UFUNCTION ( NetMulticast , Reliable )
-	void MulticastRPCPrintString ( const FString& InMessage );
 protected:
 	UFUNCTION()
 	void OnTextCommitted ( const FText& Text , ETextCommit::Type CommitMethod );
