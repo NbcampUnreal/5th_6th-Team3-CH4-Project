@@ -1,34 +1,65 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿//TTPlyaerCharacter.cpp
 
 #include "TTPlayerCharacter.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 
-// Sets default values
+
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
-}
-
-// Called when the game starts or when spawned
-void ATTPlayerCharacter::BeginPlay()
-{
-	Super::BeginPlay();
+	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
+	SpringArm->SetupAttachment ( GetRootComponent () );
+	SpringArm->TargetArmLength = 500.f;
+	SpringArm->bUsePawnControlRotation = true;	
 	
+	Camera = CreateDefaultSubobject<UCameraComponent> ( TEXT ( "Camera" ) );
+	Camera->SetupAttachment ( SpringArm );
+
+	bUseControllerRotationYaw = false;
+
+	GetCharacterMovement ()->bOrientRotationToMovement = true;
+	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 500.0f , 0.0f );
 }
 
-// Called every frame
-void ATTPlayerCharacter::Tick(float DeltaTime)
+void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInputComponent )
 {
-	Super::Tick(DeltaTime);
+	Super::SetupPlayerInputComponent ( PlayerInputComponent );
 
+	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent> ( PlayerInputComponent );
+	if (IsValid ( EnhancedInputComponent ) == true)
+	{
+		EnhancedInputComponent->BindAction ( InputMove , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Move );
+		EnhancedInputComponent->BindAction ( InputLook , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Look );
+		EnhancedInputComponent->BindAction ( InputAttack , ETriggerEvent::Started , this , &ATTPlayerCharacter::Attack );
+
+		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Jump );
+		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::StopJumping );
+	}
 }
 
-// Called to bind functionality to input
-void ATTPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void ATTPlayerCharacter::BeginPlay ()
 {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
 
+void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
+{
+	FVector2D MovementVector = Value.Get<FVector2D> ();
+	if (IsValid ( Controller ) == true)
+	{
+
+	}
+}
+
+void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
+{
+}
+
+void ATTPlayerCharacter::Attack ()
+{
 }
 

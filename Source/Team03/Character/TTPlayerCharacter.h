@@ -1,10 +1,17 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// TTPlayerCharacter.h
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "InputActionValue.h"
 #include "TTPlayerCharacter.generated.h"
+
+
+class USpringArmComponent;
+class UCameraComponent;
+class UInputAction;
+class UInputMappingContext;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -12,18 +19,33 @@ class TEAM03_API ATTPlayerCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	ATTPlayerCharacter();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SpringArm")
+	TObjectPtr<USpringArmComponent> SpringArm;
+	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly , Category = "Camera" )
+	TObjectPtr<UCameraComponent> Camera;
+
+#pragma region Input
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> InputMove;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputLook;
+	TObjectPtr<UInputAction> InputJump;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputAttack;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputMappingContext> IMC_Character;
+
+public:
+	virtual void SetupPlayerInputComponent ( class UInputComponent* PlayerInputComponent ) override;
+	
+	virtual void BeginPlay () override;
+
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
+	void Move ( const FInputActionValue& Value );
+	void Look ( const FInputActionValue& Value );
+	void Attack();
+	
+#pragma endregion
 };
