@@ -28,14 +28,14 @@ public:
 
 #pragma region Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
-	TObjectPtr<UInputAction> Move;
+	TObjectPtr<UInputAction> InputMove;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
-	TObjectPtr<UInputAction> Look;
-	TObjectPtr<UInputAction> Jump;
+	TObjectPtr<UInputAction> InputLook;
+	TObjectPtr<UInputAction> InputJump;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
-	TObjectPtr<UInputAction> Attack;
+	TObjectPtr<UInputAction> InputAttack;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
-	TObjectPtr<UInputMappingContext> IMC;
+	TObjectPtr<UInputMappingContext> IMC_Character;
 
 public:
 	virtual void SetupPlayerInputComponent ( class UInputComponent* PlayerInputComponent ) override;
@@ -45,7 +45,7 @@ public:
 protected:
 	void Move ( const FInputActionValue& Value );
 	void Look ( const FInputActionValue& Value );
-	void InputAttack();
+	void Attack();
 	
 #pragma endregion
 };

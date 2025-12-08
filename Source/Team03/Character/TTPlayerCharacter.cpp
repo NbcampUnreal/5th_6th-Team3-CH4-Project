@@ -40,7 +40,7 @@ void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
 {
 }
 
-void ATTPlayerCharacter::InputAttack ()
+void ATTPlayerCharacter::Attack ()
 {
 }
 
