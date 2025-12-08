@@ -4,6 +4,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 
 
 ATTPlayerCharacter::ATTPlayerCharacter()
@@ -26,6 +28,18 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 
 void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInputComponent )
 {
+	Super::SetupPlayerInputComponent ( PlayerInputComponent );
+
+	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent> ( PlayerInputComponent );
+	if (IsValid ( EnhancedInputComponent ) == true)
+	{
+		EnhancedInputComponent->BindAction ( InputMove , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Move );
+		EnhancedInputComponent->BindAction ( InputLook , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Look );
+		EnhancedInputComponent->BindAction ( InputAttack , ETriggerEvent::Started , this , &ATTPlayerCharacter::Attack );
+
+		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Jump );
+		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::StopJumping );
+	}
 }
 
 void ATTPlayerCharacter::BeginPlay ()
@@ -34,6 +48,11 @@ void ATTPlayerCharacter::BeginPlay ()
 
 void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 {
+	FVector2D MovementVector = Value.Get<FVector2D> ();
+	if (IsValid ( Controller ) == true)
+	{
+
+	}
 }
 
 void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
