@@ -1,5 +1,6 @@
 ﻿#include "TTPlayerController.h"
 #include "EnhancedInputSubsystems.h"
+#include "../InGameUI/TTInGameHUD.h"
 
 ATTPlayerController::ATTPlayerController ()
 	: InputMappingContext ( nullptr ) ,
@@ -9,7 +10,6 @@ ATTPlayerController::ATTPlayerController ()
 {
 }
 
-<<<<<<< HEAD
 void ATTPlayerController::BeginPlay ()
 {
 	Super::BeginPlay ();
@@ -29,9 +29,6 @@ void ATTPlayerController::BeginPlay ()
 		}
 	}
 }
-=======
-#include "TTPlayerController.h"
-#include "../InGameUI/TTInGameHUD.h"
 
 #pragma region ChatUI
 
@@ -49,4 +46,3 @@ void ATTPlayerController::ClientAddChatMessage_Implementation ( const FString& M
 
 }
 #pragma endregion
->>>>>>> InGameUI_PCY
