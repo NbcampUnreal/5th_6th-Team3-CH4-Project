@@ -6,6 +6,7 @@
 #include "../InGameUI/TTChatMessage.h"
 #include "../Controller/TTPlayerController.h"
 #include "Components/ScrollBox.h"
+#include "../InGameUI/TTSeletMeshs.h"
 
 void ATTInGameHUD::PostInitializeComponents ()
 {
@@ -22,12 +23,17 @@ void ATTInGameHUD::PostInitializeComponents ()
 		{
 			ESCMenu = CreateWidget<UUserWidget> ( PC , ESCMenuClass );
 		}
+		if(SelectedSkeletalMeshClass)
+		{
+			SelectedSkeletalMesh = CreateWidget<UUserWidget> ( PC , SelectedSkeletalMeshClass );
+		}
 	}
 }
 #pragma region ChatUI
 
 void ATTInGameHUD::AddChat () const
 {
+
 	if(IsValid(Chat))
 	{
 		Chat->AddToViewport ( );
@@ -36,6 +42,7 @@ void ATTInGameHUD::AddChat () const
 
 void ATTInGameHUD::AddChatMessage ( const FString& Message )
 {
+
 	if (OwningPlayer && ChatClass && Chat && ChatMessageClass)
 	{
 		
@@ -58,6 +65,20 @@ void ATTInGameHUD::AddESCMenu () const
 	if (IsValid ( ESCMenu ))
 	{
 		ESCMenu->AddToViewport ();
+	}
+}
+
+
+#pragma endregion
+
+#pragma region SelectedSkeletalMesh
+
+void ATTInGameHUD::AddSelectedSkeletalMenu () const
+{
+
+	if (IsValid ( SelectedSkeletalMesh ))
+	{
+		SelectedSkeletalMesh->AddToViewport ();
 	}
 }
 

@@ -14,8 +14,41 @@ class TEAM03_API UTTSeletMeshs : public UUserWidget
 {
 	GENERATED_BODY()
 public:
-	//UPROPERTY(config)
-	//TArray<FSoftObjectPath> DefaultPlayerCharacterSkeletalPaths;
-	//UPROPERTY(config)
-	//TArray<FSoftObjectPath> DefaultPlayerCharacterHeadSkeletalPaths;
+	virtual void NativeConstruct () override;
+
+	UFUNCTION ()
+	void OnHeadLeftClicked ();
+
+	UFUNCTION ()
+	void OnHeadRightClicked ();
+
+	UFUNCTION ()
+	void OnBodyLeftClicked ();
+
+	UFUNCTION ()
+	void OnBodyRightClicked ();
+private:
+
+
+	UPROPERTY ( meta = (BindWidget) )
+	TObjectPtr<class UButton> HeadLeft;
+
+	UPROPERTY ( meta = (BindWidget) )
+	TObjectPtr<UButton> HeadRight;
+
+	UPROPERTY ( meta = (BindWidget) )
+	TObjectPtr<UButton> BodyLeft;
+
+	UPROPERTY ( meta = (BindWidget) )
+	TObjectPtr<UButton> BodyRight;
+
+	FSoftObjectPath CurrentPlayerSkeletalMeshPath = FSoftObjectPath ();
+
+	FSoftObjectPath CurrentPlayerHeadSkeletalMeshPath = FSoftObjectPath ();
+
+	TSharedPtr<struct FStreamableHandle> AssetStreamableHandle = nullptr;
+
+	int32 IndexHead;
+
+	int32 IndexBody;
 };

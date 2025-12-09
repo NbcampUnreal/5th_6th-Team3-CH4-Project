@@ -1,9 +1,18 @@
-﻿{
+{
 	"FileVersion": 3,
 	"EngineAssociation": "5.5",
 	"Category": "",
 	"Description": "",
 	"Modules": [
+		{
+			"Name": "SelectSkeletal",
+			"Type": "Runtime",
+			"LoadingPhase": "PreDefault",
+			"AdditionalDependencies": [
+				"Engine",
+				"CoreUObject"
+			]
+		},
 		{
 			"Name": "Team03",
 			"Type": "Runtime",
