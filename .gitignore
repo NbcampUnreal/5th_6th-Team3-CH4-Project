@@ -84,3 +84,8 @@ DerivedDataCache/*
 
 # Prerequisites
 *.d
+Temp.txt
+UpgradeLog.htm
+UpgradeLog2.htm
+Source/Team03/Outgame/TitleLevel_Guide.md
+Source/Team03/Outgame/SRS_Outgame.txt

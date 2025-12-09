@@ -1,6 +1,8 @@
 ﻿#include "TTPlayerController.h"
 #include "EnhancedInputSubsystems.h"
+#include "../InGameMode/InGameModeBase.h"
 #include "../InGameUI/TTInGameHUD.h"
+#include "../InGameUI/TTChatUI.h"
 
 ATTPlayerController::ATTPlayerController ()
 	: InputMappingContext ( nullptr ) ,
@@ -8,6 +10,7 @@ ATTPlayerController::ATTPlayerController ()
 	JumpAction ( nullptr ) ,
 	SprintAction ( nullptr )
 {
+	bReplicates = true;
 }
 
 void ATTPlayerController::BeginPlay ()
@@ -28,21 +31,57 @@ void ATTPlayerController::BeginPlay ()
 			}
 		}
 	}
+
+	TTInGameHUD = Cast<ATTInGameHUD> ( GetHUD () );
+	if (TTInGameHUD)
+	{
+		TTInGameHUD->AddChat ();
+	}
 }
 
 #pragma region ChatUI
 
 void ATTPlayerController::ActivateChatBox ()
 {
-
+	if (IsValid ( TTInGameHUD ) && TTInGameHUD->Chat)
+	{
+		TTInGameHUD->Chat->ActivateChat();
+	}
 }
 
 void ATTPlayerController::ServerSendChatMessage_Implementation ( const FString& Message )
 {
-
+	if (!HasAuthority ())
+		return;
+	if (AInGameModeBase* GM = GetWorld ()->GetAuthGameMode<AInGameModeBase> ())
+	{
+		GM->SendChatMessage ( Message );
+	}
 }
+
 void ATTPlayerController::ClientAddChatMessage_Implementation ( const FString& Message )
 {
-
+	if (IsValid ( TTInGameHUD ))
+	{
+		UE_LOG ( LogTemp , Warning , TEXT ( "Multicast received on client! Message: %s" ) , *Message );
+		TTInGameHUD->AddChatMessage ( Message );
+	}
 }
+
 #pragma endregion
+
+#pragma region ESCMenu
+
+void ATTPlayerController::ActivateESCMenu ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->AddESCMenu ();
+		SetShowMouseCursor (true);
+		FInputModeUIOnly InputMode;
+		SetInputMode ( InputMode );
+	}
+}
+
+#pragma endregion
+

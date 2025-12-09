@@ -14,4 +14,8 @@ class TEAM03_API ATTTitlePlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	
+public:
+	ATTTitlePlayerController();
+	
+	virtual void BeginPlay() override;
 };

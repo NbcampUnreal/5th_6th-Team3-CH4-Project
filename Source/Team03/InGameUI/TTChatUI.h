@@ -15,7 +15,6 @@ class TEAM03_API UTTChatUI : public UUserWidget
 	GENERATED_BODY()
 public:
 	virtual void NativeConstruct () override;
-	virtual void NativeDestruct () override;
 
 	void SetChatMessage ( const FString& Message );
 
@@ -26,7 +25,7 @@ protected:
 	UFUNCTION()
 	void OnTextCommitted ( const FText& Text , ETextCommit::Type CommitMethod );
 
-private:
+public:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<class UEditableTextBox> ChatInputBox;
 
