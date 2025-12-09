@@ -25,27 +25,39 @@ public:
 	TObjectPtr<USpringArmComponent> SpringArm;
 	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly , Category = "Camera" )
 	TObjectPtr<UCameraComponent> Camera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Head")
+	TObjectPtr<USkeletalMeshComponent> Head;
 
 #pragma region Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> InputMove;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputLook;
+	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> InputJump;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputAttack;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputEnter;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputESC;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputMappingContext> IMC_Character;
 
 public:
 	virtual void SetupPlayerInputComponent ( class UInputComponent* PlayerInputComponent ) override;
-	
-	virtual void BeginPlay () override;
+
 
 protected:
 	void Move ( const FInputActionValue& Value );
 	void Look ( const FInputActionValue& Value );
 	void Attack();
+	void InChat ();
+	void ESCMenu();
 	
 #pragma endregion
+
+public:
+
+	virtual void BeginPlay () override;
 };

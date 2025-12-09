@@ -14,8 +14,36 @@ class TEAM03_API ATTInGameHUD : public AHUD
 {
 	GENERATED_BODY()
 public:
+	virtual void PostInitializeComponents () override;
 
-	
-private:
+#pragma region ChatUI
+	void AddChat ()const;
+	void AddChatMessage ( const FString& Message );
+
+public:
+	UPROPERTY( EditDefaultsOnly )
+	TSubclassOf<UUserWidget> ChatClass;
+
+	UPROPERTY( VisibleAnywhere )
+	TObjectPtr<class UTTChatUI> Chat;
+
+
+	UPROPERTY( EditDefaultsOnly )
+	TSubclassOf<UUserWidget> ChatMessageClass;
+
+	UPROPERTY ( VisibleAnywhere )
+	TObjectPtr<class ATTPlayerController> OwningPlayer;
+#pragma endregion
+
+#pragma region ESCMenu
+public:
+	void AddESCMenu () const;
+
+public:
+	UPROPERTY ( EditDefaultsOnly )
+	TSubclassOf<UUserWidget> ESCMenuClass;
+	UPROPERTY ( VisibleAnywhere )
+	TObjectPtr<class UUserWidget> ESCMenu;
+#pragma endregion
 
 };

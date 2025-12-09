@@ -4,6 +4,7 @@
 #include "TTChatUI.h"
 #include "Components/EditableTextBox.h"
 #include "Components/ScrollBox.h"
+#include "../Controller/TTPlayerController.h"
 
 // 생성자
 void UTTChatUI::NativeConstruct ()
@@ -16,23 +17,13 @@ void UTTChatUI::NativeConstruct ()
 	ChatInputBox->SetIsEnabled ( false );
 }
 
-// 소멸자
-void UTTChatUI::NativeDestruct ()
-{
-	Super::NativeDestruct ();
-	if (IsValid ( ChatInputBox ) )
-	{
-		ChatInputBox->OnTextCommitted.RemoveDynamic ( this , &UTTChatUI::OnTextCommitted );
-	}
-}
-
 // 엔터시 진입할 함수이며 메세지입력
 void UTTChatUI::ActivateChat ()
 {
 	if (IsValid ( ChatInputBox ) )
 	{
 		ChatInputBox->SetIsEnabled ( true );
-		ChatInputBox->SetKeyboardFocus ();
+		ChatInputBox->SetFocus ();
 	}
 }
 
@@ -48,9 +39,19 @@ void UTTChatUI::OnTextCommitted ( const FText& Text , ETextCommit::Type CommitMe
 
 			if(!Message.IsEmpty())
 			{
+				if(ATTPlayerController* PC = Cast<ATTPlayerController>( GetOwningPlayer () ))
+				{
+					// ToDo : 플레이어 캐릭터 이름 채팅에 추가
+					//TObjectPtr <APlayerState> PS = PC->GetPlayerState<APlayerState> ();
+					//FString Message = FString::Printf ( TEXT ( "%s : %s" ) , TObjectPtr < APlayerState>->GetPlayerName() , *Message );
+					PC->ServerSendChatMessage ( Message );
 
-				ChatInputBox->SetText ( FText::GetEmpty () );
-				ChatInputBox->SetIsEnabled ( false );
+					FInputModeGameOnly InputMode;
+					PC->SetInputMode ( InputMode );
+
+					ChatInputBox->SetText ( FText::GetEmpty () );
+					ChatInputBox->SetIsEnabled ( false );
+				}
 			}
 		}
 	}
