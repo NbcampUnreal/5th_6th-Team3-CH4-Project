@@ -6,11 +6,16 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "../Controller/TTPlayerController.h"
+
 
 
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = false;
+
+	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
+	Head->SetupAttachment ( GetRootComponent () );
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
@@ -39,11 +44,28 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 
 		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Jump );
 		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::StopJumping );
+		
+		EnhancedInputComponent->BindAction ( InputEnter , ETriggerEvent::Started , this , &ATTPlayerCharacter::InChat );
+		EnhancedInputComponent->BindAction (InputESC, ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu);
+
 	}
 }
 
 void ATTPlayerCharacter::BeginPlay ()
 {
+	Super::BeginPlay ();
+
+	APlayerController* PlayerController = Cast<APlayerController> ( GetController () );
+
+	if (IsValid ( PlayerController ) == true)
+	{
+		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
+
+		if (IsValid ( Subsystem ) == true)
+		{
+			Subsystem->AddMappingContext ( IMC_Character , 0 );
+		}
+	}
 }
 
 void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
@@ -51,15 +73,45 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 	FVector2D MovementVector = Value.Get<FVector2D> ();
 	if (IsValid ( Controller ) == true)
 	{
+		const FRotator Rotation = Controller->GetControlRotation ();
+		const FRotator RotationYaw ( 0 , Rotation.Yaw , 0 );
+		const FVector Forward = FRotationMatrix ( RotationYaw ).GetUnitAxis ( EAxis::X );
+		const FVector Right = FRotationMatrix ( RotationYaw ).GetUnitAxis ( EAxis::Y );
+
+		AddMovementInput ( Forward , MovementVector.X );
+		AddMovementInput ( Right , MovementVector.Y );
 
 	}
 }
 
 void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
 {
+	FVector2D MouseVector = Value.Get<FVector2D> ();
+
+	if (IsValid ( Controller ) == true)
+	{
+		AddControllerYawInput ( MouseVector.X );
+		AddControllerPitchInput ( MouseVector.Y );
+	}
 }
 
 void ATTPlayerCharacter::Attack ()
 {
+}
+
+void ATTPlayerCharacter::InChat ()
+{
+	if(ATTPlayerController* PC = Cast<ATTPlayerController>( GetController () ) )
+	{
+		PC->ActivateChatBox ();
+	}
+}
+
+void ATTPlayerCharacter::ESCMenu()
+{
+	if (ATTPlayerController* PC = Cast<ATTPlayerController>(GetController()))
+	{
+		PC->ActivateESCMenu();
+	}
 }
 
