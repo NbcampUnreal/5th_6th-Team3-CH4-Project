@@ -8,16 +8,16 @@
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
 
-AMapsGimmick::AMapsGimmick()
+AMapsGimmick::AMapsGimmick ()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
 	GasDetectionVolume = CreateDefaultSubobject<USphereComponent> ( TEXT ( "GasDetectionVolume" ) );
 	RootComponent = GasDetectionVolume;
 
+	GasDetectionVolume->SetCollisionProfileName ( TEXT ( "Trigger" ) );
 	GasDetectionVolume->OnComponentBeginOverlap.AddDynamic ( this , &AMapsGimmick::OnOverlapBegin );
 	GasDetectionVolume->OnComponentEndOverlap.AddDynamic ( this , &AMapsGimmick::OnOverlapEnd );
-
 
 }
 
@@ -27,12 +27,23 @@ void AMapsGimmick::BeginPlay()
 	
 }
 
-void AMapsGimmick::OnOverlapBegin ( UPrimitiveComponent* OverlappedComp , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult )
+void AMapsGimmick::OnOverlapBegin ( 
+	UPrimitiveComponent* OverlappedComp , 
+	AActor* OtherActor , 
+	UPrimitiveComponent* OtherComp , 
+	int32 OtherBodyIndex , 
+	bool bFromSweep , 
+	const FHitResult& SweepResult )
 {
+	if (!HasAuthority ()) return;
 
 }
 
-void AMapsGimmick::OnOverlapEnd ( UPrimitiveComponent* OverlappedComp , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex )
+void AMapsGimmick::OnOverlapEnd ( 
+	UPrimitiveComponent* OverlappedComp ,
+	AActor* OtherActor ,
+	UPrimitiveComponent* OtherComp ,
+	int32 OtherBodyIndex )
 {
 
 }
@@ -41,5 +52,3 @@ void AMapsGimmick::GasDamage ()
 {
 
 }
-
-
