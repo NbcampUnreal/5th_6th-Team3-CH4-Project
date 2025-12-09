@@ -38,6 +38,10 @@ public:
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputAttack;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputEnter;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputESC;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputMappingContext> IMC_Character;
 
 public:
@@ -48,6 +52,8 @@ protected:
 	void Move ( const FInputActionValue& Value );
 	void Look ( const FInputActionValue& Value );
 	void Attack();
+	void InChat ();
+	void ESCMenu();
 	
 #pragma endregion
 

@@ -6,6 +6,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "../Controller/TTPlayerController.h"
+
 
 
 ATTPlayerCharacter::ATTPlayerCharacter()
@@ -42,6 +44,10 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 
 		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Jump );
 		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::StopJumping );
+		
+		EnhancedInputComponent->BindAction ( InputEnter , ETriggerEvent::Started , this , &ATTPlayerCharacter::InChat );
+		EnhancedInputComponent->BindAction (InputESC, ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu);
+
 	}
 }
 
@@ -91,5 +97,21 @@ void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
 
 void ATTPlayerCharacter::Attack ()
 {
+}
+
+void ATTPlayerCharacter::InChat ()
+{
+	if(ATTPlayerController* PC = Cast<ATTPlayerController>( GetController () ) )
+	{
+		PC->ActivateChatBox ();
+	}
+}
+
+void ATTPlayerCharacter::ESCMenu()
+{
+	if (ATTPlayerController* PC = Cast<ATTPlayerController>(GetController()))
+	{
+		PC->ActivateESCMenu();
+	}
 }
 
