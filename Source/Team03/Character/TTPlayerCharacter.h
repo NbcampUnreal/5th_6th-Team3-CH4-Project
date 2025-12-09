@@ -31,7 +31,7 @@ public:
 	TObjectPtr<UInputAction> InputMove;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputLook;
-	UPROPERTY(EditAnywhere, Category="Inpu")
+	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> InputJump;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputAttack;
