@@ -12,6 +12,9 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
+	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
+	Head->SetupAttachment ( GetRootComponent () );
+
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
 	SpringArm->TargetArmLength = 500.f;

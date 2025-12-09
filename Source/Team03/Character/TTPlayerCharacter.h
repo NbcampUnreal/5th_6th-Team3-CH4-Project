@@ -25,6 +25,8 @@ public:
 	TObjectPtr<USpringArmComponent> SpringArm;
 	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly , Category = "Camera" )
 	TObjectPtr<UCameraComponent> Camera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Head")
+	TObjectPtr<USkeletalMeshComponent> Head;
 
 #pragma region Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -40,8 +42,7 @@ public:
 
 public:
 	virtual void SetupPlayerInputComponent ( class UInputComponent* PlayerInputComponent ) override;
-	
-	virtual void BeginPlay () override;
+
 
 protected:
 	void Move ( const FInputActionValue& Value );
@@ -49,4 +50,8 @@ protected:
 	void Attack();
 	
 #pragma endregion
+
+public:
+
+	virtual void BeginPlay () override;
 };
