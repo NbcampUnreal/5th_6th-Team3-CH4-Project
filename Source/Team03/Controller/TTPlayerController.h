@@ -46,4 +46,11 @@ private:
 	UPROPERTY ()
 	TObjectPtr< class ATTInGameHUD >  TTInGameHUD;
 #pragma endregion
+
+#pragma region ESCMenu
+public:
+	UFUNCTION ()
+	void ActivateESCMenu ();
+#pragma endregion
+
 };
