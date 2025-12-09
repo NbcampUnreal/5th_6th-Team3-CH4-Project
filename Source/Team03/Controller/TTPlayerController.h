@@ -53,4 +53,16 @@ public:
 	void ActivateESCMenu ();
 #pragma endregion
 
+#pragma region SelectedSkeletalMesh
+public:
+	UFUNCTION ()
+	void ActivateSelectedSkeletalMesh ();
+
+	UFUNCTION()
+	void ChangeHeadMesh ( USkeletalMesh* NewMesh );
+
+	UFUNCTION()
+	void ChangeMesh ( USkeletalMesh* NewMesh );
+#pragma endregion
+
 };

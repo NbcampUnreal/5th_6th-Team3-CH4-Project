@@ -46,7 +46,8 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::StopJumping );
 		
 		EnhancedInputComponent->BindAction ( InputEnter , ETriggerEvent::Started , this , &ATTPlayerCharacter::InChat );
-		EnhancedInputComponent->BindAction (InputESC, ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu);
+		EnhancedInputComponent->BindAction ( InputESC, ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu);
+		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey);
 
 	}
 }
@@ -54,6 +55,7 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 void ATTPlayerCharacter::BeginPlay ()
 {
 	Super::BeginPlay ();
+	UE_LOG ( LogTemp , Warning , TEXT ( "BeginPlay" ) );
 
 	APlayerController* PlayerController = Cast<APlayerController> ( GetController () );
 
@@ -115,3 +117,34 @@ void ATTPlayerCharacter::ESCMenu()
 	}
 }
 
+void ATTPlayerCharacter::TempKey ()
+{
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetController () ))
+	{
+		PC->ActivateSelectedSkeletalMesh ();
+	}
+}
+
+#pragma region MeshChange
+
+void ATTPlayerCharacter::ChangeHeadMesh ( USkeletalMesh* NewMesh ) const
+{
+	UE_LOG ( LogTemp , Warning , TEXT ( "Try ChangeHead" ) );
+
+	if (IsValid ( Head ) && IsValid ( NewMesh ))
+	{
+		Head->SetSkeletalMesh ( NewMesh );
+	}
+}
+
+void ATTPlayerCharacter::ChangeBodyMesh ( USkeletalMesh* NewMesh ) const
+{
+	UE_LOG ( LogTemp , Warning , TEXT ( "Try ChangeBody" ) );
+
+	if (IsValid ( GetMesh () ) && IsValid ( NewMesh ))
+	{
+		GetMesh ()->SetSkeletalMesh ( NewMesh );
+	}
+}
+
+#pragma endregion

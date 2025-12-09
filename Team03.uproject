@@ -5,12 +5,22 @@
 	"Description": "",
 	"Modules": [
 		{
+			"Name": "SelectSkeletal",
+			"Type": "Runtime",
+			"LoadingPhase": "PreDefault",
+			"AdditionalDependencies": [
+				"Engine",
+				"CoreUObject"
+			]
+		},
+		{
 			"Name": "Team03",
 			"Type": "Runtime",
 			"LoadingPhase": "Default",
 			"AdditionalDependencies": [
 				"Engine",
-				"UMG"
+				"UMG",
+				"SelectSkeletal"
 			]
 		}
 	],

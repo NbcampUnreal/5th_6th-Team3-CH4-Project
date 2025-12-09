@@ -3,6 +3,9 @@
 #include "../InGameMode/InGameModeBase.h"
 #include "../InGameUI/TTInGameHUD.h"
 #include "../InGameUI/TTChatUI.h"
+#include "../Character/TTPlayerCharacter.h"
+
+
 
 ATTPlayerController::ATTPlayerController ()
 	: InputMappingContext ( nullptr ) ,
@@ -80,6 +83,34 @@ void ATTPlayerController::ActivateESCMenu ()
 		SetShowMouseCursor (true);
 		FInputModeUIOnly InputMode;
 		SetInputMode ( InputMode );
+	}
+}
+
+void ATTPlayerController::ActivateSelectedSkeletalMesh ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->AddSelectedSkeletalMenu ();
+		SetShowMouseCursor ( true );
+		FInputModeUIOnly InputMode;
+		SetInputMode ( InputMode );
+	}
+	Cast<ATTPlayerController> ( GetOwner () );
+}
+
+void ATTPlayerController::ChangeHeadMesh ( USkeletalMesh* NewMesh )
+{
+	if (ATTPlayerCharacter* PC = Cast<ATTPlayerCharacter> ( GetPawn () ) )
+	{
+		PC->ChangeHeadMesh ( NewMesh );
+	}
+}
+
+void ATTPlayerController::ChangeMesh ( USkeletalMesh* NewMesh )
+{
+	if (ATTPlayerCharacter* PC = Cast<ATTPlayerCharacter> ( GetPawn () ) )
+	{
+		PC->ChangeBodyMesh ( NewMesh );
 	}
 }
 

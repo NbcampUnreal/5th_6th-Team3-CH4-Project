@@ -46,4 +46,16 @@ public:
 	TObjectPtr<class UUserWidget> ESCMenu;
 #pragma endregion
 
+#pragma region SelectedSkeletalMesh
+public:
+	void AddSelectedSkeletalMenu () const;
+
+public:
+	UPROPERTY ( EditDefaultsOnly )
+	TSubclassOf<UUserWidget> SelectedSkeletalMeshClass;
+
+	UPROPERTY ( VisibleAnywhere )
+	TObjectPtr<class UUserWidget> SelectedSkeletalMesh;
+
+#pragma endregion
 };

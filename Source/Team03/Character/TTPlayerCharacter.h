@@ -42,6 +42,8 @@ public:
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputESC;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputTempKey;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputMappingContext> IMC_Character;
 
 public:
@@ -54,10 +56,16 @@ protected:
 	void Attack();
 	void InChat ();
 	void ESCMenu();
+	void TempKey ();
 	
 #pragma endregion
 
 public:
 
 	virtual void BeginPlay () override;
+#pragma region MeshChange
+public:
+	void ChangeHeadMesh ( USkeletalMesh* NewMesh ) const;
+	void ChangeBodyMesh ( USkeletalMesh* NewMesh ) const;
+#pragma endregion
 };
