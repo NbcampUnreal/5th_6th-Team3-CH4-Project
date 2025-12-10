@@ -3,8 +3,10 @@
 
 #include "PauseGame.h"
 #include "Components/Button.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "../Controller/TTPlayerController.h"
+#include "../Outgame/UW_TitleLevel.h"
+#include "Kismet/GameplayStatics.h"
+//#include "Kismet/KismetSystemLibrary.h"
 
 void UPauseGame::NativeConstruct ()
 {
@@ -23,7 +25,7 @@ void UPauseGame::NativeConstruct ()
 void UPauseGame::OnContinueButtonClicked ()
 {
 	// TODO : UI 없애기	, 게임 재개
-	RemoveFromViewport();
+	RemoveFromParent ();
 	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () ))
 	{
 		PC->SetShowMouseCursor ( false );
@@ -35,5 +37,7 @@ void UPauseGame::OnContinueButtonClicked ()
 void UPauseGame::OnExitButtonClicked ()
 {
 	// TODO : 메인화면으로 이동, 일단 강제 종료
-	UKismetSystemLibrary::QuitGame ( this , nullptr , EQuitPreference::Quit , false );
+	//UKismetSystemLibrary::QuitGame ( this , nullptr , EQuitPreference::Quit , false );
+	RemoveFromParent ();
+	UGameplayStatics::OpenLevel ( this , FName ( TEXT ( "TitleLevel" ) ) );
 }

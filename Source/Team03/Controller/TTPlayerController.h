@@ -63,6 +63,7 @@ public:
 
 	UFUNCTION()
 	void ChangeMesh ( USkeletalMesh* NewMesh );
+
 #pragma endregion
 
 };
