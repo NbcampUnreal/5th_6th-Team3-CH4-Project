@@ -28,8 +28,11 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 
 	bUseControllerRotationYaw = false;
 
-	GetCharacterMovement ()->bOrientRotationToMovement = true;
-	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 500.0f , 0.0f );
+	GetCharacterMovement ()->bOrientRotationToMovement = false;
+	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 1080.0f , 0.0f );
+
+	TargetRotation = FRotator::ZeroRotator;
+
 	HeadMeshToReplicate = nullptr;
 	BodyMeshToReplicate = nullptr;
 }
@@ -86,7 +89,25 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 		AddMovementInput ( Forward , MovementVector.X );
 		AddMovementInput ( Right , MovementVector.Y );
 
+
+		FVector DesiredDirection = (Forward * MovementVector.X) + (Right * MovementVector.Y);
+
+		if (!DesiredDirection.IsNearlyZero ())
+		{
+			TargetRotation = DesiredDirection.Rotation ();
+		}
+
 	}
+}
+
+void ATTPlayerCharacter::Tick ( float DeltaTime )
+{
+	Super::Tick ( DeltaTime );
+
+	float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
+	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , TurnSpeed );
+
+	SetActorRotation ( NewRotation );
 }
 
 void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
