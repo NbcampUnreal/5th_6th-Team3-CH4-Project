@@ -9,12 +9,13 @@
 /**
  * 
  */
-UCLASS(config = DefaultPlayerCharacterHeadSkeletalPaths )
+
+UCLASS(config = PlayerCharacterHeadSkeletalPaths )
 class SELECTSKELETAL_API UTTCharactorHeadSkeletalSelect : public UObject
 {
 	GENERATED_BODY()
 	
 public:
 	UPROPERTY(config)
-	TArray<FSoftObjectPath> DefaultPlayerCharacterHeadSkeletalPaths;
+	TArray<FSoftObjectPath> PlayerCharacterHeadSkeletalPaths;
 };

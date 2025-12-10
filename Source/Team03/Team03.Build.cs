@@ -2,6 +2,7 @@
 
 using UnrealBuildTool;
 
+
 public class Team03 : ModuleRules
 {
 	public Team03(ReadOnlyTargetRules Target) : base(Target)
@@ -13,10 +14,13 @@ public class Team03 : ModuleRules
 			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" , "UMG" , "Slate", "SlateCore",
 
 			// Online Subsystem Dependencies
-            "OnlineSubsystem", "OnlineSubsystemUtils"
+            "OnlineSubsystem", "OnlineSubsystemUtils",
+
+			// Engine Settings for GameMapsSettings
+			"EngineSettings"
         });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PrivateDependencyModuleNames.AddRange(new string[] { "SelectSkeletal", });
 
 		PublicIncludePathModuleNames.AddRange(new string[] { "Team03" });
 

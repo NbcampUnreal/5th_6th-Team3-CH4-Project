@@ -14,4 +14,20 @@ class TEAM03_API UUW_LobbyLevel : public UUserWidget
 {
 	GENERATED_BODY()
 	
+public:
+	virtual void NativeConstruct() override;
+
+protected:
+	UPROPERTY(meta = (BindWidget))
+	class UButton* Btn_StartGame;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* Btn_Leave;
+
+private:
+	UFUNCTION()
+	void OnClickStartGame();
+
+	UFUNCTION()
+	void OnClickLeave();
 };

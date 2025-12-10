@@ -57,15 +57,40 @@ protected:
 	void InChat ();
 	void ESCMenu();
 	void TempKey ();
+	FRotator TargetRotation;
+
 	
 #pragma endregion
 
 public:
 
 	virtual void BeginPlay () override;
+	virtual void Tick ( float DeltaTime ) override;
+
 #pragma region MeshChange
 public:
-	void ChangeHeadMesh ( USkeletalMesh* NewMesh ) const;
-	void ChangeBodyMesh ( USkeletalMesh* NewMesh ) const;
+	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
+
+	UFUNCTION ( Server , Reliable , WithValidation )
+	void ServerChangeHeadMesh ( USkeletalMesh* NewMesh );
+	UFUNCTION ( Server , Reliable , WithValidation )
+	void ServerChangeBodyMesh ( USkeletalMesh* NewMesh );
+
+	void ChangeHead ( USkeletalMesh* NewMesh );
+	void ChangeBody ( USkeletalMesh* NewMesh );
+
+	UFUNCTION ()
+	void OnRep_HeadMesh ();
+
+	UFUNCTION ()
+	void OnRep_BodyMesh ();
+
+private:
+	UPROPERTY ( ReplicatedUsing = OnRep_HeadMesh )
+	USkeletalMesh* HeadMeshToReplicate;
+
+	UPROPERTY ( ReplicatedUsing = OnRep_BodyMesh )
+	USkeletalMesh* BodyMeshToReplicate;
+
 #pragma endregion
 };

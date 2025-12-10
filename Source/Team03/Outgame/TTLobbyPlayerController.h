@@ -14,4 +14,9 @@ class TEAM03_API ATTLobbyPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	
+public:
+	virtual void BeginPlay() override;
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerRPC_StartGame();
 };

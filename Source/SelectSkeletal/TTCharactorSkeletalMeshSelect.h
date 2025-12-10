@@ -9,12 +9,13 @@
 /**
  * 
  */
-UCLASS(config = DefaultPlayerCharacterSkeletalPaths )
+
+UCLASS(config = PlayerCharacterSkeletalPaths )
 class SELECTSKELETAL_API UTTCharactorSkeletalMeshSelect : public UObject
 {
 	GENERATED_BODY()
 public:
 	UPROPERTY(config)
-	TArray<FSoftObjectPath> DefaultPlayerCharacterSkeletalPaths;
+	TArray<FSoftObjectPath> PlayerCharacterSkeletalPaths;
 
 };

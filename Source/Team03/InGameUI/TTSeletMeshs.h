@@ -27,6 +27,9 @@ public:
 
 	UFUNCTION ()
 	void OnBodyRightClicked ();
+
+	UFUNCTION ()
+	void RemoveUI ();
 private:
 
 
@@ -41,6 +44,9 @@ private:
 
 	UPROPERTY ( meta = (BindWidget) )
 	TObjectPtr<UButton> BodyRight;
+
+	UPROPERTY ( meta = (BindWidget) )
+	TObjectPtr<UButton> ExitWidget;
 
 	FSoftObjectPath CurrentPlayerSkeletalMeshPath = FSoftObjectPath ();
 

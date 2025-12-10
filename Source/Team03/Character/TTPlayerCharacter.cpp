@@ -7,12 +7,13 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "../Controller/TTPlayerController.h"
-
+#include "Net/UnrealNetwork.h"
 
 
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
 	Head->SetupAttachment ( GetRootComponent () );
@@ -27,8 +28,13 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 
 	bUseControllerRotationYaw = false;
 
-	GetCharacterMovement ()->bOrientRotationToMovement = true;
-	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 500.0f , 0.0f );
+	GetCharacterMovement ()->bOrientRotationToMovement = false;
+	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 1080.0f , 0.0f );
+
+	TargetRotation = FRotator::ZeroRotator;
+
+	HeadMeshToReplicate = nullptr;
+	BodyMeshToReplicate = nullptr;
 }
 
 void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInputComponent )
@@ -83,7 +89,25 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 		AddMovementInput ( Forward , MovementVector.X );
 		AddMovementInput ( Right , MovementVector.Y );
 
+
+		FVector DesiredDirection = (Forward * MovementVector.X) + (Right * MovementVector.Y);
+
+		if (!DesiredDirection.IsNearlyZero ())
+		{
+			TargetRotation = DesiredDirection.Rotation ();
+		}
+
 	}
+}
+
+void ATTPlayerCharacter::Tick ( float DeltaTime )
+{
+	Super::Tick ( DeltaTime );
+
+	float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
+	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , TurnSpeed );
+
+	SetActorRotation ( NewRotation );
 }
 
 void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
@@ -126,21 +150,66 @@ void ATTPlayerCharacter::TempKey ()
 }
 
 #pragma region MeshChange
-
-void ATTPlayerCharacter::ChangeHeadMesh ( USkeletalMesh* NewMesh ) const
+void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
 {
-	UE_LOG ( LogTemp , Warning , TEXT ( "Try ChangeHead" ) );
+	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
 
+	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
+	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
+}
+
+bool ATTPlayerCharacter::ServerChangeHeadMesh_Validate ( USkeletalMesh* NewMesh )
+{
+	return true;
+}
+
+void ATTPlayerCharacter::ServerChangeHeadMesh_Implementation ( USkeletalMesh* NewMesh )
+{
+
+	HeadMeshToReplicate = NewMesh;
+	OnRep_HeadMesh ();
+
+}
+
+bool ATTPlayerCharacter::ServerChangeBodyMesh_Validate ( USkeletalMesh* NewMesh )
+{
+	return true;
+}
+
+void ATTPlayerCharacter::ServerChangeBodyMesh_Implementation ( USkeletalMesh* NewMesh )
+{
+	BodyMeshToReplicate = NewMesh;
+
+	OnRep_BodyMesh ();
+}
+
+
+void ATTPlayerCharacter::OnRep_HeadMesh ()
+{
+	if (HeadMeshToReplicate)
+	{
+		ChangeHead ( HeadMeshToReplicate );
+	}
+}
+
+void ATTPlayerCharacter::OnRep_BodyMesh ()
+{
+	if (BodyMeshToReplicate)
+	{
+		ChangeBody ( BodyMeshToReplicate );
+	}
+}
+
+void ATTPlayerCharacter::ChangeHead ( USkeletalMesh* NewMesh )
+{
 	if (IsValid ( Head ) && IsValid ( NewMesh ))
 	{
 		Head->SetSkeletalMesh ( NewMesh );
 	}
 }
 
-void ATTPlayerCharacter::ChangeBodyMesh ( USkeletalMesh* NewMesh ) const
+void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 {
-	UE_LOG ( LogTemp , Warning , TEXT ( "Try ChangeBody" ) );
-
 	if (IsValid ( GetMesh () ) && IsValid ( NewMesh ))
 	{
 		GetMesh ()->SetSkeletalMesh ( NewMesh );

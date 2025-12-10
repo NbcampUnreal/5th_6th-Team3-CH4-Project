@@ -29,30 +29,38 @@ void UTTSeletMeshs::NativeConstruct ()
 	{
 		BodyRight->OnClicked.AddDynamic ( this , &UTTSeletMeshs::OnBodyRightClicked );
 	}
-
+	if (ExitWidget)
+	{
+		ExitWidget->OnClicked.AddDynamic ( this , &UTTSeletMeshs::RemoveUI );
+	}
 	IndexHead = 0;
 	IndexBody = 0;
 }
 
 void UTTSeletMeshs::OnHeadLeftClicked ()
 {
-	const UTTCharactorHeadSkeletalSelect* HeadSkeletalSelect = GetDefault<UTTCharactorHeadSkeletalSelect> ();
-	if (0 < HeadSkeletalSelect->DefaultPlayerCharacterHeadSkeletalPaths.Num ())
+
+	const UTTCharactorHeadSkeletalSelect* CDO = GetDefault<UTTCharactorHeadSkeletalSelect> ();
+
+	if (0 < CDO->PlayerCharacterHeadSkeletalPaths.Num ())
 	{
-		if ( ++IndexHead >= HeadSkeletalSelect->DefaultPlayerCharacterHeadSkeletalPaths.Num () )
+		if ( ++IndexHead >= CDO->PlayerCharacterHeadSkeletalPaths.Num () )
 		{
 			IndexHead = 0;
 		}
-		CurrentPlayerHeadSkeletalMeshPath = HeadSkeletalSelect->DefaultPlayerCharacterHeadSkeletalPaths[IndexHead];
+
+		CurrentPlayerHeadSkeletalMeshPath = CDO->PlayerCharacterHeadSkeletalPaths[IndexHead];
 
 		AssetStreamableHandle = UAssetManager::GetStreamableManager ().RequestAsyncLoad (
 			{ CurrentPlayerHeadSkeletalMeshPath } ,
 			FStreamableDelegate::CreateLambda ( [this]() -> void
 				{
+
 					AssetStreamableHandle->ReleaseHandle ();
 					TSoftObjectPtr<USkeletalMesh> LoadedInstance ( CurrentPlayerHeadSkeletalMeshPath );
 					if (LoadedInstance.IsValid ())
 					{
+
 						ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () );
 						if (IsValid ( PC ))
 						{
@@ -68,23 +76,30 @@ void UTTSeletMeshs::OnHeadLeftClicked ()
 
 void UTTSeletMeshs::OnHeadRightClicked ()
 {
-	const UTTCharactorHeadSkeletalSelect* HeadSkeletalSelect = GetDefault<UTTCharactorHeadSkeletalSelect> ();
-	if (0 < HeadSkeletalSelect->DefaultPlayerCharacterHeadSkeletalPaths.Num ())
+
+	const UTTCharactorHeadSkeletalSelect* CDO = GetDefault<UTTCharactorHeadSkeletalSelect> ();
+
+
+	if (0 < CDO->PlayerCharacterHeadSkeletalPaths.Num ())
 	{
 		if (--IndexHead < 0)
 		{
-			IndexHead = HeadSkeletalSelect->DefaultPlayerCharacterHeadSkeletalPaths.Num () -1;
+			IndexHead = CDO->PlayerCharacterHeadSkeletalPaths.Num () -1;
 		}
-		CurrentPlayerHeadSkeletalMeshPath = HeadSkeletalSelect->DefaultPlayerCharacterHeadSkeletalPaths[IndexHead];
+
+
+		CurrentPlayerHeadSkeletalMeshPath = CDO->PlayerCharacterHeadSkeletalPaths[IndexHead];
 
 		AssetStreamableHandle = UAssetManager::GetStreamableManager ().RequestAsyncLoad (
 			{ CurrentPlayerHeadSkeletalMeshPath } ,
 			FStreamableDelegate::CreateLambda ( [this]() -> void
 				{
+
 					AssetStreamableHandle->ReleaseHandle ();
 					TSoftObjectPtr<USkeletalMesh> LoadedInstance ( CurrentPlayerHeadSkeletalMeshPath );
 					if (LoadedInstance.IsValid ())
 					{
+
 						ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () );
 						if (IsValid ( PC ))
 						{
@@ -94,29 +109,33 @@ void UTTSeletMeshs::OnHeadRightClicked ()
 				}
 			)
 		);
+
 	}
 }
 
 void UTTSeletMeshs::OnBodyLeftClicked ()
 {
-	const UTTCharactorSkeletalMeshSelect* BodySkeletalSelect = GetDefault<UTTCharactorSkeletalMeshSelect> ();
-	if(0< BodySkeletalSelect->DefaultPlayerCharacterSkeletalPaths.Num ())
+	const UTTCharactorSkeletalMeshSelect* CDO = GetDefault<UTTCharactorSkeletalMeshSelect> ();
+
+	if(0< CDO->PlayerCharacterSkeletalPaths.Num ())
 	{
-		if ( ++IndexBody >= BodySkeletalSelect->DefaultPlayerCharacterSkeletalPaths.Num ())
+		if ( ++IndexBody >= CDO->PlayerCharacterSkeletalPaths.Num ())
 		{
 			IndexBody = 0;
 		}
 
-		CurrentPlayerSkeletalMeshPath = BodySkeletalSelect->DefaultPlayerCharacterSkeletalPaths[IndexBody];
+		CurrentPlayerSkeletalMeshPath = CDO->PlayerCharacterSkeletalPaths[IndexBody];
 
 		AssetStreamableHandle = UAssetManager::GetStreamableManager ().RequestAsyncLoad (
 			{ CurrentPlayerSkeletalMeshPath } ,
 			FStreamableDelegate::CreateLambda ( [this]() -> void
 				{
+
 					AssetStreamableHandle->ReleaseHandle ();
 					TSoftObjectPtr<USkeletalMesh> LoadedInstance ( CurrentPlayerSkeletalMeshPath );
 					if (LoadedInstance.IsValid ())
 					{
+
 						ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () );
 						if (IsValid ( PC ))
 						{
@@ -126,38 +145,53 @@ void UTTSeletMeshs::OnBodyLeftClicked ()
 				}
 			)
 		);
-
 	}
 }
 
 void UTTSeletMeshs::OnBodyRightClicked ()
 {
-	const UTTCharactorSkeletalMeshSelect* BodySkeletalSelect = GetDefault<UTTCharactorSkeletalMeshSelect> ();
-	if (0 < BodySkeletalSelect->DefaultPlayerCharacterSkeletalPaths.Num ())
+
+	const UTTCharactorSkeletalMeshSelect* CDO = GetDefault<UTTCharactorSkeletalMeshSelect> ();
+
+	if (0 < CDO->PlayerCharacterSkeletalPaths.Num ())
 	{
 		if ( --IndexBody < 0 )
 		{
-			IndexBody = BodySkeletalSelect->DefaultPlayerCharacterSkeletalPaths.Num () - 1;
+			IndexBody = CDO->PlayerCharacterSkeletalPaths.Num () - 1;
 		}
 
-		CurrentPlayerSkeletalMeshPath = BodySkeletalSelect->DefaultPlayerCharacterSkeletalPaths[IndexBody];
+		CurrentPlayerSkeletalMeshPath = CDO->PlayerCharacterSkeletalPaths[IndexBody];
 
 		AssetStreamableHandle = UAssetManager::GetStreamableManager ().RequestAsyncLoad (
 			{ CurrentPlayerSkeletalMeshPath } ,
 			FStreamableDelegate::CreateLambda ( [this]() -> void
 				{
+
 					AssetStreamableHandle->ReleaseHandle ();
 					TSoftObjectPtr<USkeletalMesh> LoadedInstance ( CurrentPlayerSkeletalMeshPath );
 					if (LoadedInstance.IsValid ())
 					{
+
 						ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () );
 						if (IsValid ( PC ))
 						{
+
 							PC->ChangeMesh ( LoadedInstance.Get () );
 						}
 					}
 				}
 			)
 		);
+	}
+}
+
+void UTTSeletMeshs::RemoveUI ()
+{
+	RemoveFromParent ();
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () ))
+	{
+		PC->SetShowMouseCursor ( false );
+		FInputModeGameOnly InputMode;
+		PC->SetInputMode ( InputMode );
 	}
 }
