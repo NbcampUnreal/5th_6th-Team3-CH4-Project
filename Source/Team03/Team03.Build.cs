@@ -2,6 +2,7 @@
 
 using UnrealBuildTool;
 
+
 public class Team03 : ModuleRules
 {
 	public Team03(ReadOnlyTargetRules Target) : base(Target)
@@ -16,7 +17,7 @@ public class Team03 : ModuleRules
             "OnlineSubsystem", "OnlineSubsystemUtils"
         });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {  });
+		PrivateDependencyModuleNames.AddRange(new string[] { "SelectSkeletal", });
 
 		PublicIncludePathModuleNames.AddRange(new string[] { "Team03" });
 

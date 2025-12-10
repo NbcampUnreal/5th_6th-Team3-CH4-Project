@@ -100,17 +100,17 @@ void ATTPlayerController::ActivateSelectedSkeletalMesh ()
 
 void ATTPlayerController::ChangeHeadMesh ( USkeletalMesh* NewMesh )
 {
-	if (ATTPlayerCharacter* PC = Cast<ATTPlayerCharacter> ( GetPawn () ) )
+	if (ATTPlayerCharacter* PC = Cast<ATTPlayerCharacter> ( GetPawn () ))
 	{
-		PC->ChangeHeadMesh ( NewMesh );
+		PC->ServerChangeHeadMesh ( NewMesh );
 	}
 }
 
 void ATTPlayerController::ChangeMesh ( USkeletalMesh* NewMesh )
 {
-	if (ATTPlayerCharacter* PC = Cast<ATTPlayerCharacter> ( GetPawn () ) )
+	if (ATTPlayerCharacter* PC = Cast<ATTPlayerCharacter> ( GetPawn () ))
 	{
-		PC->ChangeBodyMesh ( NewMesh );
+		PC->ServerChangeBodyMesh ( NewMesh );
 	}
 }
 
