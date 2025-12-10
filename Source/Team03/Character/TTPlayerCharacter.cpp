@@ -12,7 +12,7 @@
 
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
 	Head->SetupAttachment ( GetRootComponent () );
@@ -27,8 +27,10 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 
 	bUseControllerRotationYaw = false;
 
-	GetCharacterMovement ()->bOrientRotationToMovement = true;
+	GetCharacterMovement ()->bOrientRotationToMovement = false;
 	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 500.0f , 0.0f );
+
+	TargetRotation = FRotator::ZeroRotator;
 }
 
 void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInputComponent )
@@ -70,6 +72,15 @@ void ATTPlayerCharacter::BeginPlay ()
 	}
 }
 
+void ATTPlayerCharacter::Tick ( float DeltaTime )
+{
+	Super::Tick (DeltaTime );
+
+	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , 500.0f );
+
+	SetActorRotation ( NewRotation );
+}
+
 void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 {
 	FVector2D MovementVector = Value.Get<FVector2D> ();
@@ -83,6 +94,12 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 		AddMovementInput ( Forward , MovementVector.X );
 		AddMovementInput ( Right , MovementVector.Y );
 
+		FVector DesiredDirection = (Forward * MovementVector.X) + (Right * MovementVector.Y);
+
+		if (!DesiredDirection.IsNearlyZero ())
+		{
+			TargetRotation = DesiredDirection.Rotation ();
+		}
 	}
 }
 
