@@ -1,6 +1,6 @@
 ﻿#include "TTSword.h"
 #include "Components/BoxComponent.h"
-#include "TTPlayerCharacter.generated.h"
+#include "../Character/TTPlayerCharacter.h"
 #include "GameFramework/Character.h"
 
 ATTSword::ATTSword ()
