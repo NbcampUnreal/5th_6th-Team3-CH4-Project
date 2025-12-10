@@ -57,12 +57,16 @@ protected:
 	void InChat ();
 	void ESCMenu();
 	void TempKey ();
+	FRotator TargetRotation;
+
 	
 #pragma endregion
 
 public:
 
 	virtual void BeginPlay () override;
+	virtual void Tick (float DeltaTime) override;
+
 #pragma region MeshChange
 public:
 	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
