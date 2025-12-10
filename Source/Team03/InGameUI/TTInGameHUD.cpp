@@ -29,6 +29,7 @@ void ATTInGameHUD::PostInitializeComponents ()
 		}
 	}
 }
+
 #pragma region ChatUI
 
 void ATTInGameHUD::AddChat () const
