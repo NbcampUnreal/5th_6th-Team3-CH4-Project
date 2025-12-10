@@ -13,7 +13,9 @@
 
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
-	PrimaryActorTick.bCanEverTick = false;
+	WalkSpeed = 600.f;
+	SprintSpeed = 1000.f;
+	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
 	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
@@ -48,6 +50,9 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputMove , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Move );
 		EnhancedInputComponent->BindAction ( InputLook , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Look );
 		EnhancedInputComponent->BindAction ( InputAttack , ETriggerEvent::Started , this , &ATTPlayerCharacter::Attack );
+		EnhancedInputComponent->BindAction ( InputBlocking , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PlayerBlocking );
+		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::SprintStart );
+		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Completed , this , &ATTPlayerCharacter::SprintEnd );
 
 		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Jump );
 		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::StopJumping );
@@ -164,6 +169,19 @@ void ATTPlayerCharacter::TempKey ()
 	{
 		PC->ActivateSelectedSkeletalMesh ();
 	}
+}
+
+void ATTPlayerCharacter::SprintStart ()
+{
+	GetCharacterMovement ()->MaxWalkSpeed = SprintSpeed;
+}
+void ATTPlayerCharacter::SprintEnd ()
+{
+	GetCharacterMovement ()->MaxWalkSpeed = WalkSpeed;
+}
+
+void ATTPlayerCharacter::PlayerBlocking ()
+{
 }
 
 #pragma region MeshChange
