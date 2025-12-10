@@ -20,7 +20,7 @@ protected:
 	UPROPERTY ( VisibleAnywhere , Category = "Gas Gimmick" )
 	class USphereComponent* GasDetectionVolume;
 
-	FTimerHandle GasDamageTimerHandle;
+	FTimerHandle GasDamageTimerHandle; 
 
 	UPROPERTY ( EditAnywhere , Category = "Gas Stats" )
 	float DamageInterval = 1.0f;
