@@ -29,7 +29,10 @@ void UTTSeletMeshs::NativeConstruct ()
 	{
 		BodyRight->OnClicked.AddDynamic ( this , &UTTSeletMeshs::OnBodyRightClicked );
 	}
-
+	if (ExitWidget)
+	{
+		ExitWidget->OnClicked.AddDynamic ( this , &UTTSeletMeshs::RemoveUI );
+	}
 	IndexHead = 0;
 	IndexBody = 0;
 }
@@ -179,5 +182,16 @@ void UTTSeletMeshs::OnBodyRightClicked ()
 				}
 			)
 		);
+	}
+}
+
+void UTTSeletMeshs::RemoveUI ()
+{
+	RemoveFromParent ();
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () ))
+	{
+		PC->SetShowMouseCursor ( false );
+		FInputModeGameOnly InputMode;
+		PC->SetInputMode ( InputMode );
 	}
 }
