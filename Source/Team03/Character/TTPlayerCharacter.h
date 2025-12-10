@@ -43,6 +43,10 @@ public:
 	TObjectPtr<UInputAction> InputESC;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputTempKey;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category ="Input")
+	TObjectPtr<UInputAction> InputSprint;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputBlocking;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputMappingContext> IMC_Character;
 
@@ -57,6 +61,9 @@ protected:
 	void InChat ();
 	void ESCMenu();
 	void TempKey ();
+	void SprintStart ();
+	void SprintEnd ();
+	void PlayerBlocking ();
 	FRotator TargetRotation;
 
 	
@@ -91,6 +98,11 @@ private:
 
 	UPROPERTY ( ReplicatedUsing = OnRep_BodyMesh )
 	USkeletalMesh* BodyMeshToReplicate;
+
+	UPROPERTY(EditAnywhere)
+	float WalkSpeed;
+	UPROPERTY ( EditAnywhere)
+	float SprintSpeed;
 
 #pragma endregion
 };
