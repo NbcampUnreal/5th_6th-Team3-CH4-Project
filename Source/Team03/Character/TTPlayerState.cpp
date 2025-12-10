@@ -2,4 +2,11 @@
 
 
 #include "TTPlayerState.h"
+#include "Net/UnrealNetwork.h"
 
+void ATTPlayerState::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
+{
+	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
+	DOREPLIFETIME ( ATTPlayerState , PersistedHeadMesh );
+	DOREPLIFETIME ( ATTPlayerState , PersistedBodyMesh );
+}
