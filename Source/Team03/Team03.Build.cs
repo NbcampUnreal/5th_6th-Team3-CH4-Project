@@ -13,7 +13,10 @@ public class Team03 : ModuleRules
 			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" , "UMG" , "Slate", "SlateCore",
 
 			// Online Subsystem Dependencies
-            "OnlineSubsystem", "OnlineSubsystemUtils"
+            "OnlineSubsystem", "OnlineSubsystemUtils",
+
+			// Engine Settings for GameMapsSettings
+			"EngineSettings"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
