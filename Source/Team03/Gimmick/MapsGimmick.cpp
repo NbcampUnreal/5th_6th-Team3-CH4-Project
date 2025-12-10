@@ -37,6 +37,21 @@ void AMapsGimmick::OnOverlapBegin (
 {
 	if (!HasAuthority ()) return;
 
+	ACharacter* Char = Cast<ACharacter> ( OtherActor );
+	if (Char && !ActorsInGas.Contains ( Char ) )
+	{
+		ActorsInGas.Add ( Char );
+		if ( ActorsInGas.Num () == 1 )
+		{
+			GetWorldTimerManager ().SetTimer ( 
+				GasDamageTimerHandle , 
+				this , 
+				&AMapsGimmick::GasDamage , 
+				DamageInterval , 
+				true , 
+				0.0f );
+		}
+	}
 }
 
 void AMapsGimmick::OnOverlapEnd ( 
@@ -45,10 +60,36 @@ void AMapsGimmick::OnOverlapEnd (
 	UPrimitiveComponent* OtherComp ,
 	int32 OtherBodyIndex )
 {
+	if (!HasAuthority ()) return;
 
+	ACharacter* Char = Cast<ACharacter> ( OtherActor );
+	if (Char && !ActorsInGas.Contains ( Char ))
+	{
+		ActorsInGas.Remove ( Char );
+		if ( ActorsInGas.Num () == 0 )
+		{
+			GetWorldTimerManager ().ClearTimer ( GasDamageTimerHandle );
+		}
+	}
 }
 
 void AMapsGimmick::GasDamage ()
 {
+	if (!HasAuthority ()) return;
+
+	for ( ACharacter* Char : ActorsInGas )
+	{
+		UGameplayStatics::ApplyDamage ( 
+			Char , 
+			DamagePerTick , 
+			nullptr , 
+			this , 
+			nullptr );
+	}
+}
+
+void AMapsGimmick::Tick ( float DeltaTime )
+{
 
 }
+

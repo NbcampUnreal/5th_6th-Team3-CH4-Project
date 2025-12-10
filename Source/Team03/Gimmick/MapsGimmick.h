@@ -47,4 +47,6 @@ protected:
 
 	TArray<ACharacter*> ActorsInGas;
 
+public:
+	virtual void Tick ( float DeltaTime ) override;
 };
