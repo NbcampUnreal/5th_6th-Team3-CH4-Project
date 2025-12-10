@@ -28,7 +28,7 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 	bUseControllerRotationYaw = false;
 
 	GetCharacterMovement ()->bOrientRotationToMovement = false;
-	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 500.0f , 0.0f );
+	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 1080.0f , 0.0f );
 
 	TargetRotation = FRotator::ZeroRotator;
 }
@@ -76,7 +76,8 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 {
 	Super::Tick (DeltaTime );
 
-	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , 500.0f );
+	float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
+	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , TurnSpeed );
 
 	SetActorRotation ( NewRotation );
 }
