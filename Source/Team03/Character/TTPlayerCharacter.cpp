@@ -7,6 +7,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "../Controller/TTPlayerController.h"
+#include "../Character/TTPlayerState.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -72,6 +73,22 @@ void ATTPlayerCharacter::BeginPlay ()
 		if (IsValid ( Subsystem ) == true)
 		{
 			Subsystem->AddMappingContext ( IMC_Character , 0 );
+		}
+	}
+	if (HasAuthority ())
+	{
+		if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
+		{
+			if (USkeletalMesh* HeadMesh = PS->PersistedHeadMesh)
+			{
+				OnRep_HeadMesh ();
+				HeadMeshToReplicate = HeadMesh;
+			}
+			if (USkeletalMesh* BodyMesh = PS->PersistedBodyMesh)
+			{
+				OnRep_BodyMesh ();
+				BodyMeshToReplicate = BodyMesh;
+			}
 		}
 	}
 }
@@ -165,10 +182,13 @@ bool ATTPlayerCharacter::ServerChangeHeadMesh_Validate ( USkeletalMesh* NewMesh 
 
 void ATTPlayerCharacter::ServerChangeHeadMesh_Implementation ( USkeletalMesh* NewMesh )
 {
+	if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
+	{
+		PS->PersistedHeadMesh = NewMesh;
+	}
 
 	HeadMeshToReplicate = NewMesh;
 	OnRep_HeadMesh ();
-
 }
 
 bool ATTPlayerCharacter::ServerChangeBodyMesh_Validate ( USkeletalMesh* NewMesh )
@@ -178,8 +198,12 @@ bool ATTPlayerCharacter::ServerChangeBodyMesh_Validate ( USkeletalMesh* NewMesh 
 
 void ATTPlayerCharacter::ServerChangeBodyMesh_Implementation ( USkeletalMesh* NewMesh )
 {
-	BodyMeshToReplicate = NewMesh;
+	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
+	{
+		PS->PersistedBodyMesh = NewMesh;
+	}
 
+	BodyMeshToReplicate = NewMesh;
 	OnRep_BodyMesh ();
 }
 
