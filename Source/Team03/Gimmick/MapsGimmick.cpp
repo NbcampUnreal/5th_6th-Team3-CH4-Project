@@ -7,6 +7,7 @@
 #include "TimerManager.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
+#include "Gas_Damage.h"
 
 AMapsGimmick::AMapsGimmick ()
 {
@@ -21,40 +22,41 @@ AMapsGimmick::AMapsGimmick ()
 
 }
 
-void AMapsGimmick::BeginPlay()
+void AMapsGimmick::BeginPlay ()
 {
-	Super::BeginPlay();
-	
+	Super::BeginPlay ();
 }
 
-void AMapsGimmick::OnOverlapBegin ( 
-	UPrimitiveComponent* OverlappedComp , 
-	AActor* OtherActor , 
-	UPrimitiveComponent* OtherComp , 
-	int32 OtherBodyIndex , 
-	bool bFromSweep , 
+void AMapsGimmick::OnOverlapBegin (
+	UPrimitiveComponent* OverlappedComp ,
+	AActor* OtherActor ,
+	UPrimitiveComponent* OtherComp ,
+	int32 OtherBodyIndex ,
+	bool bFromSweep ,
 	const FHitResult& SweepResult )
 {
 	if (!HasAuthority ()) return;
 
 	ACharacter* Char = Cast<ACharacter> ( OtherActor );
-	if (Char && !ActorsInGas.Contains ( Char ) )
+	if (Char && !ActorsInGas.Contains ( Char ))
 	{
 		ActorsInGas.Add ( Char );
-		if ( ActorsInGas.Num () == 1 )
+
+		if (ActorsInGas.Num () == 1)
 		{
-			GetWorldTimerManager ().SetTimer ( 
-				GasDamageTimerHandle , 
-				this , 
-				&AMapsGimmick::GasDamage , 
-				DamageInterval , 
-				true , 
-				0.0f );
+			GetWorldTimerManager ().SetTimer (
+				GasDamageTimerHandle ,
+				this ,
+				&AMapsGimmick::GasDamage ,
+				DamageInterval ,
+				true ,
+				0.0f
+			);
 		}
 	}
 }
 
-void AMapsGimmick::OnOverlapEnd ( 
+void AMapsGimmick::OnOverlapEnd (
 	UPrimitiveComponent* OverlappedComp ,
 	AActor* OtherActor ,
 	UPrimitiveComponent* OtherComp ,
@@ -63,10 +65,11 @@ void AMapsGimmick::OnOverlapEnd (
 	if (!HasAuthority ()) return;
 
 	ACharacter* Char = Cast<ACharacter> ( OtherActor );
-	if (Char && !ActorsInGas.Contains ( Char ))
+	if (Char && ActorsInGas.Contains ( Char ))
 	{
 		ActorsInGas.Remove ( Char );
-		if ( ActorsInGas.Num () == 0 )
+
+		if (ActorsInGas.Num () == 0)
 		{
 			GetWorldTimerManager ().ClearTimer ( GasDamageTimerHandle );
 		}
@@ -77,19 +80,18 @@ void AMapsGimmick::GasDamage ()
 {
 	if (!HasAuthority ()) return;
 
-	for ( ACharacter* Char : ActorsInGas )
+	for (ACharacter* Char : ActorsInGas)
 	{
-		UGameplayStatics::ApplyDamage ( 
-			Char , 
-			DamagePerTick , 
-			nullptr , 
-			this , 
-			nullptr );
+		UGameplayStatics::ApplyDamage (
+			Char ,
+			DamagePerTick ,
+			nullptr ,
+			this ,
+			UGas_Damage::StaticClass ()
+		);
 	}
 }
 
 void AMapsGimmick::Tick ( float DeltaTime )
 {
-
 }
-

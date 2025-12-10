@@ -1,9 +1,10 @@
-﻿// MapsGimmick.h
+﻿//MapsGimmick.h
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "MapsGimmick.generated.h"
+
 
 UCLASS ()
 class TEAM03_API AMapsGimmick : public AActor
