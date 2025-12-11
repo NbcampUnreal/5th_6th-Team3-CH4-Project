@@ -4,10 +4,12 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "../Controller/TTPlayerController.h"
 #include "../Character/TTPlayerState.h"
+#include "../Save/TTSaveGame.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -73,6 +75,7 @@ void ATTPlayerCharacter::BeginPlay ()
 			}
 		}
 	}
+	LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 }
 
 void ATTPlayerCharacter::Tick ( float DeltaTime )
@@ -284,6 +287,7 @@ void ATTPlayerCharacter::ChangeHead ( USkeletalMesh* NewMesh )
 	if (IsValid ( Head ) && IsValid ( NewMesh ))
 	{
 		Head->SetSkeletalMesh ( NewMesh );
+		SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 	}
 }
 
@@ -292,7 +296,67 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 	if (IsValid ( GetMesh () ) && IsValid ( NewMesh ))
 	{
 		GetMesh ()->SetSkeletalMesh ( NewMesh );
+		SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 	}
 }
 
+#pragma endregion
+
+#pragma region SaveData
+
+void ATTPlayerCharacter::SavePlayerSaveData ( const FString& SlotName , int32 UserIndex )
+{
+	USkeletalMeshComponent* HeadMesh = Head;
+	USkeletalMeshComponent* BodyMesh = GetMesh ();
+
+	if (IsValid ( HeadMesh ) && IsValid ( BodyMesh ))
+	{
+		USaveGame* SaveGameInstance = UGameplayStatics::CreateSaveGameObject ( USaveGame::StaticClass () );
+		if (!SaveGameInstance) 
+			return;
+
+		UTTSaveGame* TTSaveGameInstance = Cast<UTTSaveGame> ( SaveGameInstance );
+		if (!TTSaveGameInstance) 
+			return;
+		// 세이브 데이터에 세이브
+		if (USkeletalMesh* CurrentHeadMesh = HeadMesh->GetSkeletalMeshAsset ())
+		{
+			TTSaveGameInstance->CurrentHeadMeshPath = FSoftObjectPath ( CurrentHeadMesh );
+		}
+		if (USkeletalMesh* CurrentBodyMesh = BodyMesh->GetSkeletalMeshAsset ())
+		{
+			TTSaveGameInstance->CurrentBodyMeshPath = FSoftObjectPath ( CurrentBodyMesh );
+		}
+		UGameplayStatics::SaveGameToSlot ( TTSaveGameInstance , SlotName , UserIndex );
+	}
+}
+
+void ATTPlayerCharacter::LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex )
+{
+	if(IsValid( Head ) && IsValid ( GetMesh () ))
+	{
+		// 세이브 데이터를 불러오는 과정
+		USaveGame* LoadGameInstance = UGameplayStatics::CreateSaveGameObject ( USaveGame::StaticClass () );
+		if (!LoadGameInstance)
+			return;
+
+		UTTSaveGame* TTLoadGameInstance = Cast<UTTSaveGame> ( LoadGameInstance );
+		if (!TTLoadGameInstance)
+			return;
+		USkeletalMesh* LoadedHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
+		if (!TTLoadGameInstance->CurrentHeadMeshPath.IsNull () && !TTLoadGameInstance->CurrentBodyMeshPath.IsNull())
+			return;
+
+		// 로드된 세이브 데이터를 불러오는 과정 
+		USkeletalMesh* LoadHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
+		USkeletalMesh* LoadBodyMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentBodyMeshPath.ResolveObject () );
+
+		// 세이브 데이터 적용
+		if (IsValid ( LoadHeadMesh ) && IsValid ( LoadBodyMesh ))
+		{
+			Head->SetSkeletalMesh ( LoadHeadMesh );
+			GetMesh ()->SetSkeletalMesh ( LoadBodyMesh );
+		}
+	}
+}
 #pragma endregion
