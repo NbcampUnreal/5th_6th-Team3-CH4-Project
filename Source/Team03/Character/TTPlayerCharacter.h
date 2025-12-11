@@ -12,6 +12,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
+class UAnimMontage;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -57,12 +58,13 @@ public:
 protected:
 	void Move ( const FInputActionValue& Value );
 	void Look ( const FInputActionValue& Value );
-	void Attack();
+	void Attack( const FInputActionValue& InValue );
 	void InChat ();
 	void ESCMenu();
 	void TempKey ();
 	void SprintStart ();
 	void SprintEnd ();
+<<<<<<< HEAD
 	void PlayerBlocking ();
 
 	UPROPERTY(Replicated)
@@ -77,6 +79,15 @@ protected:
 	UFUNCTION(Server, Unreliable)
 	void ServerSetRotation ( FRotator NewRotation );
 	
+=======
+	void PlayerBlocking ( const FInputActionValue& InValue );
+	FRotator TargetRotation;
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	TObjectPtr<UAnimMontage> AttackMontage;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	TObjectPtr<UAnimMontage> PlayerBlockingMontage;
+>>>>>>> Character-LHO
 #pragma endregion
 
 private:
@@ -115,11 +126,18 @@ private:
 	UPROPERTY ( ReplicatedUsing = OnRep_BodyMesh )
 	USkeletalMesh* BodyMeshToReplicate;
 
+<<<<<<< HEAD
 #pragma endregion
 
 #pragma region SaveData
 	public:
 	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
 	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
+=======
+	UPROPERTY(EditAnywhere)
+	float WalkSpeed;
+	UPROPERTY ( EditAnywhere)
+	float SprintSpeed;
+>>>>>>> Character-LHO
 #pragma endregion
 };
