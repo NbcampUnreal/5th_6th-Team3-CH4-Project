@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -13,5 +13,11 @@ UCLASS()
 class TEAM03_API UTTSaveGame : public USaveGame
 {
 	GENERATED_BODY()
-	
+public:
+
+	UPROPERTY ( VisibleAnywhere , Category = Basic )
+	FSoftObjectPath CurrentHeadMeshPath;
+
+	UPROPERTY ( VisibleAnywhere , Category = Basic )
+	FSoftObjectPath CurrentBodyMeshPath;
 };
