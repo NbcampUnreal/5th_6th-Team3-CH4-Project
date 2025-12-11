@@ -9,6 +9,7 @@
 #include "../Controller/TTPlayerController.h"
 #include "../Character/TTPlayerState.h"
 #include "Net/UnrealNetwork.h"
+#include "../LHO/TTAnimInstance.h"
 
 
 ATTPlayerCharacter::ATTPlayerCharacter()
@@ -143,8 +144,18 @@ void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
 	}
 }
 
-void ATTPlayerCharacter::Attack ()
+void ATTPlayerCharacter::Attack ( const FInputActionValue& InValue )
 {
+	if (GetCharacterMovement ()->IsFalling () == true)
+	{
+		return;
+	}
+
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMontage ) == false)
+	{
+		AnimInstance->Montage_Play ( AttackMontage );
+	}
 }
 
 void ATTPlayerCharacter::InChat ()
@@ -180,8 +191,18 @@ void ATTPlayerCharacter::SprintEnd ()
 	GetCharacterMovement ()->MaxWalkSpeed = WalkSpeed;
 }
 
-void ATTPlayerCharacter::PlayerBlocking ()
+void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& InValue )
 {
+	if (GetCharacterMovement ()->IsFalling () == true)
+	{
+		return;
+	}
+
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	if (IsValid ( AnimInstance ) == true && IsValid ( PlayerBlockingMontage ) == true && AnimInstance->Montage_IsPlaying ( PlayerBlockingMontage ) == false)
+	{
+		AnimInstance->Montage_Play ( PlayerBlockingMontage );
+	}
 }
 
 #pragma region MeshChange
