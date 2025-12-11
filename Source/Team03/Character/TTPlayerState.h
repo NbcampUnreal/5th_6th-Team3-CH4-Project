@@ -20,4 +20,5 @@ public:
 	USkeletalMesh* PersistedHeadMesh;
 	UPROPERTY ( Replicated )
 	USkeletalMesh* PersistedBodyMesh;
+
 };

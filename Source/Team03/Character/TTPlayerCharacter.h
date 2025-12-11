@@ -93,7 +93,6 @@ public:
 #pragma region MeshChange
 public:
 
-
 	UFUNCTION ( Server , Reliable , WithValidation )
 	void ServerChangeHeadMesh ( USkeletalMesh* NewMesh );
 	UFUNCTION ( Server , Reliable , WithValidation )
@@ -117,9 +116,4 @@ private:
 
 #pragma endregion
 
-#pragma region SaveData
-	public:
-	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
-	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
-#pragma endregion
 };

@@ -4,6 +4,10 @@
 #include "../InGameUI/TTInGameHUD.h"
 #include "../InGameUI/TTChatUI.h"
 #include "../Character/TTPlayerCharacter.h"
+#include "../Character/TTPlayerState.h"
+#include "Kismet/GameplayStatics.h"
+#include "../Save/TTSaveGame.h"
+
 
 
 
@@ -14,6 +18,11 @@ ATTPlayerController::ATTPlayerController ()
 	SprintAction ( nullptr )
 {
 	bReplicates = true;
+}
+
+void ATTPlayerController::OnPossess ( APawn* InPawn )
+{
+	//LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 }
 
 void ATTPlayerController::BeginPlay ()
@@ -116,3 +125,84 @@ void ATTPlayerController::ChangeMesh ( USkeletalMesh* NewMesh )
 
 #pragma endregion
 
+#pragma region SaveData
+void ATTPlayerController::SavePlayerSaveData ( const FString& SlotName , int32 UserIndex )
+{
+	UE_LOG ( LogTemp , Warning , TEXT ( "SavePlayerSaveData()" ) );
+
+	ATTPlayerCharacter* OwnerPlayer = Cast<ATTPlayerCharacter> ( GetPawn () );
+
+	if (IsValid ( OwnerPlayer->Head ) && IsValid ( OwnerPlayer->GetMesh () ) && IsValid( OwnerPlayer ))
+	{
+		UE_LOG ( LogTemp , Warning , TEXT ( "1" ) );
+		USaveGame* SaveGameInstance = UGameplayStatics::CreateSaveGameObject ( UTTSaveGame::StaticClass () );
+		if (!SaveGameInstance)
+			return;
+		UE_LOG ( LogTemp , Warning , TEXT ( "2" ) );
+
+		UTTSaveGame* TTSaveGameInstance = Cast<UTTSaveGame> ( SaveGameInstance );
+		if (!TTSaveGameInstance)
+			return;
+		UE_LOG ( LogTemp , Warning , TEXT ( "3" ) );
+		// 세이브 데이터에 세이브
+		if (USkeletalMesh* CurrentHeadMesh = OwnerPlayer->Head->GetSkeletalMeshAsset ())
+		{
+			UE_LOG ( LogTemp , Warning , TEXT ( "4" ) );
+			TTSaveGameInstance->CurrentHeadMeshPath = FSoftObjectPath ( CurrentHeadMesh );
+		}
+		if (USkeletalMesh* CurrentBodyMesh = OwnerPlayer->GetMesh ()->GetSkeletalMeshAsset ())
+		{
+			UE_LOG ( LogTemp , Warning , TEXT ( "5" ) );
+			TTSaveGameInstance->CurrentBodyMeshPath = FSoftObjectPath ( CurrentBodyMesh );
+		}
+		UE_LOG ( LogTemp , Warning , TEXT ( "6" ) );
+
+		UGameplayStatics::SaveGameToSlot ( TTSaveGameInstance , SlotName , UserIndex );
+	}
+}
+
+void ATTPlayerController::LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex )
+{
+	ATTPlayerCharacter* OwnerPlayer = Cast<ATTPlayerCharacter> ( GetPawn () );
+	UE_LOG ( LogTemp , Warning , TEXT ( "1" ) );
+
+	if (IsValid ( OwnerPlayer->Head ) && IsValid ( OwnerPlayer->GetMesh () ) && IsValid( OwnerPlayer ))
+	{
+		UE_LOG ( LogTemp , Warning , TEXT ( "2" ) );
+
+		// 세이브 데이터를 불러오는 과정
+		USaveGame* LoadGameInstance = UGameplayStatics::CreateSaveGameObject ( UTTSaveGame::StaticClass () );
+		if (!LoadGameInstance)
+			return;
+		UE_LOG ( LogTemp , Warning , TEXT ( "3" ) );
+
+		UTTSaveGame* TTLoadGameInstance = Cast<UTTSaveGame> ( LoadGameInstance );
+		if (!TTLoadGameInstance)
+			return;
+
+		UE_LOG ( LogTemp , Warning , TEXT ( "4" ) );
+
+		USkeletalMesh* LoadedHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
+		if (!TTLoadGameInstance->CurrentHeadMeshPath.IsNull () && !TTLoadGameInstance->CurrentBodyMeshPath.IsNull ())
+			return;
+		UE_LOG ( LogTemp , Warning , TEXT ( "5" ) );
+
+		// 로드된 세이브 데이터를 불러오는 과정 
+		if (IsValid ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () ) && IsValid ( TTLoadGameInstance->CurrentBodyMeshPath.ResolveObject () ))
+		{
+			UE_LOG ( LogTemp , Warning , TEXT ( "6" ) );
+			USkeletalMesh* LoadHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
+			USkeletalMesh* LoadBodyMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentBodyMeshPath.ResolveObject () );
+			// 세이브 데이터 적용
+			if (IsValid ( LoadHeadMesh ) && IsValid ( LoadBodyMesh ))
+			{
+				UE_LOG ( LogTemp , Warning , TEXT ( "7" ) );
+				OwnerPlayer->ServerChangeHeadMesh ( LoadHeadMesh );
+				OwnerPlayer->ServerChangeBodyMesh ( LoadBodyMesh );
+			}
+
+		}
+
+	}
+}
+#pragma endregion
