@@ -156,32 +156,7 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 	}
 }
 
-<<<<<<< HEAD
-void ATTPlayerCharacter::Attack ()
-=======
-void ATTPlayerCharacter::Tick ( float DeltaTime )
-{
-	Super::Tick ( DeltaTime );
-
-	float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
-	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , TurnSpeed );
-
-	SetActorRotation ( NewRotation );
-}
-
-void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
-{
-	FVector2D MouseVector = Value.Get<FVector2D> ();
-
-	if (IsValid ( Controller ) == true)
-	{
-		AddControllerYawInput ( MouseVector.X );
-		AddControllerPitchInput ( MouseVector.Y );
-	}
-}
-
 void ATTPlayerCharacter::Attack ( const FInputActionValue& InValue )
->>>>>>> Character-LHO
 {
 	if (GetCharacterMovement ()->IsFalling () == true)
 	{

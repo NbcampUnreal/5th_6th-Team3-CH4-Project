@@ -64,8 +64,6 @@ protected:
 	void TempKey ();
 	void SprintStart ();
 	void SprintEnd ();
-<<<<<<< HEAD
-	void PlayerBlocking ();
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
@@ -79,15 +77,12 @@ protected:
 	UFUNCTION(Server, Unreliable)
 	void ServerSetRotation ( FRotator NewRotation );
 	
-=======
 	void PlayerBlocking ( const FInputActionValue& InValue );
-	FRotator TargetRotation;
 
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
 	TObjectPtr<UAnimMontage> AttackMontage;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
 	TObjectPtr<UAnimMontage> PlayerBlockingMontage;
->>>>>>> Character-LHO
 #pragma endregion
 
 private:
@@ -125,21 +120,6 @@ private:
 	UPROPERTY ( ReplicatedUsing = OnRep_BodyMesh )
 	USkeletalMesh* BodyMeshToReplicate;
 
-<<<<<<< HEAD
 #pragma endregion
 
-<<<<<<< HEAD
-#pragma region SaveData
-	public:
-	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
-	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
-=======
-	UPROPERTY(EditAnywhere)
-	float WalkSpeed;
-	UPROPERTY ( EditAnywhere)
-	float SprintSpeed;
->>>>>>> Character-LHO
-#pragma endregion
-=======
->>>>>>> InGameUI_PCY
 };

@@ -21,7 +21,6 @@ public:
 	UPROPERTY ( Replicated )
 	USkeletalMesh* PersistedBodyMesh;
 
-<<<<<<< HEAD
 	UPROPERTY(ReplicatedUsing = OnRep_UserNickname)
 	FString UserNickname;
 
@@ -30,6 +29,4 @@ public:
 
 	UFUNCTION()
 	void OnRep_UserNickname();
-=======
->>>>>>> InGameUI_PCY
 };
