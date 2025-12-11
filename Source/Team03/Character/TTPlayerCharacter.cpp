@@ -40,29 +40,6 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 	BodyMeshToReplicate = nullptr;
 }
 
-void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInputComponent )
-{
-	Super::SetupPlayerInputComponent ( PlayerInputComponent );
-
-	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent> ( PlayerInputComponent );
-	if (IsValid ( EnhancedInputComponent ) == true)
-	{
-		EnhancedInputComponent->BindAction ( InputMove , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Move );
-		EnhancedInputComponent->BindAction ( InputLook , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Look );
-		EnhancedInputComponent->BindAction ( InputAttack , ETriggerEvent::Started , this , &ATTPlayerCharacter::Attack );
-		EnhancedInputComponent->BindAction ( InputBlocking , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PlayerBlocking );
-		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::SprintStart );
-		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Completed , this , &ATTPlayerCharacter::SprintEnd );
-
-		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Jump );
-		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::StopJumping );
-		
-		EnhancedInputComponent->BindAction ( InputEnter , ETriggerEvent::Started , this , &ATTPlayerCharacter::InChat );
-		EnhancedInputComponent->BindAction ( InputESC, ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu);
-		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey);
-
-	}
-}
 
 void ATTPlayerCharacter::BeginPlay ()
 {
@@ -98,6 +75,60 @@ void ATTPlayerCharacter::BeginPlay ()
 	}
 }
 
+void ATTPlayerCharacter::Tick ( float DeltaTime )
+{
+	Super::Tick ( DeltaTime );
+
+	float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
+	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , TurnSpeed );
+
+	SetActorRotation ( NewRotation );
+}
+
+void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
+{
+	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
+
+	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
+	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
+}
+
+#pragma region Input
+void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInputComponent )
+{
+	Super::SetupPlayerInputComponent ( PlayerInputComponent );
+
+	UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent> ( PlayerInputComponent );
+	if (IsValid ( EnhancedInputComponent ) == true)
+	{
+		EnhancedInputComponent->BindAction ( InputMove , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Move );
+		EnhancedInputComponent->BindAction ( InputLook , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Look );
+		EnhancedInputComponent->BindAction ( InputAttack , ETriggerEvent::Started , this , &ATTPlayerCharacter::Attack );
+		EnhancedInputComponent->BindAction ( InputBlocking , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PlayerBlocking );
+		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::SprintStart );
+		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Completed , this , &ATTPlayerCharacter::SprintEnd );
+
+		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Jump );
+		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::StopJumping );
+
+		EnhancedInputComponent->BindAction ( InputEnter , ETriggerEvent::Started , this , &ATTPlayerCharacter::InChat );
+		EnhancedInputComponent->BindAction ( InputESC , ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu );
+		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey );
+
+	}
+}
+
+void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
+{
+	FVector2D MouseVector = Value.Get<FVector2D> ();
+
+	if (IsValid ( Controller ) == true)
+	{
+		AddControllerYawInput ( MouseVector.X );
+		AddControllerPitchInput ( MouseVector.Y );
+	}
+}
+
 void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 {
 	FVector2D MovementVector = Value.Get<FVector2D> ();
@@ -117,29 +148,10 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 		if (!DesiredDirection.IsNearlyZero ())
 		{
 			TargetRotation = DesiredDirection.Rotation ();
+
+			ServerSetRotation ( TargetRotation );
 		}
 
-	}
-}
-
-void ATTPlayerCharacter::Tick ( float DeltaTime )
-{
-	Super::Tick ( DeltaTime );
-
-	float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
-	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , TurnSpeed );
-
-	SetActorRotation ( NewRotation );
-}
-
-void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
-{
-	FVector2D MouseVector = Value.Get<FVector2D> ();
-
-	if (IsValid ( Controller ) == true)
-	{
-		AddControllerYawInput ( MouseVector.X );
-		AddControllerPitchInput ( MouseVector.Y );
 	}
 }
 
@@ -173,25 +185,50 @@ void ATTPlayerCharacter::TempKey ()
 
 void ATTPlayerCharacter::SprintStart ()
 {
-	GetCharacterMovement ()->MaxWalkSpeed = SprintSpeed;
+	SetSprintSpeed ( true );
+	ServerSprintStart ();
 }
 void ATTPlayerCharacter::SprintEnd ()
 {
-	GetCharacterMovement ()->MaxWalkSpeed = WalkSpeed;
+	SetSprintSpeed ( false );
+	ServerSprintEnd ();
 }
 
 void ATTPlayerCharacter::PlayerBlocking ()
 {
 }
 
-#pragma region MeshChange
-void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
+void ATTPlayerCharacter::SetSprintSpeed ( bool bIsSprinting )
 {
-	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
-
-	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
-	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
+	if (bIsSprinting)
+	{
+		GetCharacterMovement ()->MaxWalkSpeed = SprintSpeed;
+	}
+	else
+	{
+		GetCharacterMovement ()->MaxWalkSpeed = WalkSpeed;
+	}
 }
+
+void ATTPlayerCharacter::ServerSetRotation_Implementation ( FRotator NewRotation )
+{
+	TargetRotation = NewRotation;
+}
+
+
+void ATTPlayerCharacter::ServerSprintStart_Implementation ()
+{
+	SetSprintSpeed ( true );
+}
+
+void ATTPlayerCharacter::ServerSprintEnd_Implementation ()
+{
+	SetSprintSpeed (false);
+}
+
+#pragma endregion
+
+#pragma region MeshChange
 
 bool ATTPlayerCharacter::ServerChangeHeadMesh_Validate ( USkeletalMesh* NewMesh )
 {

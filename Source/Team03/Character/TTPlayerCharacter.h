@@ -52,7 +52,7 @@ public:
 
 public:
 	virtual void SetupPlayerInputComponent ( class UInputComponent* PlayerInputComponent ) override;
-
+	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
 
 protected:
 	void Move ( const FInputActionValue& Value );
@@ -64,10 +64,26 @@ protected:
 	void SprintStart ();
 	void SprintEnd ();
 	void PlayerBlocking ();
+
+	UPROPERTY(Replicated)
 	FRotator TargetRotation;
 
+	UFUNCTION(Server, Reliable)
+	void ServerSprintStart ();
+	UFUNCTION(Server, REliable)
+	void ServerSprintEnd ();
+	void SetSprintSpeed ( bool bIsSprinting );
+
+	UFUNCTION(Server, Unreliable)
+	void ServerSetRotation ( FRotator NewRotation );
 	
 #pragma endregion
+
+private:
+	UPROPERTY ( EditAnywhere )
+	float WalkSpeed;
+	UPROPERTY ( EditAnywhere )
+	float SprintSpeed;
 
 public:
 
@@ -76,7 +92,7 @@ public:
 
 #pragma region MeshChange
 public:
-	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
+
 
 	UFUNCTION ( Server , Reliable , WithValidation )
 	void ServerChangeHeadMesh ( USkeletalMesh* NewMesh );
@@ -98,11 +114,6 @@ private:
 
 	UPROPERTY ( ReplicatedUsing = OnRep_BodyMesh )
 	USkeletalMesh* BodyMeshToReplicate;
-
-	UPROPERTY(EditAnywhere)
-	float WalkSpeed;
-	UPROPERTY ( EditAnywhere)
-	float SprintSpeed;
 
 #pragma endregion
 };
