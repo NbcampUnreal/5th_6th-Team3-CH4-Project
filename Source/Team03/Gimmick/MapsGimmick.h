@@ -5,6 +5,7 @@
 #include "GameFramework/Actor.h"
 #include "MapsGimmick.generated.h"
 
+class USphereComponent;
 
 UCLASS ()
 class TEAM03_API AMapsGimmick : public AActor
@@ -17,7 +18,8 @@ public:
 protected:
 	virtual void BeginPlay () override;
 
-	UPROPERTY ( VisibleAnywhere , Category = "Gas Gimmick" )
+	//가스 데미지
+	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly, Category = "Gas Gimmick" )
 	class USphereComponent* GasDetectionVolume;
 
 	FTimerHandle GasDamageTimerHandle; 
@@ -28,6 +30,18 @@ protected:
 	UPROPERTY ( EditAnywhere , Category = "Gas Stats" )
 	float DamagePerTick = 5.0f;
 
+	void GasDamage ();
+
+	//게임 시작후 가스 방출
+	UPROPERTY ( Replicated )
+	bool bGasActive = false;
+
+	FTimerHandle GasStartTimer;
+
+	UFUNCTION ()
+	void StartGasDamage ();
+
+	//가스 안에 캐릭터가 들어오면 시작
 	UFUNCTION ()
 	void OnOverlapBegin (
 		UPrimitiveComponent* OverlappedComp ,
@@ -44,10 +58,11 @@ protected:
 		UPrimitiveComponent* OtherComp ,
 		int32 OtherBodyIndex );
 
-	void GasDamage ();
-
 	TArray<ACharacter*> ActorsInGas;
 
 public:
 	virtual void Tick ( float DeltaTime ) override;
+
+	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
+
 };

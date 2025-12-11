@@ -25,6 +25,29 @@ AMapsGimmick::AMapsGimmick ()
 void AMapsGimmick::BeginPlay ()
 {
 	Super::BeginPlay ();
+
+	UE_LOG ( LogTemp , Warning , TEXT ( "MapsGimmick BeginPlay" ) );
+	
+	if (HasAuthority ())
+	{
+		float StartDelay = 10.0f;
+		GetWorldTimerManager ().SetTimer (
+			GasStartTimer ,
+			this ,
+			&AMapsGimmick::StartGasDamage ,
+			StartDelay ,
+			false
+		);
+	}
+}
+
+void AMapsGimmick::StartGasDamage ()
+{
+	if (!HasAuthority ()) return;
+
+	bGasActive = true;
+
+	UE_LOG ( LogTemp , Warning , TEXT ( "Gas damage started" ) );
 }
 
 void AMapsGimmick::OnOverlapBegin (
@@ -36,11 +59,14 @@ void AMapsGimmick::OnOverlapBegin (
 	const FHitResult& SweepResult )
 {
 	if (!HasAuthority ()) return;
+	if (!bGasActive) return;
 
 	ACharacter* Char = Cast<ACharacter> ( OtherActor );
 	if (Char && !ActorsInGas.Contains ( Char ))
 	{
 		ActorsInGas.Add ( Char );
+
+		UE_LOG ( LogTemp , Warning , TEXT ( "Character entered gas area" ) );
 
 		if (ActorsInGas.Num () == 1)
 		{
@@ -63,11 +89,14 @@ void AMapsGimmick::OnOverlapEnd (
 	int32 OtherBodyIndex )
 {
 	if (!HasAuthority ()) return;
+	if (!bGasActive) return;
 
 	ACharacter* Char = Cast<ACharacter> ( OtherActor );
 	if (Char && ActorsInGas.Contains ( Char ))
 	{
 		ActorsInGas.Remove ( Char );
+
+		UE_LOG ( LogTemp , Warning , TEXT ( "Character exited gas area" ) );
 
 		if (ActorsInGas.Num () == 0)
 		{
@@ -79,9 +108,12 @@ void AMapsGimmick::OnOverlapEnd (
 void AMapsGimmick::GasDamage ()
 {
 	if (!HasAuthority ()) return;
+	if (!bGasActive) return;
 
 	for (ACharacter* Char : ActorsInGas)
 	{
+		UE_LOG ( LogTemp , Warning , TEXT ( "Applying gas damage to character" ) );
+
 		UGameplayStatics::ApplyDamage (
 			Char ,
 			DamagePerTick ,
@@ -94,4 +126,12 @@ void AMapsGimmick::GasDamage ()
 
 void AMapsGimmick::Tick ( float DeltaTime )
 {
+	Super::Tick ( DeltaTime );
+}
+
+void AMapsGimmick::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
+{
+	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
+
+	DOREPLIFETIME ( AMapsGimmick , bGasActive );
 }
