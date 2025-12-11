@@ -42,6 +42,10 @@ public:
 	UFUNCTION ( Client , Reliable )
 	void ClientAddChatMessage ( const FString& Message );
 
+// Outgame 담당자가 추가한 코드
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerRPC_InitPlayerInfo(const FString& Nickname, const FName& CharacterRowName);
+
 private:
 	UPROPERTY ()
 	TObjectPtr< class ATTInGameHUD >  TTInGameHUD;

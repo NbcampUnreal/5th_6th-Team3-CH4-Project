@@ -77,11 +77,17 @@ protected:
 	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	virtual void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
 
+    // Helper: Cleanup session before joining a new one
+	void OnDestroySessionBeforeJoin(FName SessionName, bool bWasSuccessful);
+
 private:
 	FDelegateHandle OnCreateSessionCompleteDelegateHandle;
 	FDelegateHandle OnFindSessionsCompleteDelegateHandle;
 	FDelegateHandle OnJoinSessionCompleteDelegateHandle;
 	FDelegateHandle OnDestroySessionCompleteDelegateHandle;
+    
+    // Index of session to join after cleanup
+    int32 PendingJoinSessionIndex = -1;
 
 	void OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString);
 };

@@ -20,4 +20,13 @@ public:
 	USkeletalMesh* PersistedHeadMesh;
 	UPROPERTY ( Replicated )
 	USkeletalMesh* PersistedBodyMesh;
+
+	UPROPERTY(ReplicatedUsing = OnRep_UserNickname)
+	FString UserNickname;
+
+	UPROPERTY(Replicated)
+	FName SelectedCharacterRowName;
+
+	UFUNCTION()
+	void OnRep_UserNickname();
 };

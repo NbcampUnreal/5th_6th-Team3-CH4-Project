@@ -3,8 +3,13 @@
 
 #include "UW_LobbyLevel.h"
 #include "Components/Button.h"
+#include "Components/ScrollBox.h"
+#include "Components/TextBlock.h"
 #include "TTLobbyPlayerController.h"
 #include "TTGameInstance.h"
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerState.h"
+#include "../Character/TTPlayerState.h"
 
 void UUW_LobbyLevel::NativeConstruct()
 {
@@ -25,6 +30,10 @@ void UUW_LobbyLevel::NativeConstruct()
 	{
 		Btn_Leave->OnClicked.AddDynamic(this, &ThisClass::OnClickLeave);
 	}
+
+	// Update Player List periodically
+	GetWorld()->GetTimerManager().SetTimer(PlayerListTimerHandle, this, &ThisClass::UpdatePlayerList, 1.0f, true);
+	UpdatePlayerList();
 }
 
 void UUW_LobbyLevel::OnClickStartGame()
@@ -40,6 +49,56 @@ void UUW_LobbyLevel::OnClickLeave()
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
 		GI->DestroyGameSession();
+	}
+}
+
+void UUW_LobbyLevel::UpdatePlayerList()
+{
+	if (!ScrollBox_PlayerList)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] ScrollBox_PlayerList is NULL"));
+		return;
+	}
+
+	ScrollBox_PlayerList->ClearChildren();
+
+	if (AGameStateBase* GS = GetWorld()->GetGameState())
+	{
+		UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] PlayerArray Count: %d"), GS->PlayerArray.Num());
+
+		for (APlayerState* PS : GS->PlayerArray)
+		{
+			if (ATTPlayerState* TTPS = Cast<ATTPlayerState>(PS))
+			{
+				FString DisplayName = TTPS->UserNickname;
+				UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] Found TTPlayerState. Nickname: %s"), *DisplayName);
+
+				if (DisplayName.IsEmpty()) DisplayName = TEXT("Loading...");
+
+				UTextBlock* TextBlock = NewObject<UTextBlock>(this);
+				TextBlock->SetText(FText::FromString(DisplayName));
+				
+				// Background is Black (as per screenshot), so Text should be White or Bright
+				TextBlock->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+                
+                // Ensure Font is valid
+                FSlateFontInfo FontInfo = TextBlock->GetFont();
+                FontInfo.Size = 24.0f; 
+                // FontInfo.TypefaceFontName = FName("Bold"); // Optional
+                TextBlock->SetFont(FontInfo);
+
+				ScrollBox_PlayerList->AddChild(TextBlock);
+				UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] Added TextBlock for %s. Color: White, Size: 24"), *DisplayName);
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] PlayerState is NOT ATTPlayerState"));
+			}
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] GameState is NULL"));
 	}
 }
 
