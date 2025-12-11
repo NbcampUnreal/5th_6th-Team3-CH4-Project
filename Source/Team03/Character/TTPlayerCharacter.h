@@ -104,7 +104,6 @@ public:
 #pragma region MeshChange
 public:
 
-
 	UFUNCTION ( Server , Reliable , WithValidation )
 	void ServerChangeHeadMesh ( USkeletalMesh* NewMesh );
 	UFUNCTION ( Server , Reliable , WithValidation )
@@ -129,6 +128,7 @@ private:
 <<<<<<< HEAD
 #pragma endregion
 
+<<<<<<< HEAD
 #pragma region SaveData
 	public:
 	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
@@ -140,4 +140,6 @@ private:
 	float SprintSpeed;
 >>>>>>> Character-LHO
 #pragma endregion
+=======
+>>>>>>> InGameUI_PCY
 };

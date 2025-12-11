@@ -19,6 +19,7 @@ class TEAM03_API ATTPlayerController : public APlayerController
 public:
 	ATTPlayerController ();
 
+	virtual void OnPossess (APawn* InPawn) override;
 
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
 	UInputMappingContext* InputMappingContext;
@@ -72,6 +73,11 @@ public:
 	UFUNCTION()
 	void ChangeMesh ( USkeletalMesh* NewMesh );
 
+#pragma endregion
+
+#pragma region SaveData
+	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
+	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
 #pragma endregion
 
 };
