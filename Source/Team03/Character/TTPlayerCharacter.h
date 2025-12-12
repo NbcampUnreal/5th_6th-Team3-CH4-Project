@@ -12,6 +12,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
+class UAnimMontage;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -57,13 +58,13 @@ public:
 protected:
 	void Move ( const FInputActionValue& Value );
 	void Look ( const FInputActionValue& Value );
-	void Attack();
+	void Attack( const FInputActionValue& Value );
 	void InChat ();
 	void ESCMenu();
 	void TempKey ();
 	void SprintStart ();
 	void SprintEnd ();
-	void PlayerBlocking ();
+	void PlayerBlocking ( const FInputActionValue& Value );
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
@@ -76,6 +77,11 @@ protected:
 
 	UFUNCTION(Server, Unreliable)
 	void ServerSetRotation ( FRotator NewRotation );
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	TObjectPtr<UAnimMontage> AttackMeleeMontage;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	TObjectPtr<UAnimMontage> BlockingMontage;
 	
 #pragma endregion
 
