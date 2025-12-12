@@ -11,7 +11,7 @@
 #include "Character/TTPlayerState.h"
 #include "Save/TTSaveGame.h"
 #include "Net/UnrealNetwork.h"
-
+#include "../LHO/TTAnimInstance.h"
 
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
@@ -160,8 +160,18 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 	}
 }
 
-void ATTPlayerCharacter::Attack ()
+void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 {
+	if (GetCharacterMovement ()->IsFalling () == true)
+	{
+		return;
+	}
+
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	{
+		AnimInstance->Montage_Play ( AttackMeleeMontage );
+	}
 }
 
 void ATTPlayerCharacter::InChat ()
@@ -199,8 +209,18 @@ void ATTPlayerCharacter::SprintEnd ()
 	ServerSprintEnd ();
 }
 
-void ATTPlayerCharacter::PlayerBlocking ()
+void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 {
+	if (GetCharacterMovement ()->IsFalling () == true)
+	{
+		return;
+	}
+
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	if (IsValid ( AnimInstance ) == true && IsValid ( BlockingMontage ) == true && AnimInstance->Montage_IsPlaying ( BlockingMontage ) == false)
+	{
+		AnimInstance->Montage_Play ( BlockingMontage );
+	}
 }
 
 void ATTPlayerCharacter::SetSprintSpeed ( bool bIsSprinting )
