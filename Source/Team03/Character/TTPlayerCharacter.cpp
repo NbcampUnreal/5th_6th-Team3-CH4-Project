@@ -94,6 +94,8 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
+
+	DOREPLIFETIME ( ATTPlayerCharacter , TargetRotation );
 }
 
 #pragma region Input
