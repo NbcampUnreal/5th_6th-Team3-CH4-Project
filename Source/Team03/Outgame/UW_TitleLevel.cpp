@@ -31,6 +31,11 @@ void UUW_TitleLevel::NativeConstruct()
 		Btn_Exit->OnClicked.AddDynamic(this, &UUW_TitleLevel::OnExitClicked);
 	}
 
+	if (Btn_Option)
+	{
+		Btn_Option->OnClicked.AddDynamic(this, &ThisClass::OnOptionClicked);
+	}
+
 	if (Input_Nickname)
 	{
 		Input_Nickname->OnTextChanged.AddDynamic(this, &UUW_TitleLevel::OnNicknameChanged);
@@ -114,9 +119,29 @@ void UUW_TitleLevel::OnFindClicked()
 void UUW_TitleLevel::OnCloseOverlayClicked()
 {
     if (Widget_SessionOverlay)
-    {
+    	{
         Widget_SessionOverlay->SetVisibility(ESlateVisibility::Collapsed);
     }
+}
+
+void UUW_TitleLevel::OnOptionClicked()
+{
+	if (OptionWidgetClass)
+	{
+		UUserWidget* Widget = CreateWidget<UUserWidget>(GetOwningPlayer(), OptionWidgetClass);
+		if (Widget)
+		{
+			Widget->AddToViewport();
+            
+            // Set Focus
+            if (APlayerController* PC = GetOwningPlayer())
+            {
+                FInputModeUIOnly InputMode;
+                InputMode.SetWidgetToFocus(Widget->TakeWidget());
+                PC->SetInputMode(InputMode);
+            }
+		}
+	}
 }
 
 void UUW_TitleLevel::OnExitClicked()

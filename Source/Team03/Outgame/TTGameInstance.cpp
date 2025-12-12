@@ -91,7 +91,7 @@ void UTTGameInstance::JoinGameSession(int32 SessionIndex)
             auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession);
             if (ExistingSession != nullptr)
             {
-                UE_LOG(LogTemp, Warning, TEXT("[TTGameInstance] Session already exists. Destroying before Join..."));
+                // UE_LOG(LogTemp, Warning, TEXT("[TTGameInstance] Session already exists. Destroying before Join..."));
                 PendingJoinSessionIndex = SessionIndex;
                 
                 OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(FOnDestroySessionCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnDestroySessionBeforeJoin));
@@ -104,18 +104,18 @@ void UTTGameInstance::JoinGameSession(int32 SessionIndex)
 			const FOnlineSessionSearchResult& Result = SessionSearch->SearchResults[SessionIndex];
 			FString HostName = Result.Session.OwningUserName;
 			
-			if (GEngine)
-            {
-               GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, FString::Printf(TEXT("Attempting Join -> Host: %s, Index: %d"), *HostName, SessionIndex));
-            }
+			// if (GEngine)
+            // {
+            //    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, FString::Printf(TEXT("Attempting Join -> Host: %s, Index: %d"), *HostName, SessionIndex));
+            // }
 
 			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 			if (!SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, Result))
             {
-				if (GEngine)
-				{
-				   GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("JoinSession Call Failed IMMEDIATELY!"));
-				}
+				// if (GEngine)
+				// {
+				//    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("JoinSession Call Failed IMMEDIATELY!"));
+				// }
             }
 		}
 	}
@@ -123,7 +123,7 @@ void UTTGameInstance::JoinGameSession(int32 SessionIndex)
 
 void UTTGameInstance::OnDestroySessionBeforeJoin(FName SessionName, bool bWasSuccessful)
 {
-    UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnDestroySessionBeforeJoin. Success: %d"), bWasSuccessful);
+    // UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnDestroySessionBeforeJoin. Success: %d"), bWasSuccessful);
 
     IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
     if (OnlineSub)
@@ -140,7 +140,7 @@ void UTTGameInstance::OnDestroySessionBeforeJoin(FName SessionName, bool bWasSuc
     }
     else
     {
-        UE_LOG(LogTemp, Error, TEXT("[TTGameInstance] Failed to destroy session for Join or Invalid Index"));
+        // UE_LOG(LogTemp, Error, TEXT("[TTGameInstance] Failed to destroy session for Join or Invalid Index"));
     }
 }
 
@@ -211,7 +211,7 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 
 void UTTGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
-	UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnCreateSessionComplete. Success: %d"), bWasSuccessful);
+	// UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnCreateSessionComplete. Success: %d"), bWasSuccessful);
 
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
@@ -228,7 +228,7 @@ void UTTGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucces
 
 void UTTGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 {
-	UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnFindSessionsComplete. Success: %d. Found: %d"), bWasSuccessful, SessionSearch.IsValid() ? SessionSearch->SearchResults.Num() : 0);
+	// UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnFindSessionsComplete. Success: %d. Found: %d"), bWasSuccessful, SessionSearch.IsValid() ? SessionSearch->SearchResults.Num() : 0);
 
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
@@ -242,12 +242,12 @@ void UTTGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 
 void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
-	UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnJoinSessionComplete. Result: %d"), (int32)Result);
+	// UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnJoinSessionComplete. Result: %d"), (int32)Result);
 
-    if (GEngine)
-    {
-       GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Cyan, FString::Printf(TEXT("OnJoinSessionComplete Result: %d"), (int32)Result));
-    }
+    // if (GEngine)
+    // {
+    //    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Cyan, FString::Printf(TEXT("OnJoinSessionComplete Result: %d"), (int32)Result));
+    // }
 
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
@@ -262,20 +262,20 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
 		if (SessionInterface->GetResolvedConnectString(SessionName, ConnectInfo))
 		{
-			UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] Connect String Resolved: %s"), *ConnectInfo);
+			// UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] Connect String Resolved: %s"), *ConnectInfo);
             
             // Port 0 Fix for Null Subsystem
             if (ConnectInfo.EndsWith(TEXT(":0")))
             {
-                UE_LOG(LogTemp, Warning, TEXT("[TTGameInstance] Port 0 detected, replacing with 7777"));
+                // UE_LOG(LogTemp, Warning, TEXT("[TTGameInstance] Port 0 detected, replacing with 7777"));
                 ConnectInfo = ConnectInfo.LeftChop(2); // Remove :0
                 ConnectInfo.Append(TEXT(":7777"));
             }
 
-            if (GEngine)
-            {
-               GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Travel URL: %s"), *ConnectInfo));
-            }
+            // if (GEngine)
+            // {
+            //    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Travel URL: %s"), *ConnectInfo));
+            // }
 
 			APlayerController* PlayerController = GetFirstLocalPlayerController();
 			if (PlayerController)
@@ -285,11 +285,11 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
 		}
 		else
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[TTGameInstance] Failed to resolve connect string!"));
-            if (GEngine)
-            {
-               GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("Failed to resolve Connect String!"));
-            }
+			// UE_LOG(LogTemp, Warning, TEXT("[TTGameInstance] Failed to resolve connect string!"));
+            // if (GEngine)
+            // {
+            //    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("Failed to resolve Connect String!"));
+            // }
 		}
 	}
 }

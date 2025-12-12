@@ -56,7 +56,7 @@ void UUW_LobbyLevel::UpdatePlayerList()
 {
 	if (!ScrollBox_PlayerList)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] ScrollBox_PlayerList is NULL"));
+		// UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] ScrollBox_PlayerList is NULL"));
 		return;
 	}
 
@@ -64,14 +64,14 @@ void UUW_LobbyLevel::UpdatePlayerList()
 
 	if (AGameStateBase* GS = GetWorld()->GetGameState())
 	{
-		UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] PlayerArray Count: %d"), GS->PlayerArray.Num());
+		// UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] PlayerArray Count: %d"), GS->PlayerArray.Num());
 
 		for (APlayerState* PS : GS->PlayerArray)
 		{
 			if (ATTPlayerState* TTPS = Cast<ATTPlayerState>(PS))
 			{
 				FString DisplayName = TTPS->UserNickname;
-				UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] Found TTPlayerState. Nickname: %s"), *DisplayName);
+				// UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] Found TTPlayerState. Nickname: %s"), *DisplayName);
 
 				if (DisplayName.IsEmpty()) DisplayName = TEXT("Loading...");
 
@@ -88,17 +88,17 @@ void UUW_LobbyLevel::UpdatePlayerList()
                 TextBlock->SetFont(FontInfo);
 
 				ScrollBox_PlayerList->AddChild(TextBlock);
-				UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] Added TextBlock for %s. Color: White, Size: 24"), *DisplayName);
+				// UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] Added TextBlock for %s. Color: White, Size: 24"), *DisplayName);
 			}
 			else
 			{
-				UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] PlayerState is NOT ATTPlayerState"));
+				// UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] PlayerState is NOT ATTPlayerState"));
 			}
 		}
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] GameState is NULL"));
+		// UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] GameState is NULL"));
 	}
 }
 
