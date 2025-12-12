@@ -128,4 +128,30 @@ private:
 	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
 	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
 #pragma endregion
+
+#pragma region Attack
+
+public:
+	UFUNCTION ()
+	void HandleOnCheckHit ();
+	UFUNCTION ()
+	void HandleOnCheckInputAttack ();
+
+	virtual void BeginAttack ();
+
+	UFUNCTION ()
+	virtual void EndAttack ( UAnimMontage* InMontage , bool bInterruped );
+protected:
+	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
+
+	int32 MaxComboCount = 3;
+
+	int32 CurrentComboCount = 0;
+
+	bool bIsNowAttacking = false;
+
+	bool bIsAttackKeyPressed = false;
+
+	FOnMontageEnded OnMeleeAttackMontageEndedDelegate;
+#pragma endregion
 };
