@@ -17,5 +17,4 @@ public:
 	void SendChatMessage ( const FString& Message );
 
 	virtual void PostLogin ( APlayerController* NewPlayer ) override;
-	virtual void HandleStartingNewPlayer ( APlayerController* NewPlayer ) override;
 };
