@@ -22,7 +22,7 @@ public class Team03 : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "SelectSkeletal", });
 
-		PublicIncludePathModuleNames.AddRange(new string[] { "Team03" });
+		PublicIncludePaths.AddRange(new string[] { "Team03" });
 
 		// Uncomment if you are using Slate UI
 		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
