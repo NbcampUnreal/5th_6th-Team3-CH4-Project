@@ -20,6 +20,7 @@ public:
 	USkeletalMesh* PersistedHeadMesh;
 	UPROPERTY ( Replicated )
 	USkeletalMesh* PersistedBodyMesh;
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 	UPROPERTY(ReplicatedUsing = OnRep_UserNickname)
@@ -32,4 +33,6 @@ public:
 	void OnRep_UserNickname();
 =======
 >>>>>>> InGameUI_PCY
+=======
+>>>>>>> parent of 1fe24ab (Feat: 세션 검색/참여 UI 구현)
 };

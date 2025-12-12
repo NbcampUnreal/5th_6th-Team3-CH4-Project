@@ -13,12 +13,5 @@ void ATTPlayerState::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
 	DOREPLIFETIME ( ATTPlayerState , PersistedHeadMesh );
 	DOREPLIFETIME ( ATTPlayerState , PersistedBodyMesh );
-	DOREPLIFETIME(ATTPlayerState, UserNickname);
-	DOREPLIFETIME(ATTPlayerState, SelectedCharacterRowName);
-}
-
-void ATTPlayerState::OnRep_UserNickname()
-{
-	// Optional: Broadcast delegate if needed
 }
 

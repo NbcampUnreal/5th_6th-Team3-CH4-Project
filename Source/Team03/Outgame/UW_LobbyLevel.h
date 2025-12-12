@@ -24,16 +24,10 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UButton* Btn_Leave;
 
-	UPROPERTY(meta = (BindWidget))
-	class UScrollBox* ScrollBox_PlayerList;
-
 private:
 	UFUNCTION()
 	void OnClickStartGame();
 
 	UFUNCTION()
 	void OnClickLeave();
-
-	void UpdatePlayerList();
-	FTimerHandle PlayerListTimerHandle;
 };

@@ -39,31 +39,12 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UWidget> LoadingOverlay;
 
-	// --- Find Game Overlay ---
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UWidget> Widget_SessionOverlay;
-
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UScrollBox> ScrollBox_SessionList;
-
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<UButton> Btn_CloseOverlay;
-
-	UPROPERTY(meta = (BindWidget))
-	TObjectPtr<class UTextBlock> TextBlock_NoSessions;
-
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
-	TSubclassOf<class UUW_LobbyEntry> LobbyEntryClass;
-
     // Helper to interact with GameInstance
 	UFUNCTION()
 	void OnCreateClicked();
 
 	UFUNCTION()
 	void OnFindClicked();
-
-	UFUNCTION()
-	void OnCloseOverlayClicked();
 
 	UFUNCTION()
 	void OnExitClicked();

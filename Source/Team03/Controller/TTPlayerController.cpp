@@ -5,6 +5,7 @@
 #include "../InGameUI/TTChatUI.h"
 #include "../Character/TTPlayerCharacter.h"
 <<<<<<< HEAD
+<<<<<<< HEAD
 #include "../Outgame/TTGameInstance.h"
 #include "../Character/TTPlayerState.h"
 =======
@@ -13,6 +14,8 @@
 #include "../Save/TTSaveGame.h"
 
 >>>>>>> InGameUI_PCY
+=======
+>>>>>>> parent of 1fe24ab (Feat: 세션 검색/참여 UI 구현)
 
 
 
@@ -54,42 +57,7 @@ void ATTPlayerController::BeginPlay ()
 	{
 		TTInGameHUD->AddChat ();
 	}
-
-// ---------- Outgame 담당자가 추가한 코드 ----------
-	if (IsLocalController())
-	{
-		// Force Game Input Mode
-		FInputModeGameOnly GameInputMode;
-		SetInputMode(GameInputMode);
-		bShowMouseCursor = false;
-
-		if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
-		{
-			UE_LOG(LogTemp, Log, TEXT("[TTPlayerController] Sending GameInstance Data to Server. Nickname: %s, RowName: %s"), *GI->UserNickname, *GI->SelectedCharacterRowName.ToString());
-			ServerRPC_InitPlayerInfo(GI->UserNickname, GI->SelectedCharacterRowName);
-		}
-	}
 }
-
-void ATTPlayerController::ServerRPC_InitPlayerInfo_Implementation(const FString& Nickname, const FName& CharacterRowName)
-{
-	UE_LOG(LogTemp, Log, TEXT("[TTPlayerController] Server Received Data. Nickname: %s, RowName: %s"), *Nickname, *CharacterRowName.ToString());
-
-	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState>())
-	{
-		PS->UserNickname = Nickname;
-		PS->SelectedCharacterRowName = CharacterRowName;
-
-		// Force update if needed, but replication will handle it
-		PS->ForceNetUpdate();
-	}
-}
-
-bool ATTPlayerController::ServerRPC_InitPlayerInfo_Validate(const FString& Nickname, const FName& CharacterRowName)
-{
-	return true;
-}
-// ---------- Outgame 담당자가 추가한 코드 ----------
 
 #pragma region ChatUI
 

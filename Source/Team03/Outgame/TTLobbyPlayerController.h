@@ -19,7 +19,4 @@ public:
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerRPC_StartGame();
-
-	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerRPC_InitPlayerInfo(const FString& Nickname, const FName& CharacterRowName);
 };
