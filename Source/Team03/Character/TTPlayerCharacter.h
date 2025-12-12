@@ -98,7 +98,7 @@ public:
 
 #pragma region MeshChange
 public:
-
+	void InitializeMesh ( class ATTPlayerState* TTPS );
 
 	UFUNCTION ( Server , Reliable , WithValidation )
 	void ServerChangeHeadMesh ( USkeletalMesh* NewMesh );

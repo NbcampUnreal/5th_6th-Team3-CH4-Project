@@ -112,6 +112,12 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	
 }
 
+void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
+{
+	ServerChangeHeadMesh ( TTPS->PersistedHeadMesh );
+	ServerChangeBodyMesh ( TTPS->PersistedBodyMesh );
+}
+
 void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
 {
 	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
