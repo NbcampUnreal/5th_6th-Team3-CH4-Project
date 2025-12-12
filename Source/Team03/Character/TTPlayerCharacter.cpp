@@ -9,7 +9,6 @@
 #include "../Controller/TTPlayerController.h"
 #include "../Character/TTPlayerState.h"
 #include "Net/UnrealNetwork.h"
-#include "../LHO/TTAnimInstance.h"
 
 
 ATTPlayerCharacter::ATTPlayerCharacter()
@@ -156,43 +155,8 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 	}
 }
 
-<<<<<<< HEAD
 void ATTPlayerCharacter::Attack ()
-=======
-void ATTPlayerCharacter::Tick ( float DeltaTime )
 {
-	Super::Tick ( DeltaTime );
-
-	float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
-	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , TurnSpeed );
-
-	SetActorRotation ( NewRotation );
-}
-
-void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
-{
-	FVector2D MouseVector = Value.Get<FVector2D> ();
-
-	if (IsValid ( Controller ) == true)
-	{
-		AddControllerYawInput ( MouseVector.X );
-		AddControllerPitchInput ( MouseVector.Y );
-	}
-}
-
-void ATTPlayerCharacter::Attack ( const FInputActionValue& InValue )
->>>>>>> Character-LHO
-{
-	if (GetCharacterMovement ()->IsFalling () == true)
-	{
-		return;
-	}
-
-	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMontage ) == false)
-	{
-		AnimInstance->Montage_Play ( AttackMontage );
-	}
 }
 
 void ATTPlayerCharacter::InChat ()
@@ -230,18 +194,8 @@ void ATTPlayerCharacter::SprintEnd ()
 	ServerSprintEnd ();
 }
 
-void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& InValue )
+void ATTPlayerCharacter::PlayerBlocking ()
 {
-	if (GetCharacterMovement ()->IsFalling () == true)
-	{
-		return;
-	}
-
-	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	if (IsValid ( AnimInstance ) == true && IsValid ( PlayerBlockingMontage ) == true && AnimInstance->Montage_IsPlaying ( PlayerBlockingMontage ) == false)
-	{
-		AnimInstance->Montage_Play ( PlayerBlockingMontage );
-	}
 }
 
 void ATTPlayerCharacter::SetSprintSpeed ( bool bIsSprinting )
