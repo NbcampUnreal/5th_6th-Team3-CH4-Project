@@ -20,7 +20,7 @@ class TEAM03_API ATTPlayerCharacter : public ACharacter
 
 public:
 	ATTPlayerCharacter();
-
+	virtual void PossessedBy ( AController* NewController ) override;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SpringArm")
 	TObjectPtr<USpringArmComponent> SpringArm;
 	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly , Category = "Camera" )
@@ -92,7 +92,7 @@ public:
 
 #pragma region MeshChange
 public:
-
+	void InitializeMesh (class ATTPlayerState* TTPS );
 
 	UFUNCTION ( Server , Reliable , WithValidation )
 	void ServerChangeHeadMesh ( USkeletalMesh* NewMesh );
@@ -117,9 +117,4 @@ private:
 
 #pragma endregion
 
-#pragma region SaveData
-	public:
-	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
-	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
-#pragma endregion
 };

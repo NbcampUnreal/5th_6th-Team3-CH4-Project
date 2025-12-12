@@ -19,6 +19,8 @@ class TEAM03_API ATTPlayerController : public APlayerController
 public:
 	ATTPlayerController ();
 
+	virtual void SetPawn ( APawn* InPawn ) override;
+	virtual void OnPossess ( APawn* InPawn ) override;
 
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
 	UInputMappingContext* InputMappingContext;
@@ -70,4 +72,10 @@ public:
 
 #pragma endregion
 
+#pragma region SaveData
+public:
+	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
+	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
+
+#pragma endregion
 };

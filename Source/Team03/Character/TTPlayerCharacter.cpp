@@ -42,6 +42,15 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 	BodyMeshToReplicate = nullptr;
 }
 
+void ATTPlayerCharacter::PossessedBy ( AController* NewController )
+{
+	Super::PossessedBy ( NewController );
+	UE_LOG ( LogTemp , Warning , TEXT ( "PossessedBy" ) );
+	if (ATTPlayerController* TTPC = Cast< ATTPlayerController > ( NewController ))
+	{
+		TTPC->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
+	}
+}
 
 void ATTPlayerCharacter::BeginPlay ()
 {
@@ -75,7 +84,10 @@ void ATTPlayerCharacter::BeginPlay ()
 			}
 		}
 	}
-	LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetController () ))
+	{
+		PC->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
+	}
 }
 
 void ATTPlayerCharacter::Tick ( float DeltaTime )
@@ -191,6 +203,7 @@ void ATTPlayerCharacter::SprintStart ()
 	SetSprintSpeed ( true );
 	ServerSprintStart ();
 }
+
 void ATTPlayerCharacter::SprintEnd ()
 {
 	SetSprintSpeed ( false );
@@ -218,7 +231,6 @@ void ATTPlayerCharacter::ServerSetRotation_Implementation ( FRotator NewRotation
 	TargetRotation = NewRotation;
 }
 
-
 void ATTPlayerCharacter::ServerSprintStart_Implementation ()
 {
 	SetSprintSpeed ( true );
@@ -232,6 +244,12 @@ void ATTPlayerCharacter::ServerSprintEnd_Implementation ()
 #pragma endregion
 
 #pragma region MeshChange
+
+void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
+{
+	ServerChangeHeadMesh ( TTPS->PersistedHeadMesh );
+	ServerChangeBodyMesh ( TTPS->PersistedBodyMesh );
+}
 
 bool ATTPlayerCharacter::ServerChangeHeadMesh_Validate ( USkeletalMesh* NewMesh )
 {
@@ -265,7 +283,6 @@ void ATTPlayerCharacter::ServerChangeBodyMesh_Implementation ( USkeletalMesh* Ne
 	OnRep_BodyMesh ();
 }
 
-
 void ATTPlayerCharacter::OnRep_HeadMesh ()
 {
 	if (HeadMeshToReplicate)
@@ -287,7 +304,6 @@ void ATTPlayerCharacter::ChangeHead ( USkeletalMesh* NewMesh )
 	if (IsValid ( Head ) && IsValid ( NewMesh ))
 	{
 		Head->SetSkeletalMesh ( NewMesh );
-		SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 	}
 }
 
@@ -296,67 +312,9 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 	if (IsValid ( GetMesh () ) && IsValid ( NewMesh ))
 	{
 		GetMesh ()->SetSkeletalMesh ( NewMesh );
-		SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 	}
 }
 
 #pragma endregion
 
-#pragma region SaveData
 
-void ATTPlayerCharacter::SavePlayerSaveData ( const FString& SlotName , int32 UserIndex )
-{
-	USkeletalMeshComponent* HeadMesh = Head;
-	USkeletalMeshComponent* BodyMesh = GetMesh ();
-
-	if (IsValid ( HeadMesh ) && IsValid ( BodyMesh ))
-	{
-		USaveGame* SaveGameInstance = UGameplayStatics::CreateSaveGameObject ( USaveGame::StaticClass () );
-		if (!SaveGameInstance) 
-			return;
-
-		UTTSaveGame* TTSaveGameInstance = Cast<UTTSaveGame> ( SaveGameInstance );
-		if (!TTSaveGameInstance) 
-			return;
-		// 세이브 데이터에 세이브
-		if (USkeletalMesh* CurrentHeadMesh = HeadMesh->GetSkeletalMeshAsset ())
-		{
-			TTSaveGameInstance->CurrentHeadMeshPath = FSoftObjectPath ( CurrentHeadMesh );
-		}
-		if (USkeletalMesh* CurrentBodyMesh = BodyMesh->GetSkeletalMeshAsset ())
-		{
-			TTSaveGameInstance->CurrentBodyMeshPath = FSoftObjectPath ( CurrentBodyMesh );
-		}
-		UGameplayStatics::SaveGameToSlot ( TTSaveGameInstance , SlotName , UserIndex );
-	}
-}
-
-void ATTPlayerCharacter::LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex )
-{
-	if(IsValid( Head ) && IsValid ( GetMesh () ))
-	{
-		// 세이브 데이터를 불러오는 과정
-		USaveGame* LoadGameInstance = UGameplayStatics::CreateSaveGameObject ( USaveGame::StaticClass () );
-		if (!LoadGameInstance)
-			return;
-
-		UTTSaveGame* TTLoadGameInstance = Cast<UTTSaveGame> ( LoadGameInstance );
-		if (!TTLoadGameInstance)
-			return;
-		USkeletalMesh* LoadedHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
-		if (!TTLoadGameInstance->CurrentHeadMeshPath.IsNull () && !TTLoadGameInstance->CurrentBodyMeshPath.IsNull())
-			return;
-
-		// 로드된 세이브 데이터를 불러오는 과정 
-		USkeletalMesh* LoadHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
-		USkeletalMesh* LoadBodyMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentBodyMeshPath.ResolveObject () );
-
-		// 세이브 데이터 적용
-		if (IsValid ( LoadHeadMesh ) && IsValid ( LoadBodyMesh ))
-		{
-			Head->SetSkeletalMesh ( LoadHeadMesh );
-			GetMesh ()->SetSkeletalMesh ( LoadBodyMesh );
-		}
-	}
-}
-#pragma endregion

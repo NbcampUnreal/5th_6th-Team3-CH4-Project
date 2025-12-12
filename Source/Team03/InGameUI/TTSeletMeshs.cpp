@@ -65,6 +65,7 @@ void UTTSeletMeshs::OnHeadLeftClicked ()
 						if (IsValid ( PC ))
 						{
 							PC->ChangeHeadMesh (LoadedInstance.Get () );
+							PC->SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 						}
 						
 					}
@@ -104,6 +105,7 @@ void UTTSeletMeshs::OnHeadRightClicked ()
 						if (IsValid ( PC ))
 						{
 							PC->ChangeHeadMesh ( LoadedInstance.Get () );
+							PC->SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 						}
 					}
 				}
@@ -140,6 +142,7 @@ void UTTSeletMeshs::OnBodyLeftClicked ()
 						if (IsValid ( PC ))
 						{
 							PC->ChangeMesh ( LoadedInstance.Get () );
+							PC->SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 						}
 					}
 				}
@@ -177,6 +180,7 @@ void UTTSeletMeshs::OnBodyRightClicked ()
 						{
 
 							PC->ChangeMesh ( LoadedInstance.Get () );
+							PC->SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 						}
 					}
 				}
