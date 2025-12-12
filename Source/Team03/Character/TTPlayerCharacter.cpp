@@ -7,9 +7,9 @@
 #include "Kismet/GameplayStatics.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "../Controller/TTPlayerController.h"
-#include "../Character/TTPlayerState.h"
-#include "../Save/TTSaveGame.h"
+#include "Controller/TTPlayerController.h"
+#include "Character/TTPlayerState.h"
+#include "Save/TTSaveGame.h"
 #include "Net/UnrealNetwork.h"
 
 
