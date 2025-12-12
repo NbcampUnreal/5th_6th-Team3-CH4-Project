@@ -11,7 +11,8 @@
 #include "Character/TTPlayerState.h"
 #include "Save/TTSaveGame.h"
 #include "Net/UnrealNetwork.h"
-#include "../LHO/TTAnimInstance.h"
+#include "LHO/TTAnimInstance.h"
+#include "Camera/PlayerCameraManager.h"
 
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
@@ -25,8 +26,11 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
-	SpringArm->TargetArmLength = 500.f;
+	SpringArm->TargetArmLength = 700.f;
 	SpringArm->bUsePawnControlRotation = true;	
+	SpringArm->bEnableCameraLag = true;
+	SpringArm->CameraLagSpeed = 3.0f;
+	SpringArm->CameraLagMaxDistance = 100.0f;
 	
 	Camera = CreateDefaultSubobject<UCameraComponent> ( TEXT ( "Camera" ) );
 	Camera->SetupAttachment ( SpringArm );
@@ -34,8 +38,7 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 	bUseControllerRotationYaw = false;
 
 	GetCharacterMovement ()->bOrientRotationToMovement = false;
-	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 1080.0f , 0.0f );
-
+	GetCharacterMovement ()->RotationRate = FRotator ( 0.0f , 1440.0f , 0.0f );
 	TargetRotation = FRotator::ZeroRotator;
 
 	HeadMeshToReplicate = nullptr;
@@ -58,6 +61,10 @@ void ATTPlayerCharacter::BeginPlay ()
 
 	if (IsValid ( PlayerController ) == true)
 	{
+		PlayerController->SetControlRotation (FRotator(0.f , -70.f , 0.f ));
+		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f ;
+		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f ;
+
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
 
 		if (IsValid ( Subsystem ) == true)
@@ -88,10 +95,21 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 {
 	Super::Tick ( DeltaTime );
 
-	float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
-	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , TurnSpeed );
+	FRotator CurrentRotation = GetActorRotation ();
+	FRotator NewRotation;
 
+	if (IsLocallyControlled ())
+	{
+		float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
+		NewRotation = FMath::RInterpConstantTo ( CurrentRotation , TargetRotation , DeltaTime , TurnSpeed );
+	}
+	else
+	{
+		float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
+		NewRotation = FMath::RInterpConstantTo ( CurrentRotation , TargetRotation , DeltaTime , TurnSpeed );
+	}
 	SetActorRotation ( NewRotation );
+	
 }
 
 void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
@@ -100,6 +118,8 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
+
+	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 }
 
 #pragma region Input
@@ -156,9 +176,12 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 
 		if (!DesiredDirection.IsNearlyZero ())
 		{
-			TargetRotation = DesiredDirection.Rotation ();
+			if (!TargetRotation.Equals(DesiredDirection.Rotation(), 0.1f ))
+			{
+				TargetRotation = DesiredDirection.Rotation ();
 
-			ServerSetRotation ( TargetRotation );
+				ServerSetRotation ( TargetRotation );
+			}
 		}
 
 	}
