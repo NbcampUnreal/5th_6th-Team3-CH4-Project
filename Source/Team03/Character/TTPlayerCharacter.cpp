@@ -12,6 +12,7 @@
 #include "Save/TTSaveGame.h"
 #include "Net/UnrealNetwork.h"
 #include "LHO/TTAnimInstance.h"
+#include "Camera/PlayerCameraManager.h"
 
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
@@ -25,8 +26,11 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
-	SpringArm->TargetArmLength = 500.f;
+	SpringArm->TargetArmLength = 700.f;
 	SpringArm->bUsePawnControlRotation = true;	
+	SpringArm->bEnableCameraLag = true;
+	SpringArm->CameraLagSpeed = 3.0f;
+	SpringArm->CameraLagMaxDistance = 100.0f;
 	
 	Camera = CreateDefaultSubobject<UCameraComponent> ( TEXT ( "Camera" ) );
 	Camera->SetupAttachment ( SpringArm );
@@ -51,6 +55,10 @@ void ATTPlayerCharacter::BeginPlay ()
 
 	if (IsValid ( PlayerController ) == true)
 	{
+		PlayerController->SetControlRotation (FRotator(0.f , -70.f , 0.f ));
+		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f ;
+		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f ;
+
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
 
 		if (IsValid ( Subsystem ) == true)
@@ -105,7 +113,7 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
 
-	DOREPLIFETIME ( ATTPlayerCharacter , TargetRotation );
+	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 }
 
 #pragma region Input
@@ -162,9 +170,12 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 
 		if (!DesiredDirection.IsNearlyZero ())
 		{
-			TargetRotation = DesiredDirection.Rotation ();
+			if (!TargetRotation.Equals(DesiredDirection.Rotation(), 0.1f ))
+			{
+				TargetRotation = DesiredDirection.Rotation ();
 
-			ServerSetRotation ( TargetRotation );
+				ServerSetRotation ( TargetRotation );
+			}
 		}
 
 	}
