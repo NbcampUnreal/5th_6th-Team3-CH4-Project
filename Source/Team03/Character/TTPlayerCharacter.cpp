@@ -16,8 +16,8 @@
 
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
-	WalkSpeed = 600.f;
-	SprintSpeed = 1000.f;
+	WalkSpeed = 400.f;
+	SprintSpeed = 600.f;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
@@ -50,6 +50,12 @@ void ATTPlayerCharacter::BeginPlay ()
 {
 	Super::BeginPlay ();
 	UE_LOG ( LogTemp , Warning , TEXT ( "BeginPlay" ) );
+
+	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	//if (IsValid ( AnimInstance ) == true)
+	//{
+	//	AnimInstance->OnCheckHit.AddDynamic ( this , &ThisClass::HandleOnCheckHit );
+	//}
 
 	APlayerController* PlayerController = Cast<APlayerController> ( GetController () );
 
@@ -188,10 +194,19 @@ void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 		return;
 	}
 
-	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	//if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	//{
+	//	AnimInstance->Montage_Play ( AttackMeleeMontage );
+	//}
+	if (0 == CurrentComboCount)
 	{
-		AnimInstance->Montage_Play ( AttackMeleeMontage );
+		BeginAttack ();
+	}
+	else
+	{
+		ensure ( FMath::IsWithinInclusive<int32> ( CurrentComboCount , 1 , MaxComboCount ) );
+		bIsAttackKeyPressed = true;
 	}
 }
 
@@ -400,6 +415,64 @@ void ATTPlayerCharacter::LoadPlayerSaveData ( const FString& SlotName , int32 Us
 			Head->SetSkeletalMesh ( LoadHeadMesh );
 			GetMesh ()->SetSkeletalMesh ( LoadBodyMesh );
 		}
+	}
+}
+#pragma endregion
+
+#pragma region Attack
+
+void ATTPlayerCharacter::HandleOnCheckHit ()
+{
+	UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
+}
+void ATTPlayerCharacter::HandleOnCheckInputAttack ()
+{
+	UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
+
+	if (bIsAttackKeyPressed == true)
+	{
+		CurrentComboCount = FMath::Clamp ( CurrentComboCount + 1 , 1 , MaxComboCount );
+
+		FName NextSectionName = *FString::Printf ( TEXT ( "%s%02d" ) , *AttackAnimMontageSectionPrefix , CurrentComboCount );
+		AnimInstance->Montage_JumpToSection ( NextSectionName , AttackMeleeMontage );
+		bIsAttackKeyPressed = false;
+	}
+}
+void ATTPlayerCharacter::BeginAttack ()
+{
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
+
+	/*GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_None );*/
+	bIsNowAttacking = true;
+	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	{
+		AnimInstance->Montage_Play ( AttackMeleeMontage );
+	}
+
+	CurrentComboCount = 1;
+
+	if (OnMeleeAttackMontageEndedDelegate.IsBound () == false)
+	{
+		OnMeleeAttackMontageEndedDelegate.BindUObject ( this , &ThisClass::EndAttack );
+		AnimInstance->Montage_SetEndDelegate ( OnMeleeAttackMontageEndedDelegate , AttackMeleeMontage );
+	}
+}
+
+void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped )
+{
+	ensureMsgf ( CurrentComboCount != 0 , TEXT ( "CurrentComboCount == 0" ) );
+
+	CurrentComboCount = 0;
+	bIsAttackKeyPressed = false;
+	bIsNowAttacking = false;
+	//GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_Walking );
+
+	if (OnMeleeAttackMontageEndedDelegate.IsBound () == true)
+	{
+		OnMeleeAttackMontageEndedDelegate.Unbind ();
 	}
 }
 #pragma endregion
