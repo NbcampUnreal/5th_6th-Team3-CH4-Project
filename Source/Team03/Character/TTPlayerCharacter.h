@@ -12,6 +12,7 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
+class UAnimMontage;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -20,7 +21,7 @@ class TEAM03_API ATTPlayerCharacter : public ACharacter
 
 public:
 	ATTPlayerCharacter();
-	virtual void PossessedBy ( AController* NewController ) override;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SpringArm")
 	TObjectPtr<USpringArmComponent> SpringArm;
 	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly , Category = "Camera" )
@@ -57,13 +58,13 @@ public:
 protected:
 	void Move ( const FInputActionValue& Value );
 	void Look ( const FInputActionValue& Value );
-	void Attack();
+	void Attack( const FInputActionValue& Value );
 	void InChat ();
 	void ESCMenu();
 	void TempKey ();
 	void SprintStart ();
 	void SprintEnd ();
-	void PlayerBlocking ();
+	void PlayerBlocking ( const FInputActionValue& Value );
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
@@ -76,6 +77,11 @@ protected:
 
 	UFUNCTION(Server, Unreliable)
 	void ServerSetRotation ( FRotator NewRotation );
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	TObjectPtr<UAnimMontage> AttackMeleeMontage;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	TObjectPtr<UAnimMontage> BlockingMontage;
 	
 #pragma endregion
 
@@ -92,7 +98,7 @@ public:
 
 #pragma region MeshChange
 public:
-	void InitializeMesh (class ATTPlayerState* TTPS );
+
 
 	UFUNCTION ( Server , Reliable , WithValidation )
 	void ServerChangeHeadMesh ( USkeletalMesh* NewMesh );
@@ -117,4 +123,35 @@ private:
 
 #pragma endregion
 
+#pragma region SaveData
+	public:
+	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
+	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
+#pragma endregion
+
+#pragma region Attack
+
+public:
+	UFUNCTION ()
+	void HandleOnCheckHit ();
+	UFUNCTION ()
+	void HandleOnCheckInputAttack ();
+
+	virtual void BeginAttack ();
+
+	UFUNCTION ()
+	virtual void EndAttack ( UAnimMontage* InMontage , bool bInterruped );
+protected:
+	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
+
+	int32 MaxComboCount = 3;
+
+	int32 CurrentComboCount = 0;
+
+	bool bIsNowAttacking = false;
+
+	bool bIsAttackKeyPressed = false;
+
+	FOnMontageEnded OnMeleeAttackMontageEndedDelegate;
+#pragma endregion
 };

@@ -37,6 +37,12 @@ protected:
 	TObjectPtr<UButton> Btn_Exit;
 
 	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Btn_Option;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> OptionWidgetClass;
+
+	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UWidget> LoadingOverlay;
 
 	// --- Find Game Overlay ---
@@ -64,6 +70,9 @@ protected:
 
 	UFUNCTION()
 	void OnCloseOverlayClicked();
+
+	UFUNCTION()
+	void OnOptionClicked();
 
 	UFUNCTION()
 	void OnExitClicked();

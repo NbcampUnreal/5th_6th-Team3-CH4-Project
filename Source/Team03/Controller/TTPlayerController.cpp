@@ -13,7 +13,9 @@ ATTPlayerController::ATTPlayerController ()
 	: InputMappingContext ( nullptr ) ,
 	MoveAction ( nullptr ) ,
 	JumpAction ( nullptr ) ,
-	SprintAction ( nullptr )
+	SprintAction ( nullptr ) ,
+	AttackAction ( nullptr ) ,
+	BlockingAction ( nullptr ) 
 {
 	bReplicates = true;
 }

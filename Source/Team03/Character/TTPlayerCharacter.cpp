@@ -11,12 +11,13 @@
 #include "Character/TTPlayerState.h"
 #include "Save/TTSaveGame.h"
 #include "Net/UnrealNetwork.h"
-
+#include "LHO/TTAnimInstance.h"
+#include "Camera/PlayerCameraManager.h"
 
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
-	WalkSpeed = 600.f;
-	SprintSpeed = 1000.f;
+	WalkSpeed = 400.f;
+	SprintSpeed = 600.f;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
@@ -25,8 +26,11 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
-	SpringArm->TargetArmLength = 500.f;
+	SpringArm->TargetArmLength = 700.f;
 	SpringArm->bUsePawnControlRotation = true;	
+	SpringArm->bEnableCameraLag = true;
+	SpringArm->CameraLagSpeed = 3.0f;
+	SpringArm->CameraLagMaxDistance = 100.0f;
 	
 	Camera = CreateDefaultSubobject<UCameraComponent> ( TEXT ( "Camera" ) );
 	Camera->SetupAttachment ( SpringArm );
@@ -34,33 +38,33 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 	bUseControllerRotationYaw = false;
 
 	GetCharacterMovement ()->bOrientRotationToMovement = false;
-	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 1080.0f , 0.0f );
-
+	GetCharacterMovement ()->RotationRate = FRotator ( 0.0f , 1440.0f , 0.0f );
 	TargetRotation = FRotator::ZeroRotator;
 
 	HeadMeshToReplicate = nullptr;
 	BodyMeshToReplicate = nullptr;
 }
 
-void ATTPlayerCharacter::PossessedBy ( AController* NewController )
-{
-	Super::PossessedBy ( NewController );
-	UE_LOG ( LogTemp , Warning , TEXT ( "PossessedBy" ) );
-	if (ATTPlayerController* TTPC = Cast< ATTPlayerController > ( NewController ))
-	{
-		TTPC->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
-	}
-}
 
 void ATTPlayerCharacter::BeginPlay ()
 {
 	Super::BeginPlay ();
 	UE_LOG ( LogTemp , Warning , TEXT ( "BeginPlay" ) );
 
+	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	//if (IsValid ( AnimInstance ) == true)
+	//{
+	//	AnimInstance->OnCheckHit.AddDynamic ( this , &ThisClass::HandleOnCheckHit );
+	//}
+
 	APlayerController* PlayerController = Cast<APlayerController> ( GetController () );
 
 	if (IsValid ( PlayerController ) == true)
 	{
+		PlayerController->SetControlRotation (FRotator(0.f , -70.f , 0.f ));
+		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f ;
+		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f ;
+
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
 
 		if (IsValid ( Subsystem ) == true)
@@ -84,20 +88,28 @@ void ATTPlayerCharacter::BeginPlay ()
 			}
 		}
 	}
-	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetController () ))
-	{
-		PC->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
-	}
+	LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 }
 
 void ATTPlayerCharacter::Tick ( float DeltaTime )
 {
 	Super::Tick ( DeltaTime );
 
-	float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
-	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , TurnSpeed );
+	FRotator CurrentRotation = GetActorRotation ();
+	FRotator NewRotation;
 
+	if (IsLocallyControlled ())
+	{
+		float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
+		NewRotation = FMath::RInterpConstantTo ( CurrentRotation , TargetRotation , DeltaTime , TurnSpeed );
+	}
+	else
+	{
+		float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
+		NewRotation = FMath::RInterpConstantTo ( CurrentRotation , TargetRotation , DeltaTime , TurnSpeed );
+	}
 	SetActorRotation ( NewRotation );
+	
 }
 
 void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
@@ -106,6 +118,8 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
+
+	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 }
 
 #pragma region Input
@@ -162,16 +176,38 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 
 		if (!DesiredDirection.IsNearlyZero ())
 		{
-			TargetRotation = DesiredDirection.Rotation ();
+			if (!TargetRotation.Equals(DesiredDirection.Rotation(), 0.1f ))
+			{
+				TargetRotation = DesiredDirection.Rotation ();
 
-			ServerSetRotation ( TargetRotation );
+				ServerSetRotation ( TargetRotation );
+			}
 		}
 
 	}
 }
 
-void ATTPlayerCharacter::Attack ()
+void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 {
+	if (GetCharacterMovement ()->IsFalling () == true)
+	{
+		return;
+	}
+
+	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	//if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	//{
+	//	AnimInstance->Montage_Play ( AttackMeleeMontage );
+	//}
+	if (0 == CurrentComboCount)
+	{
+		BeginAttack ();
+	}
+	else
+	{
+		ensure ( FMath::IsWithinInclusive<int32> ( CurrentComboCount , 1 , MaxComboCount ) );
+		bIsAttackKeyPressed = true;
+	}
 }
 
 void ATTPlayerCharacter::InChat ()
@@ -203,15 +239,24 @@ void ATTPlayerCharacter::SprintStart ()
 	SetSprintSpeed ( true );
 	ServerSprintStart ();
 }
-
 void ATTPlayerCharacter::SprintEnd ()
 {
 	SetSprintSpeed ( false );
 	ServerSprintEnd ();
 }
 
-void ATTPlayerCharacter::PlayerBlocking ()
+void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 {
+	if (GetCharacterMovement ()->IsFalling () == true)
+	{
+		return;
+	}
+
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	if (IsValid ( AnimInstance ) == true && IsValid ( BlockingMontage ) == true && AnimInstance->Montage_IsPlaying ( BlockingMontage ) == false)
+	{
+		AnimInstance->Montage_Play ( BlockingMontage );
+	}
 }
 
 void ATTPlayerCharacter::SetSprintSpeed ( bool bIsSprinting )
@@ -231,6 +276,7 @@ void ATTPlayerCharacter::ServerSetRotation_Implementation ( FRotator NewRotation
 	TargetRotation = NewRotation;
 }
 
+
 void ATTPlayerCharacter::ServerSprintStart_Implementation ()
 {
 	SetSprintSpeed ( true );
@@ -244,12 +290,6 @@ void ATTPlayerCharacter::ServerSprintEnd_Implementation ()
 #pragma endregion
 
 #pragma region MeshChange
-
-void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
-{
-	ServerChangeHeadMesh ( TTPS->PersistedHeadMesh );
-	ServerChangeBodyMesh ( TTPS->PersistedBodyMesh );
-}
 
 bool ATTPlayerCharacter::ServerChangeHeadMesh_Validate ( USkeletalMesh* NewMesh )
 {
@@ -283,6 +323,7 @@ void ATTPlayerCharacter::ServerChangeBodyMesh_Implementation ( USkeletalMesh* Ne
 	OnRep_BodyMesh ();
 }
 
+
 void ATTPlayerCharacter::OnRep_HeadMesh ()
 {
 	if (HeadMeshToReplicate)
@@ -304,6 +345,7 @@ void ATTPlayerCharacter::ChangeHead ( USkeletalMesh* NewMesh )
 	if (IsValid ( Head ) && IsValid ( NewMesh ))
 	{
 		Head->SetSkeletalMesh ( NewMesh );
+		SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 	}
 }
 
@@ -312,9 +354,125 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 	if (IsValid ( GetMesh () ) && IsValid ( NewMesh ))
 	{
 		GetMesh ()->SetSkeletalMesh ( NewMesh );
+		SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 	}
 }
 
 #pragma endregion
 
+#pragma region SaveData
 
+void ATTPlayerCharacter::SavePlayerSaveData ( const FString& SlotName , int32 UserIndex )
+{
+	USkeletalMeshComponent* HeadMesh = Head;
+	USkeletalMeshComponent* BodyMesh = GetMesh ();
+
+	if (IsValid ( HeadMesh ) && IsValid ( BodyMesh ))
+	{
+		USaveGame* SaveGameInstance = UGameplayStatics::CreateSaveGameObject ( USaveGame::StaticClass () );
+		if (!SaveGameInstance) 
+			return;
+
+		UTTSaveGame* TTSaveGameInstance = Cast<UTTSaveGame> ( SaveGameInstance );
+		if (!TTSaveGameInstance) 
+			return;
+		// 세이브 데이터에 세이브
+		if (USkeletalMesh* CurrentHeadMesh = HeadMesh->GetSkeletalMeshAsset ())
+		{
+			TTSaveGameInstance->CurrentHeadMeshPath = FSoftObjectPath ( CurrentHeadMesh );
+		}
+		if (USkeletalMesh* CurrentBodyMesh = BodyMesh->GetSkeletalMeshAsset ())
+		{
+			TTSaveGameInstance->CurrentBodyMeshPath = FSoftObjectPath ( CurrentBodyMesh );
+		}
+		UGameplayStatics::SaveGameToSlot ( TTSaveGameInstance , SlotName , UserIndex );
+	}
+}
+
+void ATTPlayerCharacter::LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex )
+{
+	if(IsValid( Head ) && IsValid ( GetMesh () ))
+	{
+		// 세이브 데이터를 불러오는 과정
+		USaveGame* LoadGameInstance = UGameplayStatics::CreateSaveGameObject ( USaveGame::StaticClass () );
+		if (!LoadGameInstance)
+			return;
+
+		UTTSaveGame* TTLoadGameInstance = Cast<UTTSaveGame> ( LoadGameInstance );
+		if (!TTLoadGameInstance)
+			return;
+		USkeletalMesh* LoadedHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
+		if (!TTLoadGameInstance->CurrentHeadMeshPath.IsNull () && !TTLoadGameInstance->CurrentBodyMeshPath.IsNull())
+			return;
+
+		// 로드된 세이브 데이터를 불러오는 과정 
+		USkeletalMesh* LoadHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
+		USkeletalMesh* LoadBodyMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentBodyMeshPath.ResolveObject () );
+
+		// 세이브 데이터 적용
+		if (IsValid ( LoadHeadMesh ) && IsValid ( LoadBodyMesh ))
+		{
+			Head->SetSkeletalMesh ( LoadHeadMesh );
+			GetMesh ()->SetSkeletalMesh ( LoadBodyMesh );
+		}
+	}
+}
+#pragma endregion
+
+#pragma region Attack
+
+void ATTPlayerCharacter::HandleOnCheckHit ()
+{
+	UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
+}
+void ATTPlayerCharacter::HandleOnCheckInputAttack ()
+{
+	UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
+
+	if (bIsAttackKeyPressed == true)
+	{
+		CurrentComboCount = FMath::Clamp ( CurrentComboCount + 1 , 1 , MaxComboCount );
+
+		FName NextSectionName = *FString::Printf ( TEXT ( "%s%02d" ) , *AttackAnimMontageSectionPrefix , CurrentComboCount );
+		AnimInstance->Montage_JumpToSection ( NextSectionName , AttackMeleeMontage );
+		bIsAttackKeyPressed = false;
+	}
+}
+void ATTPlayerCharacter::BeginAttack ()
+{
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
+
+	/*GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_None );*/
+	bIsNowAttacking = true;
+	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	{
+		AnimInstance->Montage_Play ( AttackMeleeMontage );
+	}
+
+	CurrentComboCount = 1;
+
+	if (OnMeleeAttackMontageEndedDelegate.IsBound () == false)
+	{
+		OnMeleeAttackMontageEndedDelegate.BindUObject ( this , &ThisClass::EndAttack );
+		AnimInstance->Montage_SetEndDelegate ( OnMeleeAttackMontageEndedDelegate , AttackMeleeMontage );
+	}
+}
+
+void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped )
+{
+	ensureMsgf ( CurrentComboCount != 0 , TEXT ( "CurrentComboCount == 0" ) );
+
+	CurrentComboCount = 0;
+	bIsAttackKeyPressed = false;
+	bIsNowAttacking = false;
+	//GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_Walking );
+
+	if (OnMeleeAttackMontageEndedDelegate.IsBound () == true)
+	{
+		OnMeleeAttackMontageEndedDelegate.Unbind ();
+	}
+}
+#pragma endregion

@@ -3,3 +3,11 @@
 
 #include "TTAnimInstance.h"
 
+
+void UTTAnimInstance::AnimNotify_CheckHit ()
+{
+	if (OnCheckHit.IsBound () == true)
+	{
+		OnCheckHit.Broadcast ();
+	}
+}

@@ -30,6 +30,10 @@ public:
 	UInputAction* JumpAction;
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
 	UInputAction* SprintAction;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* AttackAction;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* BlockingAction;
 
 	virtual void BeginPlay () override;
 	
