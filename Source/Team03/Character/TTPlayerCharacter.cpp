@@ -110,11 +110,15 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 		NewRotation = FMath::RInterpConstantTo ( CurrentRotation , TargetRotation , DeltaTime , TurnSpeed );
 	}
 	SetActorRotation ( NewRotation );
-	ATTPlayerState* PS = Cast<ATTPlayerState> ( GetPlayerState () );
-	if ((GetMesh () != Cast<USkeletalMeshComponent> ( PS->PersistedBodyMesh )) || (Head != Cast<USkeletalMeshComponent> ( PS->PersistedHeadMesh )))
-	{
-		InitializeMesh ( PS );
-	}
+
+	//ATTPlayerState* PS = Cast<ATTPlayerState> ( GetPlayerState () );
+	//if (IsValid ( PS->PersistedBodyMesh ) && IsValid ( PS->PersistedHeadMesh ) && IsValid( PS ))
+	//{
+	//	if ((GetMesh () != Cast<USkeletalMeshComponent> ( PS->PersistedBodyMesh )) || (Head != Cast<USkeletalMeshComponent> ( PS->PersistedHeadMesh )))
+	//	{
+	//		InitializeMesh ( PS );
+	//	}
+	//}
 }
 
 void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
