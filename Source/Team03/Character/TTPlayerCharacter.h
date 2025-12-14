@@ -123,12 +123,6 @@ private:
 
 #pragma endregion
 
-#pragma region SaveData
-	public:
-	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
-	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
-#pragma endregion
-
 #pragma region Attack
 
 public:
