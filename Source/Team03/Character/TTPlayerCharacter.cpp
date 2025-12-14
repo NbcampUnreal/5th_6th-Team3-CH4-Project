@@ -57,13 +57,15 @@ void ATTPlayerCharacter::BeginPlay ()
 	//	AnimInstance->OnCheckHit.AddDynamic ( this , &ThisClass::HandleOnCheckHit );
 	//}
 
-	APlayerController* PlayerController = Cast<APlayerController> ( GetController () );
+	ATTPlayerController* PlayerController = Cast<ATTPlayerController> ( GetController () );
 
 	if (IsValid ( PlayerController ) == true)
 	{
 		PlayerController->SetControlRotation (FRotator(0.f , -70.f , 0.f ));
 		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f ;
 		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f ;
+
+		PlayerController->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
 
@@ -78,17 +80,16 @@ void ATTPlayerCharacter::BeginPlay ()
 		{
 			if (USkeletalMesh* HeadMesh = PS->PersistedHeadMesh)
 			{
-				OnRep_HeadMesh ();
 				HeadMeshToReplicate = HeadMesh;
+				OnRep_HeadMesh ();
 			}
 			if (USkeletalMesh* BodyMesh = PS->PersistedBodyMesh)
 			{
-				OnRep_BodyMesh ();
 				BodyMeshToReplicate = BodyMesh;
+				OnRep_BodyMesh ();
 			}
 		}
 	}
-	LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 }
 
 void ATTPlayerCharacter::Tick ( float DeltaTime )
@@ -109,7 +110,11 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 		NewRotation = FMath::RInterpConstantTo ( CurrentRotation , TargetRotation , DeltaTime , TurnSpeed );
 	}
 	SetActorRotation ( NewRotation );
-	
+	ATTPlayerState* PS = Cast<ATTPlayerState> ( GetPlayerState () );
+	if ((GetMesh () != Cast<USkeletalMeshComponent> ( PS->PersistedBodyMesh )) || (Head != Cast<USkeletalMeshComponent> ( PS->PersistedHeadMesh )))
+	{
+		InitializeMesh ( PS );
+	}
 }
 
 void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
@@ -304,11 +309,6 @@ bool ATTPlayerCharacter::ServerChangeHeadMesh_Validate ( USkeletalMesh* NewMesh 
 
 void ATTPlayerCharacter::ServerChangeHeadMesh_Implementation ( USkeletalMesh* NewMesh )
 {
-	if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
-	{
-		PS->PersistedHeadMesh = NewMesh;
-	}
-
 	HeadMeshToReplicate = NewMesh;
 	OnRep_HeadMesh ();
 }
@@ -320,11 +320,6 @@ bool ATTPlayerCharacter::ServerChangeBodyMesh_Validate ( USkeletalMesh* NewMesh 
 
 void ATTPlayerCharacter::ServerChangeBodyMesh_Implementation ( USkeletalMesh* NewMesh )
 {
-	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
-	{
-		PS->PersistedBodyMesh = NewMesh;
-	}
-
 	BodyMeshToReplicate = NewMesh;
 	OnRep_BodyMesh ();
 }
@@ -351,7 +346,6 @@ void ATTPlayerCharacter::ChangeHead ( USkeletalMesh* NewMesh )
 	if (IsValid ( Head ) && IsValid ( NewMesh ))
 	{
 		Head->SetSkeletalMesh ( NewMesh );
-		SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 	}
 }
 
@@ -360,70 +354,11 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 	if (IsValid ( GetMesh () ) && IsValid ( NewMesh ))
 	{
 		GetMesh ()->SetSkeletalMesh ( NewMesh );
-		SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 	}
 }
 
 #pragma endregion
 
-#pragma region SaveData
-
-void ATTPlayerCharacter::SavePlayerSaveData ( const FString& SlotName , int32 UserIndex )
-{
-	USkeletalMeshComponent* HeadMesh = Head;
-	USkeletalMeshComponent* BodyMesh = GetMesh ();
-
-	if (IsValid ( HeadMesh ) && IsValid ( BodyMesh ))
-	{
-		USaveGame* SaveGameInstance = UGameplayStatics::CreateSaveGameObject ( USaveGame::StaticClass () );
-		if (!SaveGameInstance) 
-			return;
-
-		UTTSaveGame* TTSaveGameInstance = Cast<UTTSaveGame> ( SaveGameInstance );
-		if (!TTSaveGameInstance) 
-			return;
-		// 세이브 데이터에 세이브
-		if (USkeletalMesh* CurrentHeadMesh = HeadMesh->GetSkeletalMeshAsset ())
-		{
-			TTSaveGameInstance->CurrentHeadMeshPath = FSoftObjectPath ( CurrentHeadMesh );
-		}
-		if (USkeletalMesh* CurrentBodyMesh = BodyMesh->GetSkeletalMeshAsset ())
-		{
-			TTSaveGameInstance->CurrentBodyMeshPath = FSoftObjectPath ( CurrentBodyMesh );
-		}
-		UGameplayStatics::SaveGameToSlot ( TTSaveGameInstance , SlotName , UserIndex );
-	}
-}
-
-void ATTPlayerCharacter::LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex )
-{
-	if(IsValid( Head ) && IsValid ( GetMesh () ))
-	{
-		// 세이브 데이터를 불러오는 과정
-		USaveGame* LoadGameInstance = UGameplayStatics::CreateSaveGameObject ( USaveGame::StaticClass () );
-		if (!LoadGameInstance)
-			return;
-
-		UTTSaveGame* TTLoadGameInstance = Cast<UTTSaveGame> ( LoadGameInstance );
-		if (!TTLoadGameInstance)
-			return;
-		USkeletalMesh* LoadedHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
-		if (!TTLoadGameInstance->CurrentHeadMeshPath.IsNull () && !TTLoadGameInstance->CurrentBodyMeshPath.IsNull())
-			return;
-
-		// 로드된 세이브 데이터를 불러오는 과정 
-		USkeletalMesh* LoadHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
-		USkeletalMesh* LoadBodyMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentBodyMeshPath.ResolveObject () );
-
-		// 세이브 데이터 적용
-		if (IsValid ( LoadHeadMesh ) && IsValid ( LoadBodyMesh ))
-		{
-			Head->SetSkeletalMesh ( LoadHeadMesh );
-			GetMesh ()->SetSkeletalMesh ( LoadBodyMesh );
-		}
-	}
-}
-#pragma endregion
 
 #pragma region Attack
 
