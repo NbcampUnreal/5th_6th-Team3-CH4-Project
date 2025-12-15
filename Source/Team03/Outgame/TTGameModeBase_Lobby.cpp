@@ -21,9 +21,32 @@ void ATTGameModeBase_Lobby::Logout(AController* Exiting)
 
 void ATTGameModeBase_Lobby::StartGame()
 {
+	UE_LOG(LogTemp, Warning, TEXT("[LOBBY-GM] StartGame Called"));
+	
 	UWorld* World = GetWorld();
 	if (World)
 	{
+		// Log PlayerState before travel
+		for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+		{
+			if (APlayerController* PC = It->Get())
+			{
+				if (APlayerState* PS = PC->GetPlayerState<APlayerState>())
+				{
+					UE_LOG(LogTemp, Warning, TEXT("[LOBBY-GM] PlayerState Addr: %p, Class: %s"), 
+						PS, *PS->GetClass()->GetName());
+					
+					if (ATTPlayerState* TTPS = Cast<ATTPlayerState>(PS))
+					{
+						UE_LOG(LogTemp, Warning, TEXT("[LOBBY-GM] Before Travel - PersistedHeadMesh: %s"), 
+							TTPS->PersistedHeadMesh ? *TTPS->PersistedHeadMesh->GetName() : TEXT("NULL"));
+						UE_LOG(LogTemp, Warning, TEXT("[LOBBY-GM] Before Travel - PersistedBodyMesh: %s"), 
+							TTPS->PersistedBodyMesh ? *TTPS->PersistedBodyMesh->GetName() : TEXT("NULL"));
+					}
+				}
+			}
+		}
+		
 		// Get the configured Transition Map from Project Settings
 		FString TransitionMapPath = UGameMapsSettings::GetGameMapsSettings()->TransitionMap.GetLongPackageName();
 		

@@ -49,6 +49,14 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Data")
 	FName SelectedCharacterRowName;
+	
+	// Lobby Customization Persistence
+	// Lobby Customization Persistence (Local Player Only)
+	UPROPERTY(BlueprintReadWrite, Category = "Data")
+	int32 CustomizedHeadIndex = 0;
+	
+	UPROPERTY(BlueprintReadWrite, Category = "Data")
+	int32 CustomizedBodyIndex = 0;
 
 	// --- Session Management ---
 	UFUNCTION(BlueprintCallable, Category = "Session")
