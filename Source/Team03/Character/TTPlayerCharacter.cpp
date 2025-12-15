@@ -8,11 +8,13 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Controller/TTPlayerController.h"
-#include "Character/TTPlayerState.h"
+#include "TTPlayerState.h"
 #include "Save/TTSaveGame.h"
 #include "Net/UnrealNetwork.h"
 #include "LHO/TTAnimInstance.h"
 #include "Camera/PlayerCameraManager.h"
+#include "SelectSkeletal/TTCharactorSkeletalMeshSelect.h"
+#include "SelectSkeletal/TTCharactorHeadSkeletalSelect.h"
 
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
@@ -41,10 +43,7 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 	GetCharacterMovement ()->RotationRate = FRotator ( 0.0f , 1440.0f , 0.0f );
 	TargetRotation = FRotator::ZeroRotator;
 
-	HeadMeshToReplicate = nullptr;
-	BodyMeshToReplicate = nullptr;
 }
-
 
 void ATTPlayerCharacter::BeginPlay ()
 {
@@ -65,8 +64,6 @@ void ATTPlayerCharacter::BeginPlay ()
 		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f ;
 		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f ;
 
-		PlayerController->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
-
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
 
 		if (IsValid ( Subsystem ) == true)
@@ -74,20 +71,23 @@ void ATTPlayerCharacter::BeginPlay ()
 			Subsystem->AddMappingContext ( IMC_Character , 0 );
 		}
 	}
-	if (HasAuthority ())
+	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
 	{
-		if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
+		const UTTCharactorSkeletalMeshSelect* CDOBody = GetDefault<UTTCharactorSkeletalMeshSelect> ();
+		const UTTCharactorHeadSkeletalSelect* CDOHead = GetDefault<UTTCharactorHeadSkeletalSelect> ();
+		if (0 < CDOBody->PlayerCharacterSkeletalPaths.Num () && 0 < CDOHead->PlayerCharacterHeadSkeletalPaths.Num ())
 		{
-			if (USkeletalMesh* HeadMesh = PS->PersistedHeadMesh)
-			{
-				HeadMeshToReplicate = HeadMesh;
-				OnRep_HeadMesh ();
-			}
-			if (USkeletalMesh* BodyMesh = PS->PersistedBodyMesh)
-			{
-				BodyMeshToReplicate = BodyMesh;
-				OnRep_BodyMesh ();
-			}
+			FSoftObjectPath CurrentSkeletalPath = CDOBody->PlayerCharacterSkeletalPaths[0];
+			TSoftObjectPtr<USkeletalMesh> BodyInstance ( CurrentSkeletalPath );
+			FSoftObjectPath CurrentSkeletalHeadPath = CDOHead->PlayerCharacterHeadSkeletalPaths[0];
+			TSoftObjectPtr<USkeletalMesh> HeadInstance ( CurrentSkeletalHeadPath );
+
+			FCharacterMeshData Data;
+			Data.HeadMeshID = HeadInstance;
+			Data.BodyMeshID = BodyInstance;
+
+			PS->SetMeshData ( Data );
+			ApplyMeshData ( PS->MeshData );
 		}
 	}
 }
@@ -111,28 +111,12 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	}
 	SetActorRotation ( NewRotation );
 
-	//ATTPlayerState* PS = Cast<ATTPlayerState> ( GetPlayerState () );
-	//if (IsValid ( PS->PersistedBodyMesh ) && IsValid ( PS->PersistedHeadMesh ) && IsValid( PS ))
-	//{
-	//	if ((GetMesh () != Cast<USkeletalMeshComponent> ( PS->PersistedBodyMesh )) || (Head != Cast<USkeletalMeshComponent> ( PS->PersistedHeadMesh )))
-	//	{
-	//		InitializeMesh ( PS );
-	//	}
-	//}
 }
 
-void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
-{
-	ServerChangeHeadMesh ( TTPS->PersistedHeadMesh );
-	ServerChangeBodyMesh ( TTPS->PersistedBodyMesh );
-}
 
 void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
 {
 	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
-
-	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
-	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
 
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 }
@@ -305,60 +289,16 @@ void ATTPlayerCharacter::ServerSprintEnd_Implementation ()
 #pragma endregion
 
 #pragma region MeshChange
-
-bool ATTPlayerCharacter::ServerChangeHeadMesh_Validate ( USkeletalMesh* NewMesh )
+void ATTPlayerCharacter::ApplyMeshData ( const FCharacterMeshData& Data )
 {
-	return true;
-}
+	TSoftObjectPtr<USkeletalMesh> HeadMesh = Data.HeadMeshID;
+	TSoftObjectPtr<USkeletalMesh> BodyMesh = Data.BodyMeshID;
 
-void ATTPlayerCharacter::ServerChangeHeadMesh_Implementation ( USkeletalMesh* NewMesh )
-{
-	HeadMeshToReplicate = NewMesh;
-	OnRep_HeadMesh ();
-}
+	if (Head && HeadMesh)
+		Head->SetSkeletalMesh ( HeadMesh.Get() );
 
-bool ATTPlayerCharacter::ServerChangeBodyMesh_Validate ( USkeletalMesh* NewMesh )
-{
-	return true;
-}
-
-void ATTPlayerCharacter::ServerChangeBodyMesh_Implementation ( USkeletalMesh* NewMesh )
-{
-	BodyMeshToReplicate = NewMesh;
-	OnRep_BodyMesh ();
-}
-
-
-void ATTPlayerCharacter::OnRep_HeadMesh ()
-{
-	if (HeadMeshToReplicate)
-	{
-		ChangeHead ( HeadMeshToReplicate );
-	}
-}
-
-void ATTPlayerCharacter::OnRep_BodyMesh ()
-{
-	if (BodyMeshToReplicate)
-	{
-		ChangeBody ( BodyMeshToReplicate );
-	}
-}
-
-void ATTPlayerCharacter::ChangeHead ( USkeletalMesh* NewMesh )
-{
-	if (IsValid ( Head ) && IsValid ( NewMesh ))
-	{
-		Head->SetSkeletalMesh ( NewMesh );
-	}
-}
-
-void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
-{
-	if (IsValid ( GetMesh () ) && IsValid ( NewMesh ))
-	{
-		GetMesh ()->SetSkeletalMesh ( NewMesh );
-	}
+	if (GetMesh () && BodyMesh)
+		GetMesh ()->SetSkeletalMesh ( BodyMesh.Get () );
 }
 
 #pragma endregion

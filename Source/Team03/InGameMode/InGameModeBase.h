@@ -14,7 +14,7 @@ class TEAM03_API AInGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 public:
+	AInGameModeBase ();
 	void SendChatMessage ( const FString& Message );
 
-	virtual void PostLogin ( APlayerController* NewPlayer ) override;
 };

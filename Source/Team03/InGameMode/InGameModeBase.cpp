@@ -6,6 +6,11 @@
 #include "Character/TTPlayerCharacter.h"
 #include "Character/TTPlayerState.h"
 
+AInGameModeBase::AInGameModeBase ()
+{
+	bUseSeamlessTravel = true;
+}
+
 void AInGameModeBase::SendChatMessage ( const FString& Message )
 {
 	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It)
@@ -14,20 +19,6 @@ void AInGameModeBase::SendChatMessage ( const FString& Message )
 		if (PC)
 		{
 			PC->ClientAddChatMessage ( Message );
-		}
-	}
-}
-
-void AInGameModeBase::PostLogin ( APlayerController* NewPlayer )
-{
-	Super::PostLogin ( NewPlayer );
-	UE_LOG ( LogTemp , Warning , TEXT ( "PostLogin" ) );
-
-	if (ATTPlayerCharacter* TTPC = Cast<ATTPlayerCharacter> ( NewPlayer->GetPawn () ))
-	{
-		if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->GetPlayerState() ))
-		{
-			TTPC->InitializeMesh( TTPS );
 		}
 	}
 }

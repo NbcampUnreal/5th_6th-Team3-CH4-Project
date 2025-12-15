@@ -98,28 +98,7 @@ public:
 
 #pragma region MeshChange
 public:
-	void InitializeMesh ( class ATTPlayerState* TTPS );
-
-	UFUNCTION ( Server , Reliable , WithValidation )
-	void ServerChangeHeadMesh ( USkeletalMesh* NewMesh );
-	UFUNCTION ( Server , Reliable , WithValidation )
-	void ServerChangeBodyMesh ( USkeletalMesh* NewMesh );
-
-	void ChangeHead ( USkeletalMesh* NewMesh );
-	void ChangeBody ( USkeletalMesh* NewMesh );
-
-	UFUNCTION ()
-	void OnRep_HeadMesh ();
-
-	UFUNCTION ()
-	void OnRep_BodyMesh ();
-
-private:
-	UPROPERTY ( ReplicatedUsing = OnRep_HeadMesh )
-	USkeletalMesh* HeadMeshToReplicate;
-
-	UPROPERTY ( ReplicatedUsing = OnRep_BodyMesh )
-	USkeletalMesh* BodyMeshToReplicate;
+	void ApplyMeshData ( const struct FCharacterMeshData& Data );
 
 #pragma endregion
 
