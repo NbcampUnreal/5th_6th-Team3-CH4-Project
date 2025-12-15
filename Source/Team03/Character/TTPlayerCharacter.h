@@ -14,6 +14,8 @@ class UInputAction;
 class UInputMappingContext;
 class UAnimMontage;
 
+
+
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
 {
@@ -91,10 +93,32 @@ private:
 	UPROPERTY ( EditAnywhere )
 	float SprintSpeed;
 
+	UPROPERTY(EditAnywhere, Replicated)
+	float MaxHP;
+	UPROPERTY ( EditAnywhere , Replicated )
+	float CurrentHP;
+	UPROPERTY ( EditAnywhere )
+	float MaxSturn;
+	UPROPERTY ( EditAnywhere )
+	float CurrentSturn;
+
 public:
 
 	virtual void BeginPlay () override;
 	virtual void Tick ( float DeltaTime ) override;
+
+#pragma region GetSet
+public:
+	void SetMaxHP (float amount);
+	float GetMaxHP ();
+	void SetCurrentHP ( float amount );
+	float GetCurrentHP ();
+	void SetMaxSturn ( float amount );
+	float GetMaxSturn ();
+	void SetCurrentSturn (  float amount );
+	float GetCurrentSturn ();
+
+#pragma endregion
 
 #pragma region MeshChange
 public:
@@ -115,6 +139,10 @@ public:
 
 	UFUNCTION ()
 	virtual void EndAttack ( UAnimMontage* InMontage , bool bInterruped );
+
+	virtual float TakeDamage ( float DamageAmount , struct FDamageEvent const& DamageEvent , class AController* EventInstigator , AActor* DamageCauser ) override;
+
+	static int32 ShowAttackMeleeDebug;
 protected:
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
 
@@ -127,5 +155,21 @@ protected:
 	bool bIsAttackKeyPressed = false;
 
 	FOnMontageEnded OnMeleeAttackMontageEndedDelegate;
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	float AttackMeleeRange = 50.f;
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	float AttackMeleeRadius = 20.f;
+#pragma endregion
+
+#pragma region HP
+
+public:
+	bool IsDead () const { return bIsDead; }
+protected:
+	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly )
+	uint8 bIsDead : 1;
+
 #pragma endregion
 };

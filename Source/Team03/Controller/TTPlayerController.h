@@ -44,7 +44,7 @@ public:
 	void ClientAddChatMessage ( const FString& Message );
 // Outgame 담당자가 추가한 코드
 	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerRPC_InitPlayerInfo(const FString& Nickname, const FName& CharacterRowName);
+	void ServerRPC_InitPlayerInfo(const FString& Nickname, const FName& CharacterRowName, int32 HeadIndex, int32 BodyIndex);
 
 private:
 	UPROPERTY ()

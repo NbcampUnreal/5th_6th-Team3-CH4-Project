@@ -25,6 +25,12 @@ protected:
 	class UButton* Btn_Leave;
 
 	UPROPERTY(meta = (BindWidget))
+	class UButton* Btn_Customize;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> CustomizeWidgetClass;
+
+	UPROPERTY(meta = (BindWidget))
 	class UScrollBox* ScrollBox_PlayerList;
 
 private:
@@ -33,6 +39,9 @@ private:
 
 	UFUNCTION()
 	void OnClickLeave();
+
+	UFUNCTION()
+	void OnClickCustomize();
 
 	void UpdatePlayerList();
 	FTimerHandle PlayerListTimerHandle;

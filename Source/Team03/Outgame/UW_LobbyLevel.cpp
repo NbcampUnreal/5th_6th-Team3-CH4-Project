@@ -31,6 +31,11 @@ void UUW_LobbyLevel::NativeConstruct()
 		Btn_Leave->OnClicked.AddDynamic(this, &ThisClass::OnClickLeave);
 	}
 
+	if (Btn_Customize)
+	{
+		Btn_Customize->OnClicked.AddDynamic(this, &ThisClass::OnClickCustomize);
+	}
+
 	// Update Player List periodically
 	GetWorld()->GetTimerManager().SetTimer(PlayerListTimerHandle, this, &ThisClass::UpdatePlayerList, 1.0f, true);
 	UpdatePlayerList();
@@ -49,6 +54,28 @@ void UUW_LobbyLevel::OnClickLeave()
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
 		GI->DestroyGameSession();
+	}
+}
+
+void UUW_LobbyLevel::OnClickCustomize()
+{
+	if (CustomizeWidgetClass)
+	{
+		UUserWidget* Widget = CreateWidget<UUserWidget>(GetOwningPlayer(), CustomizeWidgetClass);
+		if (Widget)
+		{
+			Widget->AddToViewport();
+            
+             // Set Input Mode Game And UI
+            if (APlayerController* PC = GetOwningPlayer())
+            {
+                 FInputModeGameAndUI InputMode;
+                 InputMode.SetWidgetToFocus(Widget->TakeWidget());
+                 InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+                 PC->SetInputMode(InputMode);
+                 PC->SetShowMouseCursor(true);
+            }
+		}
 	}
 }
 

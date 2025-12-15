@@ -8,18 +8,33 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Controller/TTPlayerController.h"
-#include "TTPlayerState.h"
+#include "Character/TTPlayerState.h"
 #include "Save/TTSaveGame.h"
 #include "Net/UnrealNetwork.h"
 #include "LHO/TTAnimInstance.h"
 #include "Camera/PlayerCameraManager.h"
-#include "SelectSkeletal/TTCharactorSkeletalMeshSelect.h"
-#include "SelectSkeletal/TTCharactorHeadSkeletalSelect.h"
+#include "Engine/EngineTypes.h"
+#include "Engine/DamageEvents.h"
+#include "Team03.h"
 
-ATTPlayerCharacter::ATTPlayerCharacter()
+int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
+
+FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
+	TEXT ( "TT.ShowAttackMeleeDebug" ) ,
+	ATTPlayerCharacter::ShowAttackMeleeDebug ,
+	TEXT ( "" ) ,
+	ECVF_Cheat
+);
+
+ATTPlayerCharacter::ATTPlayerCharacter () :
+	WalkSpeed ( 200.f ) ,
+	SprintSpeed ( 400.f ) ,
+	MaxHP(100.f),
+	CurrentHP(MaxHP),
+	MaxSturn(100.f),
+	CurrentSturn(0.f)
 {
-	WalkSpeed = 400.f;
-	SprintSpeed = 600.f;
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
@@ -43,7 +58,12 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 	GetCharacterMovement ()->RotationRate = FRotator ( 0.0f , 1440.0f , 0.0f );
 	TargetRotation = FRotator::ZeroRotator;
 
+	HeadMeshToReplicate = nullptr;
+	BodyMeshToReplicate = nullptr;
+
+	bIsDead = false;
 }
+
 
 void ATTPlayerCharacter::BeginPlay ()
 {
@@ -64,6 +84,17 @@ void ATTPlayerCharacter::BeginPlay ()
 		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f ;
 		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f ;
 
+
+		// ----- Outgame 담당자가 수정함 -----
+		/* 
+		 * LoadPlayerSaveData 호출 비활성화:
+		 * - SaveGame 로드가 PlayerState 데이터를 덮어쓰는 문제 발생
+		 * - Seamless Travel을 사용하므로 PlayerState가 자동으로 유지됨
+		 * PlayerController->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
+		 */
+		// ----------------------------------
+
+
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
 
 		if (IsValid ( Subsystem ) == true)
@@ -71,22 +102,26 @@ void ATTPlayerCharacter::BeginPlay ()
 			Subsystem->AddMappingContext ( IMC_Character , 0 );
 		}
 	}
-	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
+	// ----- Outgame 담당자가 수정함 -----
+	if (HasAuthority ())
 	{
-		const UTTCharactorSkeletalMeshSelect* CDOBody = GetDefault<UTTCharactorSkeletalMeshSelect> ();
-		const UTTCharactorHeadSkeletalSelect* CDOHead = GetDefault<UTTCharactorHeadSkeletalSelect> ();
-		if (0 < CDOBody->PlayerCharacterSkeletalPaths.Num () && 0 < CDOHead->PlayerCharacterHeadSkeletalPaths.Num ())
+		if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
 		{
-			FSoftObjectPath CurrentSkeletalPath = CDOBody->PlayerCharacterSkeletalPaths[0];
-			TSoftObjectPtr<USkeletalMesh> BodyInstance ( CurrentSkeletalPath );
-			FSoftObjectPath CurrentSkeletalHeadPath = CDOHead->PlayerCharacterHeadSkeletalPaths[0];
-			TSoftObjectPtr<USkeletalMesh> HeadInstance ( CurrentSkeletalHeadPath );
-
-
-			PS->SetHeadMeshData ( HeadInstance );
-			PS->SetBodyMeshData ( BodyInstance );
+			if (USkeletalMesh* HeadMesh = PS->PersistedHeadMesh)
+			{
+				HeadMeshToReplicate = HeadMesh;
+				OnRep_HeadMesh ();
+			}
+			
+			if (USkeletalMesh* BodyMesh = PS->PersistedBodyMesh)
+			{
+				BodyMeshToReplicate = BodyMesh;
+				OnRep_BodyMesh ();
+			}
 		}
 	}
+	// ----------------------------------
+
 }
 
 void ATTPlayerCharacter::Tick ( float DeltaTime )
@@ -107,28 +142,69 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 		NewRotation = FMath::RInterpConstantTo ( CurrentRotation , TargetRotation , DeltaTime , TurnSpeed );
 	}
 	SetActorRotation ( NewRotation );
-	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
-	{
-		GetMesh ();
-		USkeletalMesh* SCHead = Cast<USkeletalMesh> ( PS->HeadMeshID.Get () );
-		USkeletalMesh* SCBody = Cast<USkeletalMesh> ( PS->BodyMeshID.Get () );
-		if (IsValid ( SCHead ) && IsValid ( SCBody ))
-		{
-			Head->SetSkeletalMesh ( SCHead );
-			GetMesh ()->SetSkeletalMesh ( SCBody );
-		}
-		if (ATTPlayerController* TTPC = Cast<ATTPlayerController> ( GetController () ))
-		{
-			TTPC->ServerRequestChangeHeadMesh ( SCHead );
-			TTPC->ServerRequestChangeBodyMesh ( SCBody );
-		}
-	}
+
+	//ATTPlayerState* PS = Cast<ATTPlayerState> ( GetPlayerState () );
+	//if (IsValid ( PS->PersistedBodyMesh ) && IsValid ( PS->PersistedHeadMesh ) && IsValid( PS ))
+	//{
+	//	if ((GetMesh () != Cast<USkeletalMeshComponent> ( PS->PersistedBodyMesh )) || (Head != Cast<USkeletalMeshComponent> ( PS->PersistedHeadMesh )))
+	//	{
+	//		InitializeMesh ( PS );
+	//	}
+	//}
 }
 
+void ATTPlayerCharacter::SetMaxHP ( float amount )
+{
+	MaxHP = amount;
+}
+
+float ATTPlayerCharacter::GetMaxHP ()
+{
+	return MaxHP;
+}
+
+void ATTPlayerCharacter::SetCurrentHP ( float amount )
+{
+	CurrentHP = amount;
+}
+
+float ATTPlayerCharacter::GetCurrentHP ()
+{
+	return CurrentHP;
+}
+
+void ATTPlayerCharacter::SetMaxSturn ( float amount )
+{
+	MaxSturn = amount;
+}
+
+float ATTPlayerCharacter::GetMaxSturn ()
+{
+	return MaxSturn;
+}
+
+void ATTPlayerCharacter::SetCurrentSturn ( float amount )
+{
+	CurrentSturn = amount;
+}
+
+float ATTPlayerCharacter::GetCurrentSturn ()
+{
+	return CurrentSturn;
+}
+
+void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
+{
+	ServerChangeHeadMesh ( TTPS->PersistedHeadMesh );
+	ServerChangeBodyMesh ( TTPS->PersistedBodyMesh );
+}
 
 void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
 {
 	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
+
+	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
+	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
 
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 }
@@ -301,16 +377,60 @@ void ATTPlayerCharacter::ServerSprintEnd_Implementation ()
 #pragma endregion
 
 #pragma region MeshChange
-void ATTPlayerCharacter::ApplyHeadMeshData ( TSoftObjectPtr<USkeletalMesh> InData )
+
+bool ATTPlayerCharacter::ServerChangeHeadMesh_Validate ( USkeletalMesh* NewMesh )
 {
-	if (Head && InData)
-		Head->SetSkeletalMesh ( InData.Get() );
+	return true;
 }
 
-void ATTPlayerCharacter::ApplyBodyMeshData ( TSoftObjectPtr<USkeletalMesh> InData )
+void ATTPlayerCharacter::ServerChangeHeadMesh_Implementation ( USkeletalMesh* NewMesh )
 {
-	if (GetMesh () && InData)
-		GetMesh ()->SetSkeletalMesh ( InData.Get () );
+	HeadMeshToReplicate = NewMesh;
+	OnRep_HeadMesh ();
+}
+
+bool ATTPlayerCharacter::ServerChangeBodyMesh_Validate ( USkeletalMesh* NewMesh )
+{
+	return true;
+}
+
+void ATTPlayerCharacter::ServerChangeBodyMesh_Implementation ( USkeletalMesh* NewMesh )
+{
+	BodyMeshToReplicate = NewMesh;
+	OnRep_BodyMesh ();
+}
+
+
+void ATTPlayerCharacter::OnRep_HeadMesh ()
+{
+	if (HeadMeshToReplicate)
+	{
+		ChangeHead ( HeadMeshToReplicate );
+	}
+}
+
+void ATTPlayerCharacter::OnRep_BodyMesh ()
+{
+	if (BodyMeshToReplicate)
+	{
+		ChangeBody ( BodyMeshToReplicate );
+	}
+}
+
+void ATTPlayerCharacter::ChangeHead ( USkeletalMesh* NewMesh )
+{
+	if (IsValid ( Head ) && IsValid ( NewMesh ))
+	{
+		Head->SetSkeletalMesh ( NewMesh );
+	}
+}
+
+void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
+{
+	if (IsValid ( GetMesh () ) && IsValid ( NewMesh ))
+	{
+		GetMesh ()->SetSkeletalMesh ( NewMesh );
+	}
 }
 
 #pragma endregion
@@ -320,11 +440,59 @@ void ATTPlayerCharacter::ApplyBodyMeshData ( TSoftObjectPtr<USkeletalMesh> InDat
 
 void ATTPlayerCharacter::HandleOnCheckHit ()
 {
-	UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
+	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
+	TArray<FHitResult> HitResults;
+	FCollisionQueryParams Params ( NAME_None , false , this );
+
+	bool bResult = GetWorld ()->SweepMultiByChannel (
+		HitResults ,
+		GetActorLocation () ,
+		GetActorLocation () + AttackMeleeRange * GetActorForwardVector () ,
+		FQuat::Identity ,
+		ECC_ATTACK ,
+		FCollisionShape::MakeSphere ( AttackMeleeRadius ) ,
+		Params
+	);
+
+	if (HitResults.IsEmpty () == false)
+	{
+		for (FHitResult HitResult : HitResults)
+		{
+			if (IsValid ( HitResult.GetActor () ) == true)
+			{
+				FDamageEvent DamageEvent;
+				HitResult.GetActor ()->TakeDamage ( 10.f , DamageEvent , GetController () , this );
+				if (1 == ShowAttackMeleeDebug)
+				{
+					UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "Hit Actor Name: %s" ) , *HitResult.GetActor ()->GetName () ) );
+				}
+			}
+		}
+	}
+	if (1 == ShowAttackMeleeDebug)
+	{
+		FVector TraceVector = AttackMeleeRange * GetActorForwardVector ();
+		FVector Center = GetActorLocation () + TraceVector + GetActorUpVector () * 40.f;
+		float HalfHeight = AttackMeleeRange * 0.5f + AttackMeleeRadius;
+		FQuat CapsuleRot = FRotationMatrix::MakeFromZ ( TraceVector ).ToQuat ();
+		FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
+		float DebugLifeTime = 5.f;
+
+		DrawDebugCapsule (
+			GetWorld () ,
+			Center ,
+			HalfHeight ,
+			AttackMeleeRadius ,
+			CapsuleRot ,
+			DrawColor ,
+			false ,
+			DebugLifeTime
+		);
+	}
 }
 void ATTPlayerCharacter::HandleOnCheckInputAttack ()
 {
-	UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
+	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
 	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
 
@@ -371,5 +539,18 @@ void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped 
 	{
 		OnMeleeAttackMontageEndedDelegate.Unbind ();
 	}
+}
+
+float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
+{
+	float FinalDamageAmount = Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
+	// 피해자쪽 로직.
+
+	if (1 == ShowAttackMeleeDebug)
+	{
+		UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "%s was taken damage: %.3f" ) , *GetName () , FinalDamageAmount ) );
+	}
+
+	return FinalDamageAmount;
 }
 #pragma endregion

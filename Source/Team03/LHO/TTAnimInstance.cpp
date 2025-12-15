@@ -2,7 +2,7 @@
 
 
 #include "TTAnimInstance.h"
-
+#include "Character/TTPlayerCharacter.h"
 
 void UTTAnimInstance::AnimNotify_CheckHit ()
 {
