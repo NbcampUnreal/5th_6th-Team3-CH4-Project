@@ -98,7 +98,8 @@ public:
 
 #pragma region MeshChange
 public:
-	void ApplyMeshData ( const struct FCharacterMeshData& Data );
+	void ApplyHeadMeshData ( TSoftObjectPtr<USkeletalMesh> InData );
+	void ApplyBodyMeshData ( TSoftObjectPtr<USkeletalMesh> InData );
 
 #pragma endregion
 

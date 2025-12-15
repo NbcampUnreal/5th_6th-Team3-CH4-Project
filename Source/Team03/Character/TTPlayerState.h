@@ -9,18 +9,6 @@
 /**
  * 
  */
-USTRUCT ()
-struct FCharacterMeshData
-{
-	GENERATED_BODY ()
-public:
-	UPROPERTY ()
-	TSoftObjectPtr<USkeletalMesh> HeadMeshID;
-
-	UPROPERTY ()
-	TSoftObjectPtr<USkeletalMesh> BodyMeshID;
-};
-
 UCLASS ()
 class TEAM03_API ATTPlayerState : public APlayerState
 {
@@ -28,13 +16,20 @@ class TEAM03_API ATTPlayerState : public APlayerState
 public:
 	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
 
-	void SetMeshData ( FCharacterMeshData InData );
+	void SetHeadMeshData ( TSoftObjectPtr<USkeletalMesh> InData);
+	void SetBodyMeshData ( TSoftObjectPtr<USkeletalMesh> InData );
 
 	UFUNCTION ()
-	void OnRep_MeshData ();
+	void OnRep_HeadMeshData ();
+
+	UFUNCTION ()
+	void OnRep_BodyMeshData ();
 public:
-	UPROPERTY ( ReplicatedUsing = OnRep_MeshData )
-	FCharacterMeshData MeshData;
+	UPROPERTY ( ReplicatedUsing = OnRep_HeadMeshData )
+	TSoftObjectPtr<USkeletalMesh> HeadMeshID;
+
+	UPROPERTY ( ReplicatedUsing = OnRep_BodyMeshData )
+	TSoftObjectPtr<USkeletalMesh> BodyMeshID;
 
 	UPROPERTY(ReplicatedUsing = OnRep_UserNickname)
 	FString UserNickname;

@@ -82,12 +82,9 @@ void ATTPlayerCharacter::BeginPlay ()
 			FSoftObjectPath CurrentSkeletalHeadPath = CDOHead->PlayerCharacterHeadSkeletalPaths[0];
 			TSoftObjectPtr<USkeletalMesh> HeadInstance ( CurrentSkeletalHeadPath );
 
-			FCharacterMeshData Data;
-			Data.HeadMeshID = HeadInstance;
-			Data.BodyMeshID = BodyInstance;
 
-			PS->SetMeshData ( Data );
-			ApplyMeshData ( PS->MeshData );
+			PS->SetHeadMeshData ( HeadInstance );
+			PS->SetBodyMeshData ( BodyInstance );
 		}
 	}
 }
@@ -110,7 +107,22 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 		NewRotation = FMath::RInterpConstantTo ( CurrentRotation , TargetRotation , DeltaTime , TurnSpeed );
 	}
 	SetActorRotation ( NewRotation );
-
+	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
+	{
+		GetMesh ();
+		USkeletalMesh* SCHead = Cast<USkeletalMesh> ( PS->HeadMeshID.Get () );
+		USkeletalMesh* SCBody = Cast<USkeletalMesh> ( PS->BodyMeshID.Get () );
+		if (IsValid ( SCHead ) && IsValid ( SCBody ))
+		{
+			Head->SetSkeletalMesh ( SCHead );
+			GetMesh ()->SetSkeletalMesh ( SCBody );
+		}
+		if (ATTPlayerController* TTPC = Cast<ATTPlayerController> ( GetController () ))
+		{
+			TTPC->ServerRequestChangeHeadMesh ( SCHead );
+			TTPC->ServerRequestChangeBodyMesh ( SCBody );
+		}
+	}
 }
 
 
@@ -289,16 +301,16 @@ void ATTPlayerCharacter::ServerSprintEnd_Implementation ()
 #pragma endregion
 
 #pragma region MeshChange
-void ATTPlayerCharacter::ApplyMeshData ( const FCharacterMeshData& Data )
+void ATTPlayerCharacter::ApplyHeadMeshData ( TSoftObjectPtr<USkeletalMesh> InData )
 {
-	TSoftObjectPtr<USkeletalMesh> HeadMesh = Data.HeadMeshID;
-	TSoftObjectPtr<USkeletalMesh> BodyMesh = Data.BodyMeshID;
+	if (Head && InData)
+		Head->SetSkeletalMesh ( InData.Get() );
+}
 
-	if (Head && HeadMesh)
-		Head->SetSkeletalMesh ( HeadMesh.Get() );
-
-	if (GetMesh () && BodyMesh)
-		GetMesh ()->SetSkeletalMesh ( BodyMesh.Get () );
+void ATTPlayerCharacter::ApplyBodyMeshData ( TSoftObjectPtr<USkeletalMesh> InData )
+{
+	if (GetMesh () && InData)
+		GetMesh ()->SetSkeletalMesh ( InData.Get () );
 }
 
 #pragma endregion

@@ -143,13 +143,10 @@ void ATTPlayerController::ActivateSelectedSkeletalMesh ()
 void ATTPlayerController::ServerRequestChangeHeadMesh_Implementation (const TSoftObjectPtr<USkeletalMesh>& HeadID )
 {
 	ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ();
-	if (!PS) return;
+	if (!IsValid ( PS ))
+		return;
 
-	FCharacterMeshData NewData;
-	NewData.HeadMeshID = HeadID;
-	NewData.BodyMeshID = PS->MeshData.BodyMeshID;
-
-	PS->SetMeshData ( NewData );
+	PS->SetHeadMeshData ( HeadID );
 }
 
 void ATTPlayerController::ServerRequestChangeBodyMesh_Implementation (const TSoftObjectPtr<USkeletalMesh>& BodyID )
@@ -158,11 +155,7 @@ void ATTPlayerController::ServerRequestChangeBodyMesh_Implementation (const TSof
 	if(!IsValid( PS))
 		return;
 
-	FCharacterMeshData NewData;
-	NewData.HeadMeshID = PS->MeshData.HeadMeshID;
-	NewData.BodyMeshID = BodyID;
-
-	PS->SetMeshData ( NewData );
+	PS->SetBodyMeshData ( BodyID );
 }
 
 
