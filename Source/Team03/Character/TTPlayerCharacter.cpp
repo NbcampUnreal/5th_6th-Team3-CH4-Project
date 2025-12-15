@@ -26,10 +26,15 @@ FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
 	ECVF_Cheat
 );
 
-ATTPlayerCharacter::ATTPlayerCharacter()
+ATTPlayerCharacter::ATTPlayerCharacter () :
+	WalkSpeed ( 200.f ) ,
+	SprintSpeed ( 400.f ) ,
+	MaxHP(100.f),
+	CurrentHP(MaxHP),
+	MaxSturn(100.f),
+	CurrentSturn(0.f)
 {
-	WalkSpeed = 200.f;
-	SprintSpeed = 400.f;
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
@@ -146,6 +151,46 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	//		InitializeMesh ( PS );
 	//	}
 	//}
+}
+
+void ATTPlayerCharacter::SetMaxHP ( float amount )
+{
+	MaxHP = amount;
+}
+
+float ATTPlayerCharacter::GetMaxHP ()
+{
+	return MaxHP;
+}
+
+void ATTPlayerCharacter::SetCurrentHP ( float amount )
+{
+	CurrentHP = amount;
+}
+
+float ATTPlayerCharacter::GetCurrentHP ()
+{
+	return CurrentHP;
+}
+
+void ATTPlayerCharacter::SetMaxSturn ( float amount )
+{
+	MaxSturn = amount;
+}
+
+float ATTPlayerCharacter::GetMaxSturn ()
+{
+	return MaxSturn;
+}
+
+void ATTPlayerCharacter::SetCurrentSturn ( float amount )
+{
+	CurrentSturn = amount;
+}
+
+float ATTPlayerCharacter::GetCurrentSturn ()
+{
+	return CurrentSturn;
 }
 
 void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
