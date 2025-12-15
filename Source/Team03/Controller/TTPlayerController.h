@@ -8,7 +8,9 @@
 
 class UInputMappingContext;
 class UInputAction;
-
+/**
+ * 
+ */
 UCLASS()
 class TEAM03_API ATTPlayerController : public APlayerController
 {
@@ -16,6 +18,9 @@ class TEAM03_API ATTPlayerController : public APlayerController
 
 public:
 	ATTPlayerController ();
+
+	virtual void SetPawn ( APawn* InPawn ) override;
+	virtual void OnPossess ( APawn* InPawn ) override;
 
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
 	UInputMappingContext* InputMappingContext;
@@ -42,6 +47,7 @@ public:
 
 	UFUNCTION ( Client , Reliable )
 	void ClientAddChatMessage ( const FString& Message );
+
 // Outgame 담당자가 추가한 코드
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerRPC_InitPlayerInfo(const FString& Nickname, const FName& CharacterRowName, int32 HeadIndex, int32 BodyIndex);
@@ -62,10 +68,18 @@ public:
 	UFUNCTION ()
 	void ActivateSelectedSkeletalMesh ();
 
-	UFUNCTION ( Server , Reliable )
-	void ServerRequestChangeHeadMesh (const TSoftObjectPtr<USkeletalMesh>& HeadID);
-	UFUNCTION ( Server , Reliable )
-	void ServerRequestChangeBodyMesh (const TSoftObjectPtr<USkeletalMesh>& BodyID );
+	UFUNCTION()
+	void ChangeHeadMesh ( USkeletalMesh* NewMesh );
+
+	UFUNCTION()
+	void ChangeMesh ( USkeletalMesh* NewMesh );
+
 #pragma endregion
 
+#pragma region SaveData
+public:
+	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
+	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
+
+#pragma endregion
 };

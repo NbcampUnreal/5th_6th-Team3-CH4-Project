@@ -15,21 +15,11 @@ class TEAM03_API ATTPlayerState : public APlayerState
 	GENERATED_BODY ()
 public:
 	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
-
-	void SetHeadMeshData ( TSoftObjectPtr<USkeletalMesh> InData);
-	void SetBodyMeshData ( TSoftObjectPtr<USkeletalMesh> InData );
-
-	UFUNCTION ()
-	void OnRep_HeadMeshData ();
-
-	UFUNCTION ()
-	void OnRep_BodyMeshData ();
 public:
-	UPROPERTY ( ReplicatedUsing = OnRep_HeadMeshData )
-	TSoftObjectPtr<USkeletalMesh> HeadMeshID;
-
-	UPROPERTY ( ReplicatedUsing = OnRep_BodyMeshData )
-	TSoftObjectPtr<USkeletalMesh> BodyMeshID;
+	UPROPERTY ( Replicated )
+	USkeletalMesh* PersistedHeadMesh;
+	UPROPERTY ( Replicated )
+	USkeletalMesh* PersistedBodyMesh;
 
 	UPROPERTY(ReplicatedUsing = OnRep_UserNickname)
 	FString UserNickname;

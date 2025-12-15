@@ -5,7 +5,6 @@
 #include "SelectSkeletal/TTCharactorSkeletalMeshSelect.h"
 #include "SelectSkeletal/TTCharactorHeadSkeletalSelect.h"
 #include "../Controller/TTPlayerController.h"
-#include "Character/TTPlayerState.h"
 #include "Components/Button.h"
 #include "Engine/AssetManager.h"
 #include "Engine/StreamableManager.h"
@@ -65,7 +64,8 @@ void UTTSeletMeshs::OnHeadLeftClicked ()
 						ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () );
 						if (IsValid ( PC ))
 						{
-							PC->ServerRequestChangeHeadMesh ( LoadedInstance );
+							PC->ChangeHeadMesh (LoadedInstance.Get () );
+							PC->SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 						}
 						
 					}
@@ -104,7 +104,8 @@ void UTTSeletMeshs::OnHeadRightClicked ()
 						ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () );
 						if (IsValid ( PC ))
 						{
-							PC->ServerRequestChangeHeadMesh ( LoadedInstance );
+							PC->ChangeHeadMesh ( LoadedInstance.Get () );
+							PC->SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 						}
 					}
 				}
@@ -140,7 +141,8 @@ void UTTSeletMeshs::OnBodyLeftClicked ()
 						ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () );
 						if (IsValid ( PC ))
 						{
-							PC->ServerRequestChangeBodyMesh ( LoadedInstance );
+							PC->ChangeMesh ( LoadedInstance.Get () );
+							PC->SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 						}
 					}
 				}
@@ -176,7 +178,9 @@ void UTTSeletMeshs::OnBodyRightClicked ()
 						ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () );
 						if (IsValid ( PC ))
 						{
-							PC->ServerRequestChangeBodyMesh ( LoadedInstance );
+
+							PC->ChangeMesh ( LoadedInstance.Get () );
+							PC->SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 						}
 					}
 				}
