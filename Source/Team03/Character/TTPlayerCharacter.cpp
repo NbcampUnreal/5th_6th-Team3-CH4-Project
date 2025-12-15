@@ -19,10 +19,12 @@ ATTPlayerCharacter::ATTPlayerCharacter ()
 	MaxHP(100.f),
 	CurrentHP(MaxHP),
 	MaxSturn(100.f),
-	CurrentSturn(0.f)
+	CurrentSturn(0.f),
+	WalkSpeed (400.f),
+	SprintSpeed(600.f)
 {
-	WalkSpeed = 400.f;
-	SprintSpeed = 600.f;
+	GetCharacterMovement ()->MaxWalkSpeed = WalkSpeed;
+
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 

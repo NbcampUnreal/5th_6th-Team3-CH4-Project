@@ -91,9 +91,9 @@ private:
 	UPROPERTY ( EditAnywhere )
 	float SprintSpeed;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Replicated)
 	float MaxHP;
-	UPROPERTY ( EditAnywhere )
+	UPROPERTY ( EditAnywhere , Replicated )
 	float CurrentHP;
 	UPROPERTY ( EditAnywhere )
 	float MaxSturn;
