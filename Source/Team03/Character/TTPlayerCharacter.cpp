@@ -14,7 +14,12 @@
 #include "LHO/TTAnimInstance.h"
 #include "Camera/PlayerCameraManager.h"
 
-ATTPlayerCharacter::ATTPlayerCharacter()
+ATTPlayerCharacter::ATTPlayerCharacter ()
+	:
+	MaxHP(100.f),
+	CurrentHP(100.f),
+	MaxSturn(100.f),
+	CurrentSturn(0.f)
 {
 	WalkSpeed = 400.f;
 	SprintSpeed = 600.f;
@@ -45,7 +50,7 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 	BodyMeshToReplicate = nullptr;
 }
 
-
+#pragma region DefaultFunc
 void ATTPlayerCharacter::BeginPlay ()
 {
 	Super::BeginPlay ();
@@ -120,6 +125,50 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	//	}
 	//}
 }
+
+#pragma endregion
+
+#pragma region GetSetFunc
+void ATTPlayerCharacter::SetMaxHP (float amount)
+{
+	MaxHP = amount;
+}
+
+float ATTPlayerCharacter::GetMaxHP ()
+{
+	return MaxHP;
+}
+
+void ATTPlayerCharacter::SetCurrentHP ( float amount )
+{
+	CurrentHP += amount;
+}
+
+float ATTPlayerCharacter::GetCurrentHP ()
+{
+	return CurrentHP;
+}
+
+void ATTPlayerCharacter::SetMaxSturn ( float amount )
+{
+	MaxSturn = amount;
+}
+
+float ATTPlayerCharacter::GetMaxSturn ()
+{
+	return MaxSturn;
+}
+
+void ATTPlayerCharacter::SetCurrentSturn ( float amount )
+{
+	CurrentSturn += amount;
+}
+
+float ATTPlayerCharacter::GetCurrentSturn ()
+{
+	return CurrentSturn;
+}
+#pragma endregion
 
 void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
 {

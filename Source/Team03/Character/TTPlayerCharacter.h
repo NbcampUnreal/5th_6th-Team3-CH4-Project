@@ -91,10 +91,32 @@ private:
 	UPROPERTY ( EditAnywhere )
 	float SprintSpeed;
 
+	UPROPERTY(EditAnywhere)
+	float MaxHP;
+	UPROPERTY ( EditAnywhere )
+	float CurrentHP;
+	UPROPERTY ( EditAnywhere )
+	float MaxSturn;
+	UPROPERTY ( EditAnywhere )
+	float CurrentSturn;
+
 public:
 
 	virtual void BeginPlay () override;
 	virtual void Tick ( float DeltaTime ) override;
+
+#pragma region GetSet
+public:
+	void SetMaxHP (float amount);
+	float GetMaxHP ();
+	void SetCurrentHP ( float amount );
+	float GetCurrentHP ();
+	void SetMaxSturn ( float amount );
+	float GetMaxSturn ();
+	void SetCurrentSturn (  float amount );
+	float GetCurrentSturn ();
+
+#pragma endregion
 
 #pragma region MeshChange
 public:
