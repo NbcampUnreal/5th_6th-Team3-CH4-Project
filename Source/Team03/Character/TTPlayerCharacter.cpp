@@ -17,7 +17,7 @@
 ATTPlayerCharacter::ATTPlayerCharacter ()
 	:
 	MaxHP(100.f),
-	CurrentHP(100.f),
+	CurrentHP(MaxHP),
 	MaxSturn(100.f),
 	CurrentSturn(0.f)
 {
