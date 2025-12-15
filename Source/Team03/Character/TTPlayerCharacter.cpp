@@ -13,18 +13,23 @@
 #include "Net/UnrealNetwork.h"
 #include "LHO/TTAnimInstance.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Engine/EngineTypes.h"
+#include "Engine/DamageEvents.h"
+#include "Team03.h"
 
-ATTPlayerCharacter::ATTPlayerCharacter ()
-	:
-	MaxHP(100.f),
-	CurrentHP(MaxHP),
-	MaxSturn(100.f),
-	CurrentSturn(0.f),
-	WalkSpeed (400.f),
-	SprintSpeed(600.f)
+int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
+
+FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
+	TEXT ( "TT.ShowAttackMeleeDebug" ) ,
+	ATTPlayerCharacter::ShowAttackMeleeDebug ,
+	TEXT ( "" ) ,
+	ECVF_Cheat
+);
+
+ATTPlayerCharacter::ATTPlayerCharacter()
 {
-	GetCharacterMovement ()->MaxWalkSpeed = WalkSpeed;
-
+	WalkSpeed = 200.f;
+	SprintSpeed = 400.f;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
@@ -50,9 +55,11 @@ ATTPlayerCharacter::ATTPlayerCharacter ()
 
 	HeadMeshToReplicate = nullptr;
 	BodyMeshToReplicate = nullptr;
+
+	bIsDead = false;
 }
 
-#pragma region DefaultFunc
+
 void ATTPlayerCharacter::BeginPlay ()
 {
 	Super::BeginPlay ();
@@ -72,7 +79,16 @@ void ATTPlayerCharacter::BeginPlay ()
 		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f ;
 		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f ;
 
-		PlayerController->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
+
+		// ----- Outgame 담당자가 수정함 -----
+		/* 
+		 * LoadPlayerSaveData 호출 비활성화:
+		 * - SaveGame 로드가 PlayerState 데이터를 덮어쓰는 문제 발생
+		 * - Seamless Travel을 사용하므로 PlayerState가 자동으로 유지됨
+		 * PlayerController->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
+		 */
+		// ----------------------------------
+
 
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
 
@@ -81,6 +97,7 @@ void ATTPlayerCharacter::BeginPlay ()
 			Subsystem->AddMappingContext ( IMC_Character , 0 );
 		}
 	}
+	// ----- Outgame 담당자가 수정함 -----
 	if (HasAuthority ())
 	{
 		if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
@@ -90,6 +107,7 @@ void ATTPlayerCharacter::BeginPlay ()
 				HeadMeshToReplicate = HeadMesh;
 				OnRep_HeadMesh ();
 			}
+			
 			if (USkeletalMesh* BodyMesh = PS->PersistedBodyMesh)
 			{
 				BodyMeshToReplicate = BodyMesh;
@@ -97,6 +115,8 @@ void ATTPlayerCharacter::BeginPlay ()
 			}
 		}
 	}
+	// ----------------------------------
+
 }
 
 void ATTPlayerCharacter::Tick ( float DeltaTime )
@@ -127,50 +147,6 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	//	}
 	//}
 }
-
-#pragma endregion
-
-#pragma region GetSetFunc
-void ATTPlayerCharacter::SetMaxHP (float amount)
-{
-	MaxHP = amount;
-}
-
-float ATTPlayerCharacter::GetMaxHP ()
-{
-	return MaxHP;
-}
-
-void ATTPlayerCharacter::SetCurrentHP ( float amount )
-{
-	CurrentHP += amount;
-}
-
-float ATTPlayerCharacter::GetCurrentHP ()
-{
-	return CurrentHP;
-}
-
-void ATTPlayerCharacter::SetMaxSturn ( float amount )
-{
-	MaxSturn = amount;
-}
-
-float ATTPlayerCharacter::GetMaxSturn ()
-{
-	return MaxSturn;
-}
-
-void ATTPlayerCharacter::SetCurrentSturn ( float amount )
-{
-	CurrentSturn += amount;
-}
-
-float ATTPlayerCharacter::GetCurrentSturn ()
-{
-	return CurrentSturn;
-}
-#pragma endregion
 
 void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
 {
@@ -419,11 +395,59 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 
 void ATTPlayerCharacter::HandleOnCheckHit ()
 {
-	UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
+	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
+	TArray<FHitResult> HitResults;
+	FCollisionQueryParams Params ( NAME_None , false , this );
+
+	bool bResult = GetWorld ()->SweepMultiByChannel (
+		HitResults ,
+		GetActorLocation () ,
+		GetActorLocation () + AttackMeleeRange * GetActorForwardVector () ,
+		FQuat::Identity ,
+		ECC_ATTACK ,
+		FCollisionShape::MakeSphere ( AttackMeleeRadius ) ,
+		Params
+	);
+
+	if (HitResults.IsEmpty () == false)
+	{
+		for (FHitResult HitResult : HitResults)
+		{
+			if (IsValid ( HitResult.GetActor () ) == true)
+			{
+				FDamageEvent DamageEvent;
+				HitResult.GetActor ()->TakeDamage ( 10.f , DamageEvent , GetController () , this );
+				if (1 == ShowAttackMeleeDebug)
+				{
+					UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "Hit Actor Name: %s" ) , *HitResult.GetActor ()->GetName () ) );
+				}
+			}
+		}
+	}
+	if (1 == ShowAttackMeleeDebug)
+	{
+		FVector TraceVector = AttackMeleeRange * GetActorForwardVector ();
+		FVector Center = GetActorLocation () + TraceVector + GetActorUpVector () * 40.f;
+		float HalfHeight = AttackMeleeRange * 0.5f + AttackMeleeRadius;
+		FQuat CapsuleRot = FRotationMatrix::MakeFromZ ( TraceVector ).ToQuat ();
+		FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
+		float DebugLifeTime = 5.f;
+
+		DrawDebugCapsule (
+			GetWorld () ,
+			Center ,
+			HalfHeight ,
+			AttackMeleeRadius ,
+			CapsuleRot ,
+			DrawColor ,
+			false ,
+			DebugLifeTime
+		);
+	}
 }
 void ATTPlayerCharacter::HandleOnCheckInputAttack ()
 {
-	UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
+	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
 	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
 
@@ -470,5 +494,18 @@ void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped 
 	{
 		OnMeleeAttackMontageEndedDelegate.Unbind ();
 	}
+}
+
+float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
+{
+	float FinalDamageAmount = Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
+	// 피해자쪽 로직.
+
+	if (1 == ShowAttackMeleeDebug)
+	{
+		UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "%s was taken damage: %.3f" ) , *GetName () , FinalDamageAmount ) );
+	}
+
+	return FinalDamageAmount;
 }
 #pragma endregion

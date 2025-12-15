@@ -1,11 +1,11 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "LHO/TTSword.h"
+#include "LHO/TTShield.h"
 #include "LHO/TTPickupComponent.h"
 #include "Character/TTPlayerCharacter.h"
 
-ATTSword::ATTSword ()
+ATTShield::ATTShield ()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
@@ -13,14 +13,14 @@ ATTSword::ATTSword ()
 	SetRootComponent ( PickupComponent );
 }
 
-void ATTSword::BeginPlay ()
+void ATTShield::BeginPlay ()
 {
 	Super::BeginPlay ();
 
 	PickupComponent->OnPickUp.AddDynamic ( this , &ThisClass::HandleOnPickUp );
 }
 
-void ATTSword::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
+void ATTShield::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 {
 	if (IsValid ( InPickUpCharacter ) == false)
 	{
@@ -28,8 +28,7 @@ void ATTSword::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 	}
 
 	FAttachmentTransformRules AttachmentRules ( EAttachmentRule::SnapToTarget , true );
-	AttachToComponent ( InPickUpCharacter->GetMesh () , AttachmentRules , FName ( TEXT ( "hand_rSocket" ) ) );
+	AttachToComponent ( InPickUpCharacter->GetMesh () , AttachmentRules , FName ( TEXT ( "hand_lSocket" ) ) );
 	SetActorEnableCollision ( false );
 	PickupComponent->SetSimulatePhysics ( false );
 }
-

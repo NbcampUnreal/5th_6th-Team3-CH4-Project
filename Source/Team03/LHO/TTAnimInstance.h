@@ -21,6 +21,4 @@ private:
 
 public:
 	FOnCheckHit OnCheckHit;
-
-
 };

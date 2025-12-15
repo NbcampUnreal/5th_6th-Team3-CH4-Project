@@ -6,6 +6,12 @@
 #include "Character/TTPlayerCharacter.h"
 #include "Character/TTPlayerState.h"
 
+// ----- Outgame 담당자가 추가함 ----- 
+AInGameModeBase::AInGameModeBase()
+{
+	bUseSeamlessTravel = true;
+}
+
 void AInGameModeBase::SendChatMessage ( const FString& Message )
 {
 	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It)

@@ -8,6 +8,8 @@
 #include "../Character/TTPlayerState.h"
 #include "../Save/TTSaveGame.h"
 #include "Kismet/GameplayStatics.h"
+#include "SelectSkeletal/TTCharactorHeadSkeletalSelect.h"
+#include "SelectSkeletal/TTCharactorSkeletalMeshSelect.h"
 
 ATTPlayerController::ATTPlayerController ()
 	: InputMappingContext ( nullptr ) ,
@@ -23,7 +25,8 @@ ATTPlayerController::ATTPlayerController ()
 void ATTPlayerController::SetPawn ( APawn* InPawn )
 {
 	Super::SetPawn ( InPawn );
-	UE_LOG ( LogTemp , Warning , TEXT ( "SetPawn" ) );
+	
+	// ----- Outgame 담당자가 수정함 -----
 	if (InPawn)
 	{
 		ATTPlayerCharacter* NewChar = Cast<ATTPlayerCharacter> ( InPawn );
@@ -39,7 +42,8 @@ void ATTPlayerController::SetPawn ( APawn* InPawn )
 void ATTPlayerController::OnPossess ( APawn* InPawn )
 {
 	Super::OnPossess ( InPawn );
-	UE_LOG ( LogTemp , Warning , TEXT ( "OnPossess" ) );
+
+	// ----- Outgame 담당자가 수정함 -----
 	if (InPawn)
 	{
 		ATTPlayerCharacter* NewChar = Cast<ATTPlayerCharacter> ( InPawn );
@@ -77,7 +81,7 @@ void ATTPlayerController::BeginPlay ()
 		TTInGameHUD->AddChat ();
 	}
 
-// ---------- Outgame 담당자가 추가한 코드 ----------
+// ---------- Outgame 담당자가 수정함 ----------
 	if (IsLocalController())
 	{
 		// Force Game Input Mode
@@ -87,16 +91,17 @@ void ATTPlayerController::BeginPlay ()
 
 		if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 		{
-			UE_LOG(LogTemp, Log, TEXT("[TTPlayerController] Sending GameInstance Data to Server. Nickname: %s, RowName: %s"), *GI->UserNickname, *GI->SelectedCharacterRowName.ToString());
-			ServerRPC_InitPlayerInfo(GI->UserNickname, GI->SelectedCharacterRowName);
+			int32 HeadIndex = GI->CustomizedHeadIndex;
+			int32 BodyIndex = GI->CustomizedBodyIndex;
+			
+			ServerRPC_InitPlayerInfo(GI->UserNickname, GI->SelectedCharacterRowName, HeadIndex, BodyIndex);
 		}
 	}
 }
 
-void ATTPlayerController::ServerRPC_InitPlayerInfo_Implementation(const FString& Nickname, const FName& CharacterRowName)
+// ----- Outgame 담당자가 수정함 -----
+void ATTPlayerController::ServerRPC_InitPlayerInfo_Implementation(const FString& Nickname, const FName& CharacterRowName, int32 HeadIndex, int32 BodyIndex)
 {
-	UE_LOG(LogTemp, Log, TEXT("[TTPlayerController] Server Received Data. Nickname: %s, RowName: %s"), *Nickname, *CharacterRowName.ToString());
-
 	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState>())
 	{
 		PS->UserNickname = Nickname;
@@ -104,14 +109,41 @@ void ATTPlayerController::ServerRPC_InitPlayerInfo_Implementation(const FString&
 
 		// Force update if needed, but replication will handle it
 		PS->ForceNetUpdate();
+		
+		// Load and apply Head Mesh
+		const UTTCharactorHeadSkeletalSelect* HeadCDO = GetDefault<UTTCharactorHeadSkeletalSelect>();
+		if (HeadCDO && HeadIndex >= 0 && HeadCDO->PlayerCharacterHeadSkeletalPaths.IsValidIndex(HeadIndex))
+		{
+			FSoftObjectPath HeadPath = HeadCDO->PlayerCharacterHeadSkeletalPaths[HeadIndex];
+			if (USkeletalMesh* HeadMesh = Cast<USkeletalMesh>(HeadPath.TryLoad()))
+			{
+				PS->PersistedHeadMesh = HeadMesh;
+			}
+		}
+
+		// Load and apply Body Mesh
+		const UTTCharactorSkeletalMeshSelect* BodyCDO = GetDefault<UTTCharactorSkeletalMeshSelect>();
+		if (BodyCDO && BodyIndex >= 0 && BodyCDO->PlayerCharacterSkeletalPaths.IsValidIndex(BodyIndex))
+		{
+			FSoftObjectPath BodyPath = BodyCDO->PlayerCharacterSkeletalPaths[BodyIndex];
+			if (USkeletalMesh* BodyMesh = Cast<USkeletalMesh>(BodyPath.TryLoad()))
+			{
+				PS->PersistedBodyMesh = BodyMesh;
+			}
+		}
+		
+		// Initialize Character Mesh if Pawn exists
+		if (ATTPlayerCharacter* MyCharacter = Cast<ATTPlayerCharacter>(GetPawn()))
+		{
+			MyCharacter->InitializeMesh(PS);
+		}
 	}
 }
 
-bool ATTPlayerController::ServerRPC_InitPlayerInfo_Validate(const FString& Nickname, const FName& CharacterRowName)
+bool ATTPlayerController::ServerRPC_InitPlayerInfo_Validate(const FString& Nickname, const FName& CharacterRowName, int32 HeadIndex, int32 BodyIndex)
 {
 	return true;
 }
-// ---------- Outgame 담당자가 추가한 코드 ----------
 
 #pragma region ChatUI
 
@@ -228,16 +260,13 @@ void ATTPlayerController::SavePlayerSaveData ( const FString& SlotName , int32 U
 
 void ATTPlayerController::LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex )
 {
-	UE_LOG ( LogTemp , Warning , TEXT ( "1" ) );
 	ATTPlayerCharacter* TTPC = Cast<ATTPlayerCharacter> ( GetPawn () );
 	if (IsValid ( TTPC->Head ) && IsValid ( TTPC->GetMesh () ) && IsValid( TTPC ))
 	{
-		UE_LOG ( LogTemp , Warning , TEXT ( "2" ) );
 		// 세이브 데이터를 불러오는 과정
 		USaveGame* LoadGameInstance = UGameplayStatics::LoadGameFromSlot ( SlotName , UserIndex );
 		if (!LoadGameInstance)
 			return;
-		UE_LOG ( LogTemp , Warning , TEXT ( "3" ) );
 
 		UTTSaveGame* TTLoadGameInstance = Cast<UTTSaveGame> ( LoadGameInstance );
 
@@ -245,7 +274,6 @@ void ATTPlayerController::LoadPlayerSaveData ( const FString& SlotName , int32 U
 			!TTLoadGameInstance->CurrentHeadMeshPath.IsNull () && 
 			!TTLoadGameInstance->CurrentBodyMeshPath.IsNull ())
 			return;
-		UE_LOG ( LogTemp , Warning , TEXT ( "4" ) );
 
 		// 로드된 세이브 데이터를 불러오는 과정 
 		USkeletalMesh* LoadHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
@@ -254,7 +282,6 @@ void ATTPlayerController::LoadPlayerSaveData ( const FString& SlotName , int32 U
 		// 세이브 데이터 적용
 		if (IsValid ( LoadHeadMesh ) && IsValid ( LoadBodyMesh ))
 		{
-			UE_LOG ( LogTemp , Warning , TEXT ( "5" ) );
 			TTPC->Head->SetSkeletalMesh ( LoadHeadMesh );
 			TTPC->GetMesh ()->SetSkeletalMesh ( LoadBodyMesh );
 		}
