@@ -79,7 +79,16 @@ void ATTPlayerCharacter::BeginPlay ()
 		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f ;
 		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f ;
 
-		PlayerController->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
+
+		// ----- Outgame 담당자가 수정함 -----
+		/* 
+		 * LoadPlayerSaveData 호출 비활성화:
+		 * - SaveGame 로드가 PlayerState 데이터를 덮어쓰는 문제 발생
+		 * - Seamless Travel을 사용하므로 PlayerState가 자동으로 유지됨
+		 * PlayerController->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
+		 */
+		// ----------------------------------
+
 
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
 
@@ -88,6 +97,7 @@ void ATTPlayerCharacter::BeginPlay ()
 			Subsystem->AddMappingContext ( IMC_Character , 0 );
 		}
 	}
+	// ----- Outgame 담당자가 수정함 -----
 	if (HasAuthority ())
 	{
 		if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
@@ -97,6 +107,7 @@ void ATTPlayerCharacter::BeginPlay ()
 				HeadMeshToReplicate = HeadMesh;
 				OnRep_HeadMesh ();
 			}
+			
 			if (USkeletalMesh* BodyMesh = PS->PersistedBodyMesh)
 			{
 				BodyMeshToReplicate = BodyMesh;
@@ -104,6 +115,8 @@ void ATTPlayerCharacter::BeginPlay ()
 			}
 		}
 	}
+	// ----------------------------------
+
 }
 
 void ATTPlayerCharacter::Tick ( float DeltaTime )
