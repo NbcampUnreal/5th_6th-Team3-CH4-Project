@@ -4,19 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "TTSword.generated.h"
-
+#include "TTShield.generated.h"
 
 class ATTPlayerCharacter;
 class UTTPickupComponent;
 
-UCLASS()
-class TEAM03_API ATTSword : public AActor
+UCLASS ()
+class TEAM03_API ATTShield : public AActor
 {
-	GENERATED_BODY()
+	GENERATED_BODY ()
 
 public:
-	ATTSword ();
+	ATTShield ();
 
 	UTTPickupComponent* GetPickupComponent () const { return PickupComponent; }
 

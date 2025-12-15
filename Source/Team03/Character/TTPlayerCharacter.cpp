@@ -13,11 +13,23 @@
 #include "Net/UnrealNetwork.h"
 #include "LHO/TTAnimInstance.h"
 #include "Camera/PlayerCameraManager.h"
+#include "Engine/EngineTypes.h"
+#include "Engine/DamageEvents.h"
+#include "Team03.h"
+
+int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
+
+FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
+	TEXT ( "TT.ShowAttackMeleeDebug" ) ,
+	ATTPlayerCharacter::ShowAttackMeleeDebug ,
+	TEXT ( "" ) ,
+	ECVF_Cheat
+);
 
 ATTPlayerCharacter::ATTPlayerCharacter()
 {
-	WalkSpeed = 400.f;
-	SprintSpeed = 600.f;
+	WalkSpeed = 200.f;
+	SprintSpeed = 400.f;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
@@ -43,6 +55,8 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 
 	HeadMeshToReplicate = nullptr;
 	BodyMeshToReplicate = nullptr;
+
+	bIsDead = false;
 }
 
 
@@ -368,11 +382,59 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 
 void ATTPlayerCharacter::HandleOnCheckHit ()
 {
-	UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
+	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
+	TArray<FHitResult> HitResults;
+	FCollisionQueryParams Params ( NAME_None , false , this );
+
+	bool bResult = GetWorld ()->SweepMultiByChannel (
+		HitResults ,
+		GetActorLocation () ,
+		GetActorLocation () + AttackMeleeRange * GetActorForwardVector () ,
+		FQuat::Identity ,
+		ECC_ATTACK ,
+		FCollisionShape::MakeSphere ( AttackMeleeRadius ) ,
+		Params
+	);
+
+	if (HitResults.IsEmpty () == false)
+	{
+		for (FHitResult HitResult : HitResults)
+		{
+			if (IsValid ( HitResult.GetActor () ) == true)
+			{
+				FDamageEvent DamageEvent;
+				HitResult.GetActor ()->TakeDamage ( 10.f , DamageEvent , GetController () , this );
+				if (1 == ShowAttackMeleeDebug)
+				{
+					UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "Hit Actor Name: %s" ) , *HitResult.GetActor ()->GetName () ) );
+				}
+			}
+		}
+	}
+	if (1 == ShowAttackMeleeDebug)
+	{
+		FVector TraceVector = AttackMeleeRange * GetActorForwardVector ();
+		FVector Center = GetActorLocation () + TraceVector + GetActorUpVector () * 40.f;
+		float HalfHeight = AttackMeleeRange * 0.5f + AttackMeleeRadius;
+		FQuat CapsuleRot = FRotationMatrix::MakeFromZ ( TraceVector ).ToQuat ();
+		FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
+		float DebugLifeTime = 5.f;
+
+		DrawDebugCapsule (
+			GetWorld () ,
+			Center ,
+			HalfHeight ,
+			AttackMeleeRadius ,
+			CapsuleRot ,
+			DrawColor ,
+			false ,
+			DebugLifeTime
+		);
+	}
 }
 void ATTPlayerCharacter::HandleOnCheckInputAttack ()
 {
-	UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
+	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
 	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
 
@@ -419,5 +481,18 @@ void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped 
 	{
 		OnMeleeAttackMontageEndedDelegate.Unbind ();
 	}
+}
+
+float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
+{
+	float FinalDamageAmount = Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
+	// 피해자쪽 로직.
+
+	if (1 == ShowAttackMeleeDebug)
+	{
+		UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "%s was taken damage: %.3f" ) , *GetName () , FinalDamageAmount ) );
+	}
+
+	return FinalDamageAmount;
 }
 #pragma endregion
