@@ -303,6 +303,14 @@ void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 		bIsAttackKeyPressed = true;
 	}
 
+	if (IsValid ( WeaponData ))
+	{
+		FTTWeaponData* CurrentWeapon = WeaponData->FindRow<FTTWeaponData> (WeaponName, TEXT("WeaponError"));
+		if (CurrentWeapon!=nullptr)
+		{
+			UE_LOG ( LogTemp , Warning , TEXT ( "Current StunAmount is %f" ) , CurrentWeapon->StunAmount );
+		}
+	}
 	
 }
 
