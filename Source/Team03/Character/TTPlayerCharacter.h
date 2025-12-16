@@ -163,6 +163,9 @@ public:
 
 	virtual float TakeDamage ( float DamageAmount , struct FDamageEvent const& DamageEvent , class AController* EventInstigator , AActor* DamageCauser ) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SetWeaponData ( FName NewWeaponName );
+
 	static int32 ShowAttackMeleeDebug;
 protected:
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );

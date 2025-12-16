@@ -281,38 +281,6 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 	}
 }
 
-void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
-{
-	if (GetCharacterMovement ()->IsFalling () == true)
-	{
-		return;
-	}
-
-	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	//if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
-	//{
-	//	AnimInstance->Montage_Play ( AttackMeleeMontage );
-	//}
-	if (0 == CurrentComboCount)
-	{
-		BeginAttack ();
-	}
-	else
-	{
-		ensure ( FMath::IsWithinInclusive<int32> ( CurrentComboCount , 1 , MaxComboCount ) );
-		bIsAttackKeyPressed = true;
-	}
-
-	if (IsValid ( WeaponData ))
-	{
-		FTTWeaponData* CurrentWeapon = WeaponData->FindRow<FTTWeaponData> (WeaponName, TEXT("WeaponError"));
-		if (CurrentWeapon!=nullptr)
-		{
-			UE_LOG ( LogTemp , Warning , TEXT ( "Current StunAmount is %f" ) , CurrentWeapon->StunAmount );
-		}
-	}
-	
-}
 
 void ATTPlayerCharacter::InChat ()
 {
@@ -455,6 +423,40 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 
 #pragma region Attack
 
+
+void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
+{
+	if (GetCharacterMovement ()->IsFalling () == true)
+	{
+		return;
+	}
+
+	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	//if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	//{
+	//	AnimInstance->Montage_Play ( AttackMeleeMontage );
+	//}
+	if (0 == CurrentComboCount)
+	{
+		BeginAttack ();
+	}
+	else
+	{
+		ensure ( FMath::IsWithinInclusive<int32> ( CurrentComboCount , 1 , MaxComboCount ) );
+		bIsAttackKeyPressed = true;
+	}
+
+	if (IsValid ( WeaponData ))
+	{
+		FTTWeaponData* CurrentWeapon = WeaponData->FindRow<FTTWeaponData> ( WeaponName , TEXT ( "WeaponError" ) );
+		if (CurrentWeapon != nullptr)
+		{
+			UE_LOG ( LogTemp , Warning , TEXT ( "Current StunAmount is %f" ) , CurrentWeapon->StunAmount );
+		}
+	}
+
+}
+
 void ATTPlayerCharacter::HandleOnCheckHit ()
 {
 	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
@@ -569,5 +571,10 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 	}
 
 	return FinalDamageAmount;
+}
+void ATTPlayerCharacter::SetWeaponData ( FName NewWeaponName )
+{
+	WeaponName = NewWeaponName;
+	UE_LOG ( LogTemp , Warning , TEXT ( "Weapon Changed to : %s" ) , *WeaponName.ToString () );
 }
 #pragma endregion
