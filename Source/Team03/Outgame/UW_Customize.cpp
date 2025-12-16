@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// (c) 2024. Team03. All rights reserved.
 
 #include "UW_Customize.h"
 #include "Components/Button.h"
@@ -14,7 +13,7 @@ void UUW_Customize::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// Initialize indices from character's current state
+	// 캐릭터 현재 상태에서 인덱스 초기화
 	if (ATTLobbyPlayerController* PC = Cast<ATTLobbyPlayerController>(GetOwningPlayer()))
 	{
 		if (ATTLobbyCharacter* Character = Cast<ATTLobbyCharacter>(PC->GetPawn()))
@@ -24,13 +23,13 @@ void UUW_Customize::NativeConstruct()
 		}
 		else
 		{
-			// Fallback if character not available yet
+			// 캐릭터를 아직 사용할 수 없는 경우 대비
 			CurrentHeadIndex = 0;
 			CurrentBodyIndex = 0;
 		}
 	}
 
-	// Bind button callbacks
+	// 버튼 콜백 바인딩
 	if (Btn_Close) Btn_Close->OnClicked.AddDynamic(this, &ThisClass::OnClickClose);
 	if (Btn_Head_Next) Btn_Head_Next->OnClicked.AddDynamic(this, &ThisClass::OnClickHeadNext);
 	if (Btn_Head_Prev) Btn_Head_Prev->OnClicked.AddDynamic(this, &ThisClass::OnClickHeadPrev);
@@ -38,11 +37,13 @@ void UUW_Customize::NativeConstruct()
 	if (Btn_Body_Prev) Btn_Body_Prev->OnClicked.AddDynamic(this, &ThisClass::OnClickBodyPrev);
 }
 
+#pragma region Callbacks
+
 void UUW_Customize::OnClickClose()
 {
 	RemoveFromParent();
     
-    // Restore Focus to Lobby Widget ideally, but simpler is just remove.
+    // 이상적으로는 로비 위젯으로 포커스를 복구해야 하지만, 단순 제거로 처리
     if (APlayerController* PC = GetOwningPlayer())
     {
          FInputModeGameAndUI InputMode;
@@ -100,6 +101,10 @@ void UUW_Customize::OnClickBodyPrev()
 	}
 }
 
+#pragma endregion
+
+#pragma region Helpers
+
 void UUW_Customize::ApplyHeadChange()
 {
 	APlayerController* PC = GetOwningPlayer();
@@ -133,3 +138,5 @@ void UUW_Customize::ApplyBodyChange()
 	
 	Character->ChangeBody(CurrentBodyIndex);
 }
+
+#pragma endregion

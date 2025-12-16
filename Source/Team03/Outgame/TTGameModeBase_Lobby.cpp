@@ -1,8 +1,8 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿// (c) 2024. Team03. All rights reserved.
 
 #include "TTGameModeBase_Lobby.h"
 #include "GameMapsSettings.h"
+#include "Team03/Character/TTPlayerState.h"
 
 ATTGameModeBase_Lobby::ATTGameModeBase_Lobby()
 {
@@ -21,38 +21,30 @@ void ATTGameModeBase_Lobby::Logout(AController* Exiting)
 
 void ATTGameModeBase_Lobby::StartGame()
 {
-	UE_LOG(LogTemp, Warning, TEXT("[LOBBY-GM] StartGame Called"));
-	
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		// Log PlayerState before travel
+		// Travel 전 PlayerState 로그
 		for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
 		{
 			if (APlayerController* PC = It->Get())
 			{
 				if (APlayerState* PS = PC->GetPlayerState<APlayerState>())
 				{
-					UE_LOG(LogTemp, Warning, TEXT("[LOBBY-GM] PlayerState Addr: %p, Class: %s"), 
-						PS, *PS->GetClass()->GetName());
-					
 					if (ATTPlayerState* TTPS = Cast<ATTPlayerState>(PS))
 					{
-						UE_LOG(LogTemp, Warning, TEXT("[LOBBY-GM] Before Travel - PersistedHeadMesh: %s"), 
-							TTPS->PersistedHeadMesh ? *TTPS->PersistedHeadMesh->GetName() : TEXT("NULL"));
-						UE_LOG(LogTemp, Warning, TEXT("[LOBBY-GM] Before Travel - PersistedBodyMesh: %s"), 
-							TTPS->PersistedBodyMesh ? *TTPS->PersistedBodyMesh->GetName() : TEXT("NULL"));
+                        // Player State Logic
 					}
 				}
 			}
 		}
 		
-		// Get the configured Transition Map from Project Settings
+		// 프로젝트 설정에서 설정된 Transition Map 가져오기
 		FString TransitionMapPath = UGameMapsSettings::GetGameMapsSettings()->TransitionMap.GetLongPackageName();
 		
 		if (TransitionMapPath.IsEmpty())
 		{
-			// Fallback if not set (though user said it is set to TestMap)
+			// 설정되지 않은 경우 대비 (TestMap으로 설정됨)
 			TransitionMapPath = TEXT("/Game/Maps/TestMap"); 
 		}
 

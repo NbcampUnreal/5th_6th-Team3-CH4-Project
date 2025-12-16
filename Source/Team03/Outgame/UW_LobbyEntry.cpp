@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿// (c) 2024. Team03. All rights reserved.
 
 #include "UW_LobbyEntry.h"
 #include "Components/Button.h"
@@ -22,7 +21,7 @@ void UUW_LobbyEntry::Setup(const FTTSessionInfo& InInfo)
 
 	if (TextBlock_HostName)
 	{
-		// SRS Requirement: Display as "Nickname's Game"
+		// "Nickname's Game"으로 표시
 		FString DisplayName = FString::Printf(TEXT("%s's Game"), *SessionInfo.HostName);
 		TextBlock_HostName->SetText(FText::FromString(DisplayName));
 	}
