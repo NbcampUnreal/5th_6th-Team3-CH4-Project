@@ -16,6 +16,7 @@
 #include "Engine/EngineTypes.h"
 #include "Engine/DamageEvents.h"
 #include "Team03.h"
+#include "TTWeaponData.h"
 
 int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 
@@ -34,6 +35,9 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	MaxStun(100.f),
 	CurrentStun(0.f)
 {
+	WeaponName = "Hand";
+	WeaponData = nullptr;
+
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
@@ -153,6 +157,7 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	//}
 }
 
+#pragma region Get,Set
 void ATTPlayerCharacter::SetMaxHP ( float amount )
 {
 	MaxHP = amount;
@@ -192,6 +197,8 @@ float ATTPlayerCharacter::GetCurrentStun ()
 {
 	return CurrentStun;
 }
+
+#pragma endregion
 
 void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
 {
@@ -295,6 +302,8 @@ void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 		ensure ( FMath::IsWithinInclusive<int32> ( CurrentComboCount , 1 , MaxComboCount ) );
 		bIsAttackKeyPressed = true;
 	}
+
+	
 }
 
 void ATTPlayerCharacter::InChat ()

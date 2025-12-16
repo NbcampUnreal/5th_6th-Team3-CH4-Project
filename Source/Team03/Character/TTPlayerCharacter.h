@@ -31,6 +31,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Head")
 	TObjectPtr<USkeletalMeshComponent> Head;
 
+
 #pragma region Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> InputMove;
@@ -181,6 +182,11 @@ protected:
 
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
 	float AttackMeleeRadius = 20.f;
+
+	UPROPERTY ( EditAnywhere , Category = "Weapon" )
+	TObjectPtr<UDataTable> WeaponData;
+
+	FName WeaponName;
 #pragma endregion
 
 #pragma region HP
