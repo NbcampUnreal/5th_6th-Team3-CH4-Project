@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// (c) 2024. Team03. All rights reserved.
 
 #pragma once
 
@@ -23,24 +23,27 @@ public:
 	virtual void NativeConstruct() override;
 
 protected:
+#pragma region Widgets
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_Close;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_Apply;
 
-	// --- Video Settings ---
+	// 비디오 설정
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UComboBoxString> Combo_Resolution;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UComboBoxString> Combo_WindowMode;
 
-	// --- Audio Settings ---
+	// 오디오 설정
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<USlider> Slider_MasterVolume;
+#pragma endregion
 
 private:
+#pragma region Callbacks
 	UFUNCTION()
 	void OnClickClose();
 
@@ -55,8 +58,11 @@ private:
 
 	UFUNCTION()
 	void OnMasterVolumeChanged(float Value);
+#pragma endregion
 
-	// Helpers
+#pragma region Helpers
+	// 헬퍼
 	void InitSettings();
 	void ApplySettings();
+#pragma endregion
 };

@@ -1,5 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿// (c) 2024. Team03. All rights reserved.
 
 #include "TTGameInstance.h"
 #include "OnlineSubsystem.h"
@@ -23,6 +22,8 @@ void UTTGameInstance::Init()
 	}
 }
 
+#pragma region Session Management
+
 void UTTGameInstance::CreateGameSession(bool bIsLAN)
 {
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
@@ -31,7 +32,7 @@ void UTTGameInstance::CreateGameSession(bool bIsLAN)
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
 		if (SessionInterface.IsValid())
 		{
-			// Existing Session Check
+			// 기존 세션 확인
 			auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession);
 			if (ExistingSession != nullptr)
 			{
@@ -42,13 +43,12 @@ void UTTGameInstance::CreateGameSession(bool bIsLAN)
 
 			FOnlineSessionSettings SessionSettings;
 			SessionSettings.bIsLANMatch = bIsLAN;
-			SessionSettings.NumPublicConnections = 4; // Default to 4 players
+			SessionSettings.NumPublicConnections = 4; // 최대 4명
 			SessionSettings.bAllowJoinInProgress = true;
 			SessionSettings.bShouldAdvertise = true;
 			SessionSettings.bUsesPresence = true;
-			// SessionSettings.bUseLobbiesIfAvailable = true; // Null subsystem might not strictly support Lobbies V2, stick to basic sessions
-
-			// Store Host Name in Session Settings for clients to see
+			
+			// 클라이언트에게 알릴 호스트 이름 저장
 			FString HostName = UserNickname.IsEmpty() ? TEXT("Unknown") : UserNickname;
 			SessionSettings.Set(FName("HostName"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
@@ -69,7 +69,6 @@ void UTTGameInstance::FindGameSessions(bool bIsLAN)
 			SessionSearch = MakeShareable(new FOnlineSessionSearch());
 			SessionSearch->bIsLanQuery = bIsLAN;
 			SessionSearch->MaxSearchResults = 20;
-			// Null subsystem에서는 presence 검색이 필요하지 않을 수 있음
 
 			OnFindSessionsCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FOnFindSessionsCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnFindSessionsComplete));
 
@@ -87,11 +86,10 @@ void UTTGameInstance::JoinGameSession(int32 SessionIndex)
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
 		if (SessionInterface.IsValid() && SessionSearch->SearchResults.IsValidIndex(SessionIndex))
 		{
-            // Check if session already exists
+            // 세션이 이미 존재하는지 확인
             auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession);
             if (ExistingSession != nullptr)
             {
-                // UE_LOG(LogTemp, Warning, TEXT("[TTGameInstance] Session already exists. Destroying before Join..."));
                 PendingJoinSessionIndex = SessionIndex;
                 
                 OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(FOnDestroySessionCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnDestroySessionBeforeJoin));
@@ -102,46 +100,14 @@ void UTTGameInstance::JoinGameSession(int32 SessionIndex)
 			OnJoinSessionCompleteDelegateHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(FOnJoinSessionCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnJoinSessionComplete));
 
 			const FOnlineSessionSearchResult& Result = SessionSearch->SearchResults[SessionIndex];
-			FString HostName = Result.Session.OwningUserName;
-			
-			// if (GEngine)
-            // {
-            //    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, FString::Printf(TEXT("Attempting Join -> Host: %s, Index: %d"), *HostName, SessionIndex));
-            // }
 
 			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 			if (!SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, Result))
             {
-				// if (GEngine)
-				// {
-				//    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("JoinSession Call Failed IMMEDIATELY!"));
-				// }
+				// Join Fail logic
             }
 		}
 	}
-}
-
-void UTTGameInstance::OnDestroySessionBeforeJoin(FName SessionName, bool bWasSuccessful)
-{
-    // UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnDestroySessionBeforeJoin. Success: %d"), bWasSuccessful);
-
-    IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
-    if (OnlineSub)
-    {
-        IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
-        SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
-    }
-
-    // Retry Join
-    if (bWasSuccessful && PendingJoinSessionIndex != -1)
-    {
-        JoinGameSession(PendingJoinSessionIndex);
-        PendingJoinSessionIndex = -1; // Reset
-    }
-    else
-    {
-        // UE_LOG(LogTemp, Error, TEXT("[TTGameInstance] Failed to destroy session for Join or Invalid Index"));
-    }
 }
 
 void UTTGameInstance::DestroyGameSession()
@@ -164,7 +130,7 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 
 	if (SessionSearch.IsValid())
 	{
-		// Need LocalUserId to filter self
+		// 자신의 세션을 필터링하기 위한 LocalUserId
 		const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 		FUniqueNetIdRepl LocalUserId = LocalPlayer ? LocalPlayer->GetPreferredUniqueNetId() : FUniqueNetIdRepl();
 
@@ -172,7 +138,7 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 		{
 			const FOnlineSessionSearchResult& SearchResult = SessionSearch->SearchResults[i];
 			
-			// SRS 2.1: Filter Self-Host
+			// 자기 자신의 호스트 필터링
 			if (SearchResult.Session.OwningUserId == LocalUserId)
 			{
 				continue;
@@ -181,7 +147,7 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 			if (SearchResult.IsValid())
 			{
 				FTTSessionInfo Info;
-				Info.SessionIndex = i; // Store original index correctly!
+				Info.SessionIndex = i; // 원래 인덱스 저장
 				
 				FString HostName;
 				if (SearchResult.Session.SessionSettings.Get(FName("HostName"), HostName))
@@ -193,11 +159,21 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 					Info.HostName = SearchResult.Session.OwningUserName;
 				}
 
-				// Calculate Current Players
+				// 현재 플레이어 수 계산
 				int32 OpenConnections = SearchResult.Session.NumOpenPublicConnections;
 				int32 MaxConnections = SearchResult.Session.SessionSettings.NumPublicConnections;
 				
 				Info.CurrentPlayers = MaxConnections - OpenConnections;
+
+				// Null Subsystem(LAN/에디터)에서는 Host가 세션 생성 시 Open Connection을 소모하지 않음
+				// 따라서 0명으로 표시되는 문제를 해결하기 위해 Host(+1)를 추가
+				if (IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get())
+				{
+					if (OnlineSub->GetSubsystemName() == TEXT("NULL"))
+					{
+						Info.CurrentPlayers++;
+					}
+				}
 
 				Info.MaxPlayers = MaxConnections;
 				Info.Ping = SearchResult.PingInMs;
@@ -209,10 +185,12 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 	return Results;
 }
 
+#pragma endregion
+
+#pragma region Session Callbacks
+
 void UTTGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
-	// UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnCreateSessionComplete. Success: %d"), bWasSuccessful);
-
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
 	{
@@ -228,8 +206,6 @@ void UTTGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucces
 
 void UTTGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 {
-	// UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnFindSessionsComplete. Success: %d. Found: %d"), bWasSuccessful, SessionSearch.IsValid() ? SessionSearch->SearchResults.Num() : 0);
-
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
 	{
@@ -242,13 +218,6 @@ void UTTGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 
 void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
-	// UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] OnJoinSessionComplete. Result: %d"), (int32)Result);
-
-    // if (GEngine)
-    // {
-    //    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Cyan, FString::Printf(TEXT("OnJoinSessionComplete Result: %d"), (int32)Result));
-    // }
-
 	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
 	if (OnlineSub)
 	{
@@ -262,20 +231,12 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
 		if (SessionInterface->GetResolvedConnectString(SessionName, ConnectInfo))
 		{
-			// UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] Connect String Resolved: %s"), *ConnectInfo);
-            
-            // Port 0 Fix for Null Subsystem
+            // Null Subsystem의 Port 0 문제 수정
             if (ConnectInfo.EndsWith(TEXT(":0")))
             {
-                // UE_LOG(LogTemp, Warning, TEXT("[TTGameInstance] Port 0 detected, replacing with 7777"));
                 ConnectInfo = ConnectInfo.LeftChop(2); // Remove :0
                 ConnectInfo.Append(TEXT(":7777"));
             }
-
-            // if (GEngine)
-            // {
-            //    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("Travel URL: %s"), *ConnectInfo));
-            // }
 
 			APlayerController* PlayerController = GetFirstLocalPlayerController();
 			if (PlayerController)
@@ -283,15 +244,24 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
 				PlayerController->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
 			}
 		}
-		else
-		{
-			// UE_LOG(LogTemp, Warning, TEXT("[TTGameInstance] Failed to resolve connect string!"));
-            // if (GEngine)
-            // {
-            //    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("Failed to resolve Connect String!"));
-            // }
-		}
 	}
+}
+
+void UTTGameInstance::OnDestroySessionBeforeJoin(FName SessionName, bool bWasSuccessful)
+{
+    IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    if (OnlineSub)
+    {
+        IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
+        SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
+    }
+
+    // 세션 참여 재시도
+    if (bWasSuccessful && PendingJoinSessionIndex != -1)
+    {
+        JoinGameSession(PendingJoinSessionIndex);
+        PendingJoinSessionIndex = -1; // 초기화
+    }
 }
 
 void UTTGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
@@ -311,6 +281,7 @@ void UTTGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSucce
 
 void UTTGameInstance::OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString)
 {
-    // Handle network failure (e.g. return to title)
-    // SRS doesn't explicitly detail failure recovery but asks for reliability.
+    // 네트워크 실패 처리 (예: 타이틀로 복귀)
 }
+
+#pragma endregion

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// (c) 2024. Team03. All rights reserved.
 
 #pragma once
 
@@ -18,6 +18,7 @@ public:
 	virtual void NativeConstruct() override;
 
 protected:
+#pragma region Widgets
 	UPROPERTY(meta = (BindWidget))
 	class UButton* Btn_StartGame;
 
@@ -32,8 +33,10 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UScrollBox* ScrollBox_PlayerList;
+#pragma endregion
 
 private:
+#pragma region Callbacks
 	UFUNCTION()
 	void OnClickStartGame();
 
@@ -45,4 +48,5 @@ private:
 
 	void UpdatePlayerList();
 	FTimerHandle PlayerListTimerHandle;
+#pragma endregion
 };
