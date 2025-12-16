@@ -1,5 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿// (c) 2024. Team03. All rights reserved.
 
 #include "Character/TTLobbyCharacter.h"
 #include "Net/UnrealNetwork.h"
@@ -14,28 +13,21 @@ ATTLobbyCharacter::ATTLobbyCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Use the default Mesh as Body, or create a separate one.
-	// For now, let's assume 'Mesh' inherited from ACharacter is the Body.
-	// But if we want separate parts similar to TTPlayerCharacter:
-	
+	// 헤드 생성 및 부착
 	Head = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Head"));
 	Head->SetupAttachment(GetMesh());
 	Head->SetIsReplicated(true);
 
-	// Body usually refers to GetMesh(), so we might just use GetMesh() as the Body logic target,
-	// or if 'Body' implies a specific part separate from the root mesh.
-	// Let's assume GetMesh() is the main body for simplicity, 
-	// but if user wants explicit separation:
-	// Body = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Body")); ...
-	// However, ACharacter already has 'Mesh'. Let's alias logic to it or keep separate if needed.
-	// Re-reading TTPlayerCharacter, it has 'Head' attached.
+	// 바디는 기본 Mesh를 사용한다고 가정
 
-	// Initialize indices
+	// 인덱스 초기화
 	CurrentHeadIndex = 0;
 	CurrentBodyIndex = 0;
 
 	bReplicates = true;
 }
+
+#pragma region Life Cycle
 
 // Called when the game starts or when spawned
 void ATTLobbyCharacter::BeginPlay()
@@ -68,6 +60,10 @@ void ATTLobbyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 	DOREPLIFETIME(ATTLobbyCharacter, CurrentBodyIndex);
 }
 
+#pragma endregion
+
+#pragma region Replication Callbacks
+
 void ATTLobbyCharacter::OnRep_HeadMesh()
 {
 	if (Head)
@@ -84,29 +80,28 @@ void ATTLobbyCharacter::OnRep_BodyMesh()
 	}
 }
 
+#pragma endregion
+
+#pragma region Server RPCs
+
 void ATTLobbyCharacter::ServerChangeHeadMeshByIndex_Implementation(int32 MeshIndex)
 {
-	UE_LOG(LogTemp, Warning, TEXT("[LOBBY-HEAD] ServerChangeHeadMeshByIndex: Index=%d"), MeshIndex);
-	
 	const UTTCharactorHeadSkeletalSelect* CDO = GetDefault<UTTCharactorHeadSkeletalSelect>();
 	if (CDO && CDO->PlayerCharacterHeadSkeletalPaths.IsValidIndex(MeshIndex))
 	{
 		CurrentHeadIndex = MeshIndex;
 		FSoftObjectPath MeshPath = CDO->PlayerCharacterHeadSkeletalPaths[MeshIndex];
 		
-		// Synchronous load for server (can be async if needed)
+		// 서버 동기 로드
 		USkeletalMesh* LoadedMesh = Cast<USkeletalMesh>(MeshPath.TryLoad());
 		if (LoadedMesh)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[LOBBY-HEAD] LoadedMesh Valid: %s"), *LoadedMesh->GetName());
-			
 			HeadMesh = LoadedMesh;
-			OnRep_HeadMesh(); // Apply on server
+			OnRep_HeadMesh(); // 서버에서 적용
 			
-			// Persist to PlayerState for Seamless Travel to Main Level
+			// 메인 레벨로의 Seamless Travel을 위해 PlayerState에 지속
 			if (AController* Ctrl = GetController())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("[LOBBY-HEAD] Controller Valid"));
 				if (ATTPlayerState* PS = Ctrl->GetPlayerState<ATTPlayerState>())
 				{
 					PS->PersistedHeadMesh = LoadedMesh;
@@ -126,20 +121,19 @@ void ATTLobbyCharacter::ServerChangeBodyMeshByIndex_Implementation(int32 MeshInd
 {
 	const UTTCharactorSkeletalMeshSelect* CDO = GetDefault<UTTCharactorSkeletalMeshSelect>();
 	
-
 	if (CDO && CDO->PlayerCharacterSkeletalPaths.IsValidIndex(MeshIndex))
 	{
 		CurrentBodyIndex = MeshIndex;
 		FSoftObjectPath MeshPath = CDO->PlayerCharacterSkeletalPaths[MeshIndex];
 		
-		// Synchronous load for server (can be async if needed)
+		// 서버 동기 로드
 		USkeletalMesh* LoadedMesh = Cast<USkeletalMesh>(MeshPath.TryLoad());
 		if (LoadedMesh)
 		{
 			BodyMesh = LoadedMesh;
-			OnRep_BodyMesh(); // Apply on server
+			OnRep_BodyMesh(); // 서버에서 적용
 			
-			// Persist to PlayerState for Seamless Travel to Main Level
+			// 메인 레벨로의 Seamless Travel을 위해 PlayerState에 지속
 			if (AController* Ctrl = GetController())
 			{
 				if (ATTPlayerState* PS = Ctrl->GetPlayerState<ATTPlayerState>())
@@ -157,10 +151,13 @@ bool ATTLobbyCharacter::ServerChangeBodyMeshByIndex_Validate(int32 MeshIndex)
 	return CDO && CDO->PlayerCharacterSkeletalPaths.IsValidIndex(MeshIndex);
 }
 
+#pragma endregion
+
+#pragma region Helpers
 
 void ATTLobbyCharacter::ChangeHead(int32 Index)
 {
-	// Save to Local GameInstance (Client)
+	// 로컬 GameInstance에 저장 (클라이언트)
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		if (UTTGameInstance* GI = Cast<UTTGameInstance>(PC->GetGameInstance()))
@@ -171,19 +168,19 @@ void ATTLobbyCharacter::ChangeHead(int32 Index)
 
 	if (HasAuthority())
 	{
-		// Server - 직접 Implementation 호출
+		// 서버 - 직접 Implementation 호출
 		ServerChangeHeadMeshByIndex_Implementation(Index);
 	}
 	else
 	{
-		// Client - RPC 호출
+		// 클라이언트 - RPC 호출
 		ServerChangeHeadMeshByIndex(Index);
 	}
 }
 
 void ATTLobbyCharacter::ChangeBody(int32 Index)
 {
-	// Save to Local GameInstance (Client)
+	// 로컬 GameInstance에 저장 (클라이언트)
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		if (UTTGameInstance* GI = Cast<UTTGameInstance>(PC->GetGameInstance()))
@@ -194,13 +191,15 @@ void ATTLobbyCharacter::ChangeBody(int32 Index)
 
 	if (HasAuthority())
 	{
-		// Server - 직접 Implementation 호출
+		// 서버 - 직접 Implementation 호출
 		ServerChangeBodyMeshByIndex_Implementation(Index);
 	}
 	else
 	{
-		// Client - RPC 호출
+		// 클라이언트 - RPC 호출
 		ServerChangeBodyMeshByIndex(Index);
 	}
 }
+
+#pragma endregion
 

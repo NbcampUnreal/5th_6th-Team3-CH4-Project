@@ -1,11 +1,12 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿// (c) 2024. Team03. All rights reserved.
 
 #include "TTLobbyPlayerController.h"
 #include "TTGameModeBase_Lobby.h"
 #include "Blueprint/UserWidget.h"
 #include "TTGameInstance.h"
 #include "../Character/TTPlayerState.h"
+
+#pragma region Game Loop
 
 void ATTLobbyPlayerController::BeginPlay()
 {
@@ -23,6 +24,10 @@ void ATTLobbyPlayerController::BeginPlay()
 		}
 	}
 }
+
+#pragma endregion
+
+#pragma region Server RPC
 
 void ATTLobbyPlayerController::ServerRPC_StartGame_Implementation()
 {
@@ -51,4 +56,6 @@ bool ATTLobbyPlayerController::ServerRPC_InitPlayerInfo_Validate(const FString& 
 {
 	return true;
 }
+
+#pragma endregion
 

@@ -1,11 +1,10 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿// (c) 2024. Team03. All rights reserved.
 
 #include "TTTitlePlayerController.h"
 
 ATTTitlePlayerController::ATTTitlePlayerController()
 {
-	// SRS 4.2: Mouse Cursor Show
+	// 마우스 커서 표시
 	bShowMouseCursor = true;
 	bEnableClickEvents = true;
 	bEnableMouseOverEvents = true;

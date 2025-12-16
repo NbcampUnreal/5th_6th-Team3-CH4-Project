@@ -16,6 +16,7 @@
 #include "Engine/EngineTypes.h"
 #include "Engine/DamageEvents.h"
 #include "Team03.h"
+#include "TTWeaponData.h"
 
 int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 
@@ -31,9 +32,12 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	SprintSpeed ( 400.f ) ,
 	MaxHP(100.f),
 	CurrentHP(MaxHP),
-	MaxSturn(100.f),
-	CurrentSturn(0.f)
+	MaxStun(100.f),
+	CurrentStun(0.f)
 {
+	WeaponName = "Hand";
+	WeaponData = nullptr;
+
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
@@ -153,6 +157,7 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	//}
 }
 
+#pragma region Get,Set
 void ATTPlayerCharacter::SetMaxHP ( float amount )
 {
 	MaxHP = amount;
@@ -173,25 +178,27 @@ float ATTPlayerCharacter::GetCurrentHP ()
 	return CurrentHP;
 }
 
-void ATTPlayerCharacter::SetMaxSturn ( float amount )
+void ATTPlayerCharacter::SetMaxStun ( float amount )
 {
-	MaxSturn = amount;
+	MaxStun = amount;
 }
 
-float ATTPlayerCharacter::GetMaxSturn ()
+float ATTPlayerCharacter::GetMaxStun ()
 {
-	return MaxSturn;
+	return MaxStun;
 }
 
-void ATTPlayerCharacter::SetCurrentSturn ( float amount )
+void ATTPlayerCharacter::SetCurrentStun ( float amount )
 {
-	CurrentSturn = amount;
+	CurrentStun = amount;
 }
 
-float ATTPlayerCharacter::GetCurrentSturn ()
+float ATTPlayerCharacter::GetCurrentStun ()
 {
-	return CurrentSturn;
+	return CurrentStun;
 }
+
+#pragma endregion
 
 void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
 {
@@ -274,28 +281,6 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 	}
 }
 
-void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
-{
-	if (GetCharacterMovement ()->IsFalling () == true)
-	{
-		return;
-	}
-
-	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	//if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
-	//{
-	//	AnimInstance->Montage_Play ( AttackMeleeMontage );
-	//}
-	if (0 == CurrentComboCount)
-	{
-		BeginAttack ();
-	}
-	else
-	{
-		ensure ( FMath::IsWithinInclusive<int32> ( CurrentComboCount , 1 , MaxComboCount ) );
-		bIsAttackKeyPressed = true;
-	}
-}
 
 void ATTPlayerCharacter::InChat ()
 {
@@ -438,6 +423,40 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 
 #pragma region Attack
 
+
+void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
+{
+	if (GetCharacterMovement ()->IsFalling () == true)
+	{
+		return;
+	}
+
+	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	//if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	//{
+	//	AnimInstance->Montage_Play ( AttackMeleeMontage );
+	//}
+	if (0 == CurrentComboCount)
+	{
+		BeginAttack ();
+	}
+	else
+	{
+		ensure ( FMath::IsWithinInclusive<int32> ( CurrentComboCount , 1 , MaxComboCount ) );
+		bIsAttackKeyPressed = true;
+	}
+
+	if (IsValid ( WeaponData ))
+	{
+		FTTWeaponData* CurrentWeapon = WeaponData->FindRow<FTTWeaponData> ( WeaponName , TEXT ( "WeaponError" ) );
+		if (CurrentWeapon != nullptr)
+		{
+			UE_LOG ( LogTemp , Warning , TEXT ( "Current StunAmount is %f" ) , CurrentWeapon->StunAmount );
+		}
+	}
+
+}
+
 void ATTPlayerCharacter::HandleOnCheckHit ()
 {
 	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
@@ -552,5 +571,10 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 	}
 
 	return FinalDamageAmount;
+}
+void ATTPlayerCharacter::SetWeaponData ( FName NewWeaponName )
+{
+	WeaponName = NewWeaponName;
+	UE_LOG ( LogTemp , Warning , TEXT ( "Weapon Changed to : %s" ) , *WeaponName.ToString () );
 }
 #pragma endregion

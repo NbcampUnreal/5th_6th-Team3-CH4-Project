@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// (c) 2024. Team03. All rights reserved.
 
 #pragma once
 
@@ -22,6 +22,7 @@ public:
 	virtual void NativeConstruct() override;
 
 protected:
+#pragma region Widgets
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_Close;
 
@@ -36,18 +37,22 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_Body_Prev;
+#pragma endregion
 
 private:
-	// Index tracking for cyclic navigation
+#pragma region Internal State
+	// 순환 탐색을 위한 인덱스 추적
 	int32 CurrentHeadIndex;
 	int32 CurrentBodyIndex;
 
-	// Helper to apply mesh change
+	// 메쉬 변경 적용 헬퍼
 	void ApplyHeadChange();
 	void ApplyBodyChange();
 	
 	TSharedPtr<FStreamableHandle> AssetStreamableHandle;
+#pragma endregion
 
+#pragma region Callbacks
 	UFUNCTION()
 	void OnClickClose();
 
@@ -62,4 +67,5 @@ private:
 
 	UFUNCTION()
 	void OnClickBodyPrev();
+#pragma endregion
 };

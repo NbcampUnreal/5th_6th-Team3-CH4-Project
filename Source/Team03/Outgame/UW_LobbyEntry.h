@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// (c) 2024. Team03. All rights reserved.
 
 #pragma once
 
@@ -21,6 +21,7 @@ public:
 	void Setup(const FTTSessionInfo& InInfo);
 
 protected:
+#pragma region Widgets
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* TextBlock_HostName;
 
@@ -32,10 +33,13 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* Btn_Join;
+#pragma endregion
 
 private:
+#pragma region Callbacks
 	UFUNCTION()
 	void OnJoinClicked();
+#pragma endregion
 
 	FTTSessionInfo SessionInfo;
 };

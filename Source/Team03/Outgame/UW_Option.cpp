@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿// (c) 2024. Team03. All rights reserved.
 
 #include "UW_Option.h"
 #include "Components/Button.h"
@@ -24,12 +23,14 @@ void UUW_Option::NativeConstruct()
 	InitSettings();
 }
 
+#pragma region Helpers
+
 void UUW_Option::InitSettings()
 {
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (!Settings) return;
 
-	// Init Resolution
+	// 해상도 초기화
 	if (Combo_Resolution)
 	{
 		Combo_Resolution->ClearOptions();
@@ -41,7 +42,7 @@ void UUW_Option::InitSettings()
 		Combo_Resolution->SetSelectedOption(ResString);
 	}
 
-	// Init Window Mode
+	// 윈도우 모드 초기화
 	if (Combo_WindowMode)
 	{
 		Combo_WindowMode->ClearOptions();
@@ -56,39 +57,12 @@ void UUW_Option::InitSettings()
 	}
 }
 
-void UUW_Option::OnClickClose()
-{
-	RemoveFromParent();
-}
-
-void UUW_Option::OnClickApply()
-{
-	ApplySettings();
-}
-
-void UUW_Option::OnResolutionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
-{
-	// Logic can be moved here if we want instant preview, but usually Apply is better
-}
-
-void UUW_Option::OnWindowModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
-{
-}
-
-void UUW_Option::OnMasterVolumeChanged(float Value)
-{
-	// Simple Audio Volume - Using GameplayStatics Sound Mix or similar would be better, 
-	// but for now let's just assume we hook up to a SoundClass or just store it.
-	// For this task, we will just Log it as placeholder unless we have a SoundMix.
-	// UGameplayStatics::SetSoundMixClassOverride(...);
-}
-
 void UUW_Option::ApplySettings()
 {
 	UGameUserSettings* Settings = GEngine->GetGameUserSettings();
 	if (!Settings) return;
 
-	// Resolution
+	// 해상도
 	if (Combo_Resolution)
 	{
 		FString Selected = Combo_Resolution->GetSelectedOption();
@@ -101,7 +75,7 @@ void UUW_Option::ApplySettings()
 		}
 	}
 
-	// Window Mode
+	// 윈도우 모드
 	if (Combo_WindowMode)
 	{
 		FString Selected = Combo_WindowMode->GetSelectedOption();
@@ -113,3 +87,34 @@ void UUW_Option::ApplySettings()
 
 	Settings->ApplySettings(false);
 }
+
+#pragma endregion
+
+#pragma region Callbacks
+
+void UUW_Option::OnClickClose()
+{
+	RemoveFromParent();
+}
+
+void UUW_Option::OnClickApply()
+{
+	ApplySettings();
+}
+
+void UUW_Option::OnResolutionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+	// 즉시 미리보기를 원하면 로직을 여기로 이동, 보통 적용 버튼이 더 좋음
+}
+
+void UUW_Option::OnWindowModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+}
+
+void UUW_Option::OnMasterVolumeChanged(float Value)
+{
+	// 간단한 오디오 볼륨 - Sound Mix 등을 사용하는 것이 더 좋음
+	// UGameplayStatics::SetSoundMixClassOverride(...);
+}
+
+#pragma endregion

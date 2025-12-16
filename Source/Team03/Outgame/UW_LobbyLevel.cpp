@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿// (c) 2024. Team03. All rights reserved.
 
 #include "UW_LobbyLevel.h"
 #include "Components/Button.h"
@@ -19,7 +18,7 @@ void UUW_LobbyLevel::NativeConstruct()
 	{
 		Btn_StartGame->OnClicked.AddDynamic(this, &ThisClass::OnClickStartGame);
 		
-		// Hide Start Button if Client
+		// 클라이언트인 경우 시작 버튼 숨김
 		if (GetOwningPlayer() && GetOwningPlayer()->GetWorld()->GetNetMode() == NM_Client)
 		{
 			Btn_StartGame->SetVisibility(ESlateVisibility::Collapsed);
@@ -36,10 +35,12 @@ void UUW_LobbyLevel::NativeConstruct()
 		Btn_Customize->OnClicked.AddDynamic(this, &ThisClass::OnClickCustomize);
 	}
 
-	// Update Player List periodically
+	// 플레이어 목록 주기적 업데이트
 	GetWorld()->GetTimerManager().SetTimer(PlayerListTimerHandle, this, &ThisClass::UpdatePlayerList, 1.0f, true);
 	UpdatePlayerList();
 }
+
+#pragma region Callbacks
 
 void UUW_LobbyLevel::OnClickStartGame()
 {
@@ -66,7 +67,7 @@ void UUW_LobbyLevel::OnClickCustomize()
 		{
 			Widget->AddToViewport();
             
-             // Set Input Mode Game And UI
+             // 게임 및 UI 입력 모드 설정
             if (APlayerController* PC = GetOwningPlayer())
             {
                  FInputModeGameAndUI InputMode;
@@ -83,7 +84,6 @@ void UUW_LobbyLevel::UpdatePlayerList()
 {
 	if (!ScrollBox_PlayerList)
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] ScrollBox_PlayerList is NULL"));
 		return;
 	}
 
@@ -91,41 +91,37 @@ void UUW_LobbyLevel::UpdatePlayerList()
 
 	if (AGameStateBase* GS = GetWorld()->GetGameState())
 	{
-		// UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] PlayerArray Count: %d"), GS->PlayerArray.Num());
-
 		for (APlayerState* PS : GS->PlayerArray)
 		{
 			if (ATTPlayerState* TTPS = Cast<ATTPlayerState>(PS))
 			{
 				FString DisplayName = TTPS->UserNickname;
-				// UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] Found TTPlayerState. Nickname: %s"), *DisplayName);
 
 				if (DisplayName.IsEmpty()) DisplayName = TEXT("Loading...");
 
 				UTextBlock* TextBlock = NewObject<UTextBlock>(this);
 				TextBlock->SetText(FText::FromString(DisplayName));
 				
-				// Background is Black (as per screenshot), so Text should be White or Bright
+				// 배경이 검은색이므로 텍스트는 흰색 또는 밝은색이어야 함
 				TextBlock->SetColorAndOpacity(FSlateColor(FLinearColor::White));
                 
-                // Ensure Font is valid
+                // 폰트 유효성 확인
                 FSlateFontInfo FontInfo = TextBlock->GetFont();
                 FontInfo.Size = 24.0f; 
                 // FontInfo.TypefaceFontName = FName("Bold"); // Optional
                 TextBlock->SetFont(FontInfo);
 
 				ScrollBox_PlayerList->AddChild(TextBlock);
-				// UE_LOG(LogTemp, Log, TEXT("[UW_LobbyLevel] Added TextBlock for %s. Color: White, Size: 24"), *DisplayName);
 			}
 			else
 			{
-				// UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] PlayerState is NOT ATTPlayerState"));
 			}
 		}
 	}
 	else
 	{
-		// UE_LOG(LogTemp, Warning, TEXT("[UW_LobbyLevel] GameState is NULL"));
 	}
 }
+
+#pragma endregion
 
