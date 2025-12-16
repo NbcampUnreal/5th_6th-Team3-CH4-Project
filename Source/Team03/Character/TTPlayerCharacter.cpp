@@ -31,8 +31,8 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	SprintSpeed ( 400.f ) ,
 	MaxHP(100.f),
 	CurrentHP(MaxHP),
-	MaxSturn(100.f),
-	CurrentSturn(0.f)
+	MaxStun(100.f),
+	CurrentStun(0.f)
 {
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	PrimaryActorTick.bCanEverTick = true;
@@ -173,24 +173,24 @@ float ATTPlayerCharacter::GetCurrentHP ()
 	return CurrentHP;
 }
 
-void ATTPlayerCharacter::SetMaxSturn ( float amount )
+void ATTPlayerCharacter::SetMaxStun ( float amount )
 {
-	MaxSturn = amount;
+	MaxStun = amount;
 }
 
-float ATTPlayerCharacter::GetMaxSturn ()
+float ATTPlayerCharacter::GetMaxStun ()
 {
-	return MaxSturn;
+	return MaxStun;
 }
 
-void ATTPlayerCharacter::SetCurrentSturn ( float amount )
+void ATTPlayerCharacter::SetCurrentStun ( float amount )
 {
-	CurrentSturn = amount;
+	CurrentStun = amount;
 }
 
-float ATTPlayerCharacter::GetCurrentSturn ()
+float ATTPlayerCharacter::GetCurrentStun ()
 {
-	return CurrentSturn;
+	return CurrentStun;
 }
 
 void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )

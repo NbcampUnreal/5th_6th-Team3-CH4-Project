@@ -98,9 +98,9 @@ private:
 	UPROPERTY ( EditAnywhere , Replicated )
 	float CurrentHP;
 	UPROPERTY ( EditAnywhere )
-	float MaxSturn;
+	float MaxStun;
 	UPROPERTY ( EditAnywhere )
-	float CurrentSturn;
+	float CurrentStun;
 
 public:
 
@@ -113,10 +113,10 @@ public:
 	float GetMaxHP ();
 	void SetCurrentHP ( float amount );
 	float GetCurrentHP ();
-	void SetMaxSturn ( float amount );
-	float GetMaxSturn ();
-	void SetCurrentSturn (  float amount );
-	float GetCurrentSturn ();
+	void SetMaxStun ( float amount );
+	float GetMaxStun ();
+	void SetCurrentStun (  float amount );
+	float GetCurrentStun ();
 
 #pragma endregion
 
