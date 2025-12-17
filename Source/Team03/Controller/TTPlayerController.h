@@ -19,6 +19,8 @@ class TEAM03_API ATTPlayerController : public APlayerController
 public:
 	ATTPlayerController ();
 
+	virtual void SetPawn ( APawn* InPawn ) override;
+	virtual void OnPossess ( APawn* InPawn ) override;
 
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
 	UInputMappingContext* InputMappingContext;
@@ -28,6 +30,10 @@ public:
 	UInputAction* JumpAction;
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
 	UInputAction* SprintAction;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* AttackAction;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* BlockingAction;
 
 	virtual void BeginPlay () override;
 	
@@ -44,7 +50,7 @@ public:
 
 // Outgame 담당자가 추가한 코드
 	UFUNCTION(Server, Reliable, WithValidation)
-	void ServerRPC_InitPlayerInfo(const FString& Nickname, const FName& CharacterRowName);
+	void ServerRPC_InitPlayerInfo(const FString& Nickname, const FName& CharacterRowName, int32 HeadIndex, int32 BodyIndex);
 
 private:
 	UPROPERTY ()
@@ -70,4 +76,10 @@ public:
 
 #pragma endregion
 
+#pragma region SaveData
+public:
+	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
+	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
+
+#pragma endregion
 };

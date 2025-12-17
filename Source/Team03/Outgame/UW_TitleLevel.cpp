@@ -1,5 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿// (c) 2024. Team03. All rights reserved.
 
 #include "UW_TitleLevel.h"
 #include "Components/Button.h"
@@ -15,7 +14,7 @@ void UUW_TitleLevel::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	// Bind Events
+	// 이벤트 바인딩
 	if (Btn_Create)
 	{
 		Btn_Create->OnClicked.AddDynamic(this, &UUW_TitleLevel::OnCreateClicked);
@@ -31,18 +30,23 @@ void UUW_TitleLevel::NativeConstruct()
 		Btn_Exit->OnClicked.AddDynamic(this, &UUW_TitleLevel::OnExitClicked);
 	}
 
+	if (Btn_Option)
+	{
+		Btn_Option->OnClicked.AddDynamic(this, &ThisClass::OnOptionClicked);
+	}
+
 	if (Input_Nickname)
 	{
 		Input_Nickname->OnTextChanged.AddDynamic(this, &UUW_TitleLevel::OnNicknameChanged);
 		
-		// Initialize Nickname from GameInstance
+		// GameInstance에서 닉네임 초기화
 		if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 		{
 			Input_Nickname->SetText(FText::FromString(GI->UserNickname));
 		}
 	}
 
-	// Bind GameInstance Delegate
+	// GameInstance 델리게이트 바인딩
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
 		GI->OnFindSessionsCompleteBP.AddDynamic(this, &UUW_TitleLevel::OnSessionSearchCompleted);
@@ -53,7 +57,7 @@ void UUW_TitleLevel::NativeConstruct()
 		Btn_CloseOverlay->OnClicked.AddDynamic(this, &ThisClass::OnCloseOverlayClicked);
 	}
 
-	// SRS 4.2: Set Input Mode
+	// 입력 모드 설정
 	if (APlayerController* PC = GetOwningPlayer())
 	{
 		PC->SetShowMouseCursor(true);
@@ -81,12 +85,14 @@ void UUW_TitleLevel::NativeDestruct()
 	}
 }
 
+#pragma region Callbacks
+
 void UUW_TitleLevel::OnCreateClicked()
 {
 	SetLoadingState(true);
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
-		// SRS 1.1: LAN Connection
+		// LAN 연결
 		GI->CreateGameSession(true);
 	}
 }
@@ -95,13 +101,13 @@ void UUW_TitleLevel::OnFindClicked()
 {
 	SetLoadingState(true);
     
-    // Show Overlay
+    // 오버레이 표시
     if (Widget_SessionOverlay)
     {
         Widget_SessionOverlay->SetVisibility(ESlateVisibility::Visible);
     }
     
-    // Clear List
+    // 목록 초기화
     if (ScrollBox_SessionList) ScrollBox_SessionList->ClearChildren();
     if (TextBlock_NoSessions) TextBlock_NoSessions->SetVisibility(ESlateVisibility::Collapsed);
 
@@ -114,9 +120,29 @@ void UUW_TitleLevel::OnFindClicked()
 void UUW_TitleLevel::OnCloseOverlayClicked()
 {
     if (Widget_SessionOverlay)
-    {
+    	{
         Widget_SessionOverlay->SetVisibility(ESlateVisibility::Collapsed);
     }
+}
+
+void UUW_TitleLevel::OnOptionClicked()
+{
+	if (OptionWidgetClass)
+	{
+		UUserWidget* Widget = CreateWidget<UUserWidget>(GetOwningPlayer(), OptionWidgetClass);
+		if (Widget)
+		{
+			Widget->AddToViewport();
+            
+            // 포커스 설정
+            if (APlayerController* PC = GetOwningPlayer())
+            {
+                FInputModeUIOnly InputMode;
+                InputMode.SetWidgetToFocus(Widget->TakeWidget());
+                PC->SetInputMode(InputMode);
+            }
+		}
+	}
 }
 
 void UUW_TitleLevel::OnExitClicked()
@@ -143,7 +169,7 @@ void UUW_TitleLevel::OnSessionSearchCompleted(bool bWasSuccessful)
 			TArray<FTTSessionInfo> Results = GI->GetSessionSearchResults();
 			UpdateSessionList(Results);
             
-            // Populate C++ Logic
+            // C++ 로직으로 채우기
             if (ScrollBox_SessionList)
             {
                 ScrollBox_SessionList->ClearChildren();
@@ -173,9 +199,13 @@ void UUW_TitleLevel::OnSessionSearchCompleted(bool bWasSuccessful)
 	}
 }
 
+#pragma endregion
+
+#pragma region UI State
+
 void UUW_TitleLevel::SetLoadingState(bool bIsLoading)
 {
-	// SRS 3.9: Loading Indicator
+	// 로딩 인디케이터
 	if (LoadingOverlay)
 	{
 		LoadingOverlay->SetVisibility(bIsLoading ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
@@ -184,3 +214,5 @@ void UUW_TitleLevel::SetLoadingState(bool bIsLoading)
 	if (Btn_Create) Btn_Create->SetIsEnabled(!bIsLoading);
 	if (Btn_Find) Btn_Find->SetIsEnabled(!bIsLoading);
 }
+
+#pragma endregion

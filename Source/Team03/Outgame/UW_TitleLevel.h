@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// (c) 2024. Team03. All rights reserved.
 
 #pragma once
 
@@ -24,6 +24,7 @@ public:
 	virtual void NativeDestruct() override;
 
 protected:
+#pragma region Widgets
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UEditableText> Input_Nickname;
 
@@ -37,9 +38,15 @@ protected:
 	TObjectPtr<UButton> Btn_Exit;
 
 	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> Btn_Option;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UUserWidget> OptionWidgetClass;
+
+	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UWidget> LoadingOverlay;
 
-	// --- Find Game Overlay ---
+	// 게임 찾기 오버레이
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UWidget> Widget_SessionOverlay;
 
@@ -54,8 +61,10 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UUW_LobbyEntry> LobbyEntryClass;
+#pragma endregion
 
-    // Helper to interact with GameInstance
+#pragma region Callbacks
+    // GameInstance 상호작용 헬퍼
 	UFUNCTION()
 	void OnCreateClicked();
 
@@ -66,6 +75,9 @@ protected:
 	void OnCloseOverlayClicked();
 
 	UFUNCTION()
+	void OnOptionClicked();
+
+	UFUNCTION()
 	void OnExitClicked();
 
 	UFUNCTION()
@@ -74,10 +86,13 @@ protected:
 	UFUNCTION()
 	void OnSessionSearchCompleted(bool bWasSuccessful);
 
-	// Function to populate list in BP
+	// BP에서 목록을 채우는 함수
 	UFUNCTION(BlueprintImplementableEvent, Category = "UI")
 	void UpdateSessionList(const TArray<FTTSessionInfo>& SessionResults);
+#pragma endregion
     
-    // UI State
+#pragma region UI State
+    // UI 상태
 	void SetLoadingState(bool bIsLoading);
+#pragma endregion
 };

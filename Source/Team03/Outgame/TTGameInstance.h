@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// (c) 2024. Team03. All rights reserved.
 
 #pragma once
 
@@ -43,14 +43,24 @@ public:
 	UTTGameInstance();
 	virtual void Init() override;
 
-	// --- 3.1 Data Persistence ---
+#pragma region Data Persistence
+	// 데이터 지속성
 	UPROPERTY(BlueprintReadWrite, Category = "Data")
 	FString UserNickname;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Data")
 	FName SelectedCharacterRowName;
+	
+	// 로비 커스터마이징 데이터 (로컬 플레이어 전용)
+	UPROPERTY(BlueprintReadWrite, Category = "Data")
+	int32 CustomizedHeadIndex = 0;
+	
+	UPROPERTY(BlueprintReadWrite, Category = "Data")
+	int32 CustomizedBodyIndex = 0;
+#pragma endregion
 
-	// --- Session Management ---
+#pragma region Session Management
+	// 세션 관리
 	UFUNCTION(BlueprintCallable, Category = "Session")
 	void CreateGameSession(bool bIsLAN);
 
@@ -68,8 +78,10 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Session")
 	FOnFindSessionsCompleteBP OnFindSessionsCompleteBP;
+#pragma endregion
 
 protected:
+#pragma region Session Callbacks
 	TSharedPtr<FOnlineSessionSearch> SessionSearch;
 	
 	virtual void OnCreateSessionComplete(FName SessionName, bool bWasSuccessful);
@@ -77,8 +89,9 @@ protected:
 	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	virtual void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
 
-    // Helper: Cleanup session before joining a new one
+    // 헬퍼: 새 세션 참여 전 세션 정리
 	void OnDestroySessionBeforeJoin(FName SessionName, bool bWasSuccessful);
+#pragma endregion
 
 private:
 	FDelegateHandle OnCreateSessionCompleteDelegateHandle;
@@ -86,7 +99,7 @@ private:
 	FDelegateHandle OnJoinSessionCompleteDelegateHandle;
 	FDelegateHandle OnDestroySessionCompleteDelegateHandle;
     
-    // Index of session to join after cleanup
+    // 정리 후 참여할 세션 인덱스
     int32 PendingJoinSessionIndex = -1;
 
 	void OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString);

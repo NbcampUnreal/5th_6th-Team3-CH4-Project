@@ -12,6 +12,9 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
+class UAnimMontage;
+
+
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -27,6 +30,7 @@ public:
 	TObjectPtr<UCameraComponent> Camera;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Head")
 	TObjectPtr<USkeletalMeshComponent> Head;
+
 
 #pragma region Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
@@ -57,13 +61,13 @@ public:
 protected:
 	void Move ( const FInputActionValue& Value );
 	void Look ( const FInputActionValue& Value );
-	void Attack();
+	void Attack( const FInputActionValue& Value );
 	void InChat ();
 	void ESCMenu();
 	void TempKey ();
 	void SprintStart ();
 	void SprintEnd ();
-	void PlayerBlocking ();
+	void PlayerBlocking ( const FInputActionValue& Value );
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
@@ -76,6 +80,11 @@ protected:
 
 	UFUNCTION(Server, Unreliable)
 	void ServerSetRotation ( FRotator NewRotation );
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	TObjectPtr<UAnimMontage> AttackMeleeMontage;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	TObjectPtr<UAnimMontage> BlockingMontage;
 	
 #pragma endregion
 
@@ -85,14 +94,36 @@ private:
 	UPROPERTY ( EditAnywhere )
 	float SprintSpeed;
 
+	UPROPERTY(EditAnywhere, Replicated)
+	float MaxHP;
+	UPROPERTY ( EditAnywhere , Replicated )
+	float CurrentHP;
+	UPROPERTY ( EditAnywhere )
+	float MaxStun;
+	UPROPERTY ( EditAnywhere )
+	float CurrentStun;
+
 public:
 
 	virtual void BeginPlay () override;
 	virtual void Tick ( float DeltaTime ) override;
 
+#pragma region GetSet
+public:
+	void SetMaxHP (float amount);
+	float GetMaxHP ();
+	void SetCurrentHP ( float amount );
+	float GetCurrentHP ();
+	void SetMaxStun ( float amount );
+	float GetMaxStun ();
+	void SetCurrentStun (  float amount );
+	float GetCurrentStun ();
+
+#pragma endregion
+
 #pragma region MeshChange
 public:
-
+	void InitializeMesh ( class ATTPlayerState* TTPS );
 
 	UFUNCTION ( Server , Reliable , WithValidation )
 	void ServerChangeHeadMesh ( USkeletalMesh* NewMesh );
@@ -117,9 +148,57 @@ private:
 
 #pragma endregion
 
-#pragma region SaveData
-	public:
-	void SavePlayerSaveData ( const FString& SlotName , int32 UserIndex );
-	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
+#pragma region Attack
+
+public:
+	UFUNCTION ()
+	void HandleOnCheckHit ();
+	UFUNCTION ()
+	void HandleOnCheckInputAttack ();
+
+	virtual void BeginAttack ();
+
+	UFUNCTION ()
+	virtual void EndAttack ( UAnimMontage* InMontage , bool bInterruped );
+
+	virtual float TakeDamage ( float DamageAmount , struct FDamageEvent const& DamageEvent , class AController* EventInstigator , AActor* DamageCauser ) override;
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SetWeaponData ( FName NewWeaponName );
+
+	static int32 ShowAttackMeleeDebug;
+protected:
+	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
+
+	int32 MaxComboCount = 3;
+
+	int32 CurrentComboCount = 0;
+
+	bool bIsNowAttacking = false;
+
+	bool bIsAttackKeyPressed = false;
+
+	FOnMontageEnded OnMeleeAttackMontageEndedDelegate;
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	float AttackMeleeRange = 50.f;
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
+	float AttackMeleeRadius = 20.f;
+
+	UPROPERTY ( EditAnywhere , Category = "Weapon" )
+	TObjectPtr<UDataTable> WeaponData;
+
+	FName WeaponName;
+#pragma endregion
+
+#pragma region HP
+
+public:
+	bool IsDead () const { return bIsDead; }
+protected:
+	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly )
+	uint8 bIsDead : 1;
+
 #pragma endregion
 };

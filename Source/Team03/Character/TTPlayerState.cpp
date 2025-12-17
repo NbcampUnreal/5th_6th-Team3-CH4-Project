@@ -2,7 +2,11 @@
 
 
 #include "TTPlayerState.h"
+#include "TTPlayerCharacter.h"
+#include "../Save/TTSaveGame.h"
 #include "Net/UnrealNetwork.h"
+
+
 
 void ATTPlayerState::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
 {
@@ -17,3 +21,4 @@ void ATTPlayerState::OnRep_UserNickname()
 {
 	// Optional: Broadcast delegate if needed
 }
+

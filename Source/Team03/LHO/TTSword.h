@@ -3,38 +3,32 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "TTWeaponBase.h"
+#include "GameFramework/Actor.h"
 #include "TTSword.generated.h"
 
-/**
- * 
- */
+
+class ATTPlayerCharacter;
+class UTTPickupComponent;
+
 UCLASS()
-class TEAM03_API ATTSword : public ATTWeaponBase
+class TEAM03_API ATTSword : public AActor
 {
 	GENERATED_BODY()
+
 public:
 	ATTSword ();
-	void BeginPlay () override;
-	virtual void Attack () override;
-	void AttackEnd () override;
 
-private:
-	UPROPERTY ( EditAnywhere )
-	TObjectPtr<UStaticMeshComponent> SwordMesh;
+	UTTPickupComponent* GetPickupComponent () const { return PickupComponent; }
 
-	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly , Category = "Combat" , meta = (AllowPrivateAccess = "true") )
-	TObjectPtr<class UBoxComponent> MeleeCollisionBox;
+protected:
+	virtual void BeginPlay () override;
 
-	/** 히트박스에 오버랩 감지 시 호출될 함수 */
 	UFUNCTION ()
-	void OnMeleeOverlap ( UPrimitiveComponent* OverlappedComponent ,
-		AActor* OtherActor ,
-		UPrimitiveComponent* OtherComp ,
-		int32 OtherBodyIndex ,
-		bool bFromSweep ,
-		const FHitResult& SweepResult );
-	/** 공격에 이미 감지된 캐릭터 리스트 (중복 히트 방지용) */
-	TArray<class ACharacter*> HitCharacters;
+	void HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter );
+
+protected:
+	UPROPERTY ( EditDefaultsOnly , BlueprintReadOnly )
+	TObjectPtr<UTTPickupComponent> PickupComponent;
+
 
 };

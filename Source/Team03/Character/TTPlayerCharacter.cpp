@@ -11,12 +11,34 @@
 #include "Character/TTPlayerState.h"
 #include "Save/TTSaveGame.h"
 #include "Net/UnrealNetwork.h"
+#include "LHO/TTAnimInstance.h"
+#include "Camera/PlayerCameraManager.h"
+#include "Engine/EngineTypes.h"
+#include "Engine/DamageEvents.h"
+#include "Team03.h"
+#include "TTWeaponData.h"
 
+int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 
-ATTPlayerCharacter::ATTPlayerCharacter()
+FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
+	TEXT ( "TT.ShowAttackMeleeDebug" ) ,
+	ATTPlayerCharacter::ShowAttackMeleeDebug ,
+	TEXT ( "" ) ,
+	ECVF_Cheat
+);
+
+ATTPlayerCharacter::ATTPlayerCharacter () :
+	WalkSpeed ( 200.f ) ,
+	SprintSpeed ( 400.f ) ,
+	MaxHP(100.f),
+	CurrentHP(MaxHP),
+	MaxStun(100.f),
+	CurrentStun(0.f)
 {
-	WalkSpeed = 600.f;
-	SprintSpeed = 1000.f;
+	WeaponName = "Hand";
+	WeaponData = nullptr;
+
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
@@ -25,8 +47,11 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
-	SpringArm->TargetArmLength = 500.f;
+	SpringArm->TargetArmLength = 700.f;
 	SpringArm->bUsePawnControlRotation = true;	
+	SpringArm->bEnableCameraLag = true;
+	SpringArm->CameraLagSpeed = 3.0f;
+	SpringArm->CameraLagMaxDistance = 100.0f;
 	
 	Camera = CreateDefaultSubobject<UCameraComponent> ( TEXT ( "Camera" ) );
 	Camera->SetupAttachment ( SpringArm );
@@ -34,12 +59,13 @@ ATTPlayerCharacter::ATTPlayerCharacter()
 	bUseControllerRotationYaw = false;
 
 	GetCharacterMovement ()->bOrientRotationToMovement = false;
-	GetCharacterMovement ()->RotationRate=FRotator( 0.0f , 1080.0f , 0.0f );
-
+	GetCharacterMovement ()->RotationRate = FRotator ( 0.0f , 1440.0f , 0.0f );
 	TargetRotation = FRotator::ZeroRotator;
 
 	HeadMeshToReplicate = nullptr;
 	BodyMeshToReplicate = nullptr;
+
+	bIsDead = false;
 }
 
 
@@ -48,10 +74,31 @@ void ATTPlayerCharacter::BeginPlay ()
 	Super::BeginPlay ();
 	UE_LOG ( LogTemp , Warning , TEXT ( "BeginPlay" ) );
 
-	APlayerController* PlayerController = Cast<APlayerController> ( GetController () );
+	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	//if (IsValid ( AnimInstance ) == true)
+	//{
+	//	AnimInstance->OnCheckHit.AddDynamic ( this , &ThisClass::HandleOnCheckHit );
+	//}
+
+	ATTPlayerController* PlayerController = Cast<ATTPlayerController> ( GetController () );
 
 	if (IsValid ( PlayerController ) == true)
 	{
+		PlayerController->SetControlRotation (FRotator(0.f , -70.f , 0.f ));
+		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f ;
+		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f ;
+
+
+		// ----- Outgame 담당자가 수정함 -----
+		/* 
+		 * LoadPlayerSaveData 호출 비활성화:
+		 * - SaveGame 로드가 PlayerState 데이터를 덮어쓰는 문제 발생
+		 * - Seamless Travel을 사용하므로 PlayerState가 자동으로 유지됨
+		 * PlayerController->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
+		 */
+		// ----------------------------------
+
+
 		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
 
 		if (IsValid ( Subsystem ) == true)
@@ -59,33 +106,104 @@ void ATTPlayerCharacter::BeginPlay ()
 			Subsystem->AddMappingContext ( IMC_Character , 0 );
 		}
 	}
+	// ----- Outgame 담당자가 수정함 -----
 	if (HasAuthority ())
 	{
 		if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
 		{
 			if (USkeletalMesh* HeadMesh = PS->PersistedHeadMesh)
 			{
-				OnRep_HeadMesh ();
 				HeadMeshToReplicate = HeadMesh;
+				OnRep_HeadMesh ();
 			}
+			
 			if (USkeletalMesh* BodyMesh = PS->PersistedBodyMesh)
 			{
-				OnRep_BodyMesh ();
 				BodyMeshToReplicate = BodyMesh;
+				OnRep_BodyMesh ();
 			}
 		}
 	}
-	LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
+	// ----------------------------------
+
 }
 
 void ATTPlayerCharacter::Tick ( float DeltaTime )
 {
 	Super::Tick ( DeltaTime );
 
-	float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
-	FRotator NewRotation = FMath::RInterpConstantTo ( GetActorRotation () , TargetRotation , DeltaTime , TurnSpeed );
+	FRotator CurrentRotation = GetActorRotation ();
+	FRotator NewRotation;
 
+	if (IsLocallyControlled ())
+	{
+		float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
+		NewRotation = FMath::RInterpConstantTo ( CurrentRotation , TargetRotation , DeltaTime , TurnSpeed );
+	}
+	else
+	{
+		float TurnSpeed = GetCharacterMovement ()->RotationRate.Yaw;
+		NewRotation = FMath::RInterpConstantTo ( CurrentRotation , TargetRotation , DeltaTime , TurnSpeed );
+	}
 	SetActorRotation ( NewRotation );
+
+	//ATTPlayerState* PS = Cast<ATTPlayerState> ( GetPlayerState () );
+	//if (IsValid ( PS->PersistedBodyMesh ) && IsValid ( PS->PersistedHeadMesh ) && IsValid( PS ))
+	//{
+	//	if ((GetMesh () != Cast<USkeletalMeshComponent> ( PS->PersistedBodyMesh )) || (Head != Cast<USkeletalMeshComponent> ( PS->PersistedHeadMesh )))
+	//	{
+	//		InitializeMesh ( PS );
+	//	}
+	//}
+}
+
+#pragma region Get,Set
+void ATTPlayerCharacter::SetMaxHP ( float amount )
+{
+	MaxHP = amount;
+}
+
+float ATTPlayerCharacter::GetMaxHP ()
+{
+	return MaxHP;
+}
+
+void ATTPlayerCharacter::SetCurrentHP ( float amount )
+{
+	CurrentHP = amount;
+}
+
+float ATTPlayerCharacter::GetCurrentHP ()
+{
+	return CurrentHP;
+}
+
+void ATTPlayerCharacter::SetMaxStun ( float amount )
+{
+	MaxStun = amount;
+}
+
+float ATTPlayerCharacter::GetMaxStun ()
+{
+	return MaxStun;
+}
+
+void ATTPlayerCharacter::SetCurrentStun ( float amount )
+{
+	CurrentStun = amount;
+}
+
+float ATTPlayerCharacter::GetCurrentStun ()
+{
+	return CurrentStun;
+}
+
+#pragma endregion
+
+void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
+{
+	ServerChangeHeadMesh ( TTPS->PersistedHeadMesh );
+	ServerChangeBodyMesh ( TTPS->PersistedBodyMesh );
 }
 
 void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
@@ -94,6 +212,8 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
+
+	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 }
 
 #pragma region Input
@@ -150,17 +270,17 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 
 		if (!DesiredDirection.IsNearlyZero ())
 		{
-			TargetRotation = DesiredDirection.Rotation ();
+			if (!TargetRotation.Equals(DesiredDirection.Rotation(), 0.1f ))
+			{
+				TargetRotation = DesiredDirection.Rotation ();
 
-			ServerSetRotation ( TargetRotation );
+				ServerSetRotation ( TargetRotation );
+			}
 		}
 
 	}
 }
 
-void ATTPlayerCharacter::Attack ()
-{
-}
 
 void ATTPlayerCharacter::InChat ()
 {
@@ -197,8 +317,18 @@ void ATTPlayerCharacter::SprintEnd ()
 	ServerSprintEnd ();
 }
 
-void ATTPlayerCharacter::PlayerBlocking ()
+void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 {
+	if (GetCharacterMovement ()->IsFalling () == true)
+	{
+		return;
+	}
+
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	if (IsValid ( AnimInstance ) == true && IsValid ( BlockingMontage ) == true && AnimInstance->Montage_IsPlaying ( BlockingMontage ) == false)
+	{
+		AnimInstance->Montage_Play ( BlockingMontage );
+	}
 }
 
 void ATTPlayerCharacter::SetSprintSpeed ( bool bIsSprinting )
@@ -240,11 +370,6 @@ bool ATTPlayerCharacter::ServerChangeHeadMesh_Validate ( USkeletalMesh* NewMesh 
 
 void ATTPlayerCharacter::ServerChangeHeadMesh_Implementation ( USkeletalMesh* NewMesh )
 {
-	if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
-	{
-		PS->PersistedHeadMesh = NewMesh;
-	}
-
 	HeadMeshToReplicate = NewMesh;
 	OnRep_HeadMesh ();
 }
@@ -256,11 +381,6 @@ bool ATTPlayerCharacter::ServerChangeBodyMesh_Validate ( USkeletalMesh* NewMesh 
 
 void ATTPlayerCharacter::ServerChangeBodyMesh_Implementation ( USkeletalMesh* NewMesh )
 {
-	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
-	{
-		PS->PersistedBodyMesh = NewMesh;
-	}
-
 	BodyMeshToReplicate = NewMesh;
 	OnRep_BodyMesh ();
 }
@@ -287,7 +407,6 @@ void ATTPlayerCharacter::ChangeHead ( USkeletalMesh* NewMesh )
 	if (IsValid ( Head ) && IsValid ( NewMesh ))
 	{
 		Head->SetSkeletalMesh ( NewMesh );
-		SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 	}
 }
 
@@ -296,67 +415,166 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 	if (IsValid ( GetMesh () ) && IsValid ( NewMesh ))
 	{
 		GetMesh ()->SetSkeletalMesh ( NewMesh );
-		SavePlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 	}
 }
 
 #pragma endregion
 
-#pragma region SaveData
 
-void ATTPlayerCharacter::SavePlayerSaveData ( const FString& SlotName , int32 UserIndex )
+#pragma region Attack
+
+
+void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 {
-	USkeletalMeshComponent* HeadMesh = Head;
-	USkeletalMeshComponent* BodyMesh = GetMesh ();
-
-	if (IsValid ( HeadMesh ) && IsValid ( BodyMesh ))
+	if (GetCharacterMovement ()->IsFalling () == true)
 	{
-		USaveGame* SaveGameInstance = UGameplayStatics::CreateSaveGameObject ( USaveGame::StaticClass () );
-		if (!SaveGameInstance) 
-			return;
+		return;
+	}
 
-		UTTSaveGame* TTSaveGameInstance = Cast<UTTSaveGame> ( SaveGameInstance );
-		if (!TTSaveGameInstance) 
-			return;
-		// 세이브 데이터에 세이브
-		if (USkeletalMesh* CurrentHeadMesh = HeadMesh->GetSkeletalMeshAsset ())
+	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	//if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	//{
+	//	AnimInstance->Montage_Play ( AttackMeleeMontage );
+	//}
+	if (0 == CurrentComboCount)
+	{
+		BeginAttack ();
+	}
+	else
+	{
+		ensure ( FMath::IsWithinInclusive<int32> ( CurrentComboCount , 1 , MaxComboCount ) );
+		bIsAttackKeyPressed = true;
+	}
+
+	if (IsValid ( WeaponData ))
+	{
+		FTTWeaponData* CurrentWeapon = WeaponData->FindRow<FTTWeaponData> ( WeaponName , TEXT ( "WeaponError" ) );
+		if (CurrentWeapon != nullptr)
 		{
-			TTSaveGameInstance->CurrentHeadMeshPath = FSoftObjectPath ( CurrentHeadMesh );
+			UE_LOG ( LogTemp , Warning , TEXT ( "Current StunAmount is %f" ) , CurrentWeapon->StunAmount );
 		}
-		if (USkeletalMesh* CurrentBodyMesh = BodyMesh->GetSkeletalMeshAsset ())
+	}
+
+}
+
+void ATTPlayerCharacter::HandleOnCheckHit ()
+{
+	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
+	TArray<FHitResult> HitResults;
+	FCollisionQueryParams Params ( NAME_None , false , this );
+
+	bool bResult = GetWorld ()->SweepMultiByChannel (
+		HitResults ,
+		GetActorLocation () ,
+		GetActorLocation () + AttackMeleeRange * GetActorForwardVector () ,
+		FQuat::Identity ,
+		ECC_ATTACK ,
+		FCollisionShape::MakeSphere ( AttackMeleeRadius ) ,
+		Params
+	);
+
+	if (HitResults.IsEmpty () == false)
+	{
+		for (FHitResult HitResult : HitResults)
 		{
-			TTSaveGameInstance->CurrentBodyMeshPath = FSoftObjectPath ( CurrentBodyMesh );
+			if (IsValid ( HitResult.GetActor () ) == true)
+			{
+				FDamageEvent DamageEvent;
+				HitResult.GetActor ()->TakeDamage ( 10.f , DamageEvent , GetController () , this );
+				if (1 == ShowAttackMeleeDebug)
+				{
+					UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "Hit Actor Name: %s" ) , *HitResult.GetActor ()->GetName () ) );
+				}
+			}
 		}
-		UGameplayStatics::SaveGameToSlot ( TTSaveGameInstance , SlotName , UserIndex );
+	}
+	if (1 == ShowAttackMeleeDebug)
+	{
+		FVector TraceVector = AttackMeleeRange * GetActorForwardVector ();
+		FVector Center = GetActorLocation () + TraceVector + GetActorUpVector () * 40.f;
+		float HalfHeight = AttackMeleeRange * 0.5f + AttackMeleeRadius;
+		FQuat CapsuleRot = FRotationMatrix::MakeFromZ ( TraceVector ).ToQuat ();
+		FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
+		float DebugLifeTime = 5.f;
+
+		DrawDebugCapsule (
+			GetWorld () ,
+			Center ,
+			HalfHeight ,
+			AttackMeleeRadius ,
+			CapsuleRot ,
+			DrawColor ,
+			false ,
+			DebugLifeTime
+		);
+	}
+}
+void ATTPlayerCharacter::HandleOnCheckInputAttack ()
+{
+	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
+
+	if (bIsAttackKeyPressed == true)
+	{
+		CurrentComboCount = FMath::Clamp ( CurrentComboCount + 1 , 1 , MaxComboCount );
+
+		FName NextSectionName = *FString::Printf ( TEXT ( "%s%02d" ) , *AttackAnimMontageSectionPrefix , CurrentComboCount );
+		AnimInstance->Montage_JumpToSection ( NextSectionName , AttackMeleeMontage );
+		bIsAttackKeyPressed = false;
+	}
+}
+void ATTPlayerCharacter::BeginAttack ()
+{
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
+
+	/*GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_None );*/
+	bIsNowAttacking = true;
+	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	{
+		AnimInstance->Montage_Play ( AttackMeleeMontage );
+	}
+
+	CurrentComboCount = 1;
+
+	if (OnMeleeAttackMontageEndedDelegate.IsBound () == false)
+	{
+		OnMeleeAttackMontageEndedDelegate.BindUObject ( this , &ThisClass::EndAttack );
+		AnimInstance->Montage_SetEndDelegate ( OnMeleeAttackMontageEndedDelegate , AttackMeleeMontage );
 	}
 }
 
-void ATTPlayerCharacter::LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex )
+void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped )
 {
-	if(IsValid( Head ) && IsValid ( GetMesh () ))
+	ensureMsgf ( CurrentComboCount != 0 , TEXT ( "CurrentComboCount == 0" ) );
+
+	CurrentComboCount = 0;
+	bIsAttackKeyPressed = false;
+	bIsNowAttacking = false;
+	//GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_Walking );
+
+	if (OnMeleeAttackMontageEndedDelegate.IsBound () == true)
 	{
-		// 세이브 데이터를 불러오는 과정
-		USaveGame* LoadGameInstance = UGameplayStatics::CreateSaveGameObject ( USaveGame::StaticClass () );
-		if (!LoadGameInstance)
-			return;
-
-		UTTSaveGame* TTLoadGameInstance = Cast<UTTSaveGame> ( LoadGameInstance );
-		if (!TTLoadGameInstance)
-			return;
-		USkeletalMesh* LoadedHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
-		if (!TTLoadGameInstance->CurrentHeadMeshPath.IsNull () && !TTLoadGameInstance->CurrentBodyMeshPath.IsNull())
-			return;
-
-		// 로드된 세이브 데이터를 불러오는 과정 
-		USkeletalMesh* LoadHeadMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentHeadMeshPath.ResolveObject () );
-		USkeletalMesh* LoadBodyMesh = Cast<USkeletalMesh> ( TTLoadGameInstance->CurrentBodyMeshPath.ResolveObject () );
-
-		// 세이브 데이터 적용
-		if (IsValid ( LoadHeadMesh ) && IsValid ( LoadBodyMesh ))
-		{
-			Head->SetSkeletalMesh ( LoadHeadMesh );
-			GetMesh ()->SetSkeletalMesh ( LoadBodyMesh );
-		}
+		OnMeleeAttackMontageEndedDelegate.Unbind ();
 	}
+}
+
+float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
+{
+	float FinalDamageAmount = Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
+	// 피해자쪽 로직.
+
+	if (1 == ShowAttackMeleeDebug)
+	{
+		UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "%s was taken damage: %.3f" ) , *GetName () , FinalDamageAmount ) );
+	}
+
+	return FinalDamageAmount;
+}
+void ATTPlayerCharacter::SetWeaponData ( FName NewWeaponName )
+{
+	WeaponName = NewWeaponName;
+	UE_LOG ( LogTemp , Warning , TEXT ( "Weapon Changed to : %s" ) , *WeaponName.ToString () );
 }
 #pragma endregion

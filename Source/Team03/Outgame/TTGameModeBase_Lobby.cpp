@@ -1,8 +1,8 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿// (c) 2024. Team03. All rights reserved.
 
 #include "TTGameModeBase_Lobby.h"
 #include "GameMapsSettings.h"
+#include "Team03/Character/TTPlayerState.h"
 
 ATTGameModeBase_Lobby::ATTGameModeBase_Lobby()
 {
@@ -24,12 +24,27 @@ void ATTGameModeBase_Lobby::StartGame()
 	UWorld* World = GetWorld();
 	if (World)
 	{
-		// Get the configured Transition Map from Project Settings
+		// Travel 전 PlayerState 로그
+		for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+		{
+			if (APlayerController* PC = It->Get())
+			{
+				if (APlayerState* PS = PC->GetPlayerState<APlayerState>())
+				{
+					if (ATTPlayerState* TTPS = Cast<ATTPlayerState>(PS))
+					{
+                        // Player State Logic
+					}
+				}
+			}
+		}
+		
+		// 프로젝트 설정에서 설정된 Transition Map 가져오기
 		FString TransitionMapPath = UGameMapsSettings::GetGameMapsSettings()->TransitionMap.GetLongPackageName();
 		
 		if (TransitionMapPath.IsEmpty())
 		{
-			// Fallback if not set (though user said it is set to TestMap)
+			// 설정되지 않은 경우 대비 (TestMap으로 설정됨)
 			TransitionMapPath = TEXT("/Game/Maps/TestMap"); 
 		}
 
