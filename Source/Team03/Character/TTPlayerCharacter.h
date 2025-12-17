@@ -77,7 +77,7 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void ServerSprintStart ();
-	UFUNCTION(Server, REliable)
+	UFUNCTION(Server, Reliable)
 	void ServerSprintEnd ();
 	void SetSprintSpeed ( bool bIsSprinting );
 
@@ -106,6 +106,7 @@ private:
 	UPROPERTY ( EditAnywhere )
 	float CurrentStun;
 
+
 public:
 
 	virtual void BeginPlay () override;
@@ -115,7 +116,7 @@ public:
 public:
 	void SetMaxHP (float amount);
 	float GetMaxHP ();
-	void SetCurrentHP ( float amount );
+	void SetCurrentHP (float amount );
 	float GetCurrentHP ();
 	void SetMaxStun ( float amount );
 	float GetMaxStun ();
@@ -160,6 +161,8 @@ public:
 	TObjectPtr<ATTSword> CurrentWeapon;
 	UFUNCTION ()
 	void HandleOnCheckHit ();
+	UFUNCTION(Server, Reliable)
+	void ServerHandleOnCheckHit ();
 	UFUNCTION ()
 	void HandleOnCheckInputAttack ();
 
@@ -173,7 +176,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void SetWeaponData ( FName NewWeaponName );
 
-	static int32 ShowAttackMeleeDebug;
+	void KnockOut ();
+
+	//static int32 ShowAttackMeleeDebug;
 protected:
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
 
@@ -184,6 +189,9 @@ protected:
 	bool bIsNowAttacking = false;
 
 	bool bIsAttackKeyPressed = false;
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Replicated )
+	bool bIsStunned;
 
 	FOnMontageEnded OnMeleeAttackMontageEndedDelegate;
 
