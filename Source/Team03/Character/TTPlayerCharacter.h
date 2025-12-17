@@ -13,6 +13,7 @@ class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
 class UAnimMontage;
+class ATTSword;
 
 
 
@@ -52,6 +53,8 @@ public:
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputBlocking;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputHandAttack;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputMappingContext> IMC_Character;
 
 public:
@@ -68,7 +71,7 @@ protected:
 	void SprintStart ();
 	void SprintEnd ();
 	void PlayerBlocking ( const FInputActionValue& Value );
-
+	void HandAttack ( const FInputActionValue& InValue );
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
 
@@ -151,6 +154,10 @@ private:
 #pragma region Attack
 
 public:
+	UAnimMontage* GetCurrentWeaponAttackAnimMontage () const;
+
+	UPROPERTY ()
+	TObjectPtr<ATTSword> CurrentWeapon;
 	UFUNCTION ()
 	void HandleOnCheckHit ();
 	UFUNCTION ()

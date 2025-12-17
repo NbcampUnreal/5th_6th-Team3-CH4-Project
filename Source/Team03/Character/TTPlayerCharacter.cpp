@@ -17,7 +17,7 @@
 #include "Engine/DamageEvents.h"
 #include "Team03.h"
 #include "TTWeaponData.h"
-
+#include "LHO/TTSword.h"
 int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 
 FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
@@ -66,6 +66,7 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	BodyMeshToReplicate = nullptr;
 
 	bIsDead = false;
+
 }
 
 
@@ -237,7 +238,7 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputEnter , ETriggerEvent::Started , this , &ATTPlayerCharacter::InChat );
 		EnhancedInputComponent->BindAction ( InputESC , ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu );
 		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey );
-
+		EnhancedInputComponent->BindAction ( InputHandAttack , ETriggerEvent::Started , this , &ATTPlayerCharacter::HandAttack );
 	}
 }
 
@@ -423,6 +424,40 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 
 #pragma region Attack
 
+void ATTPlayerCharacter::HandAttack ( const FInputActionValue& InValue )
+{
+	if (0.f < GetCharacterMovement ()->Velocity.Size ())
+	{
+		return;
+	}
+
+	if (IsValid ( CurrentWeapon ) == false)
+	{
+		return;
+	}
+
+	if (IsValid ( GetCurrentWeaponAttackAnimMontage () ) == false)
+	{
+		return;
+	}
+
+	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
+	if (IsValid ( AnimInstance ) == true)
+	{
+		if (AnimInstance->Montage_IsPlaying ( GetCurrentWeaponAttackAnimMontage () ) == false)
+		{
+			AnimInstance->Montage_Play ( GetCurrentWeaponAttackAnimMontage () );
+		}
+	}
+}
+UAnimMontage* ATTPlayerCharacter::GetCurrentWeaponAttackAnimMontage () const
+{
+	if (IsValid ( CurrentWeapon ) == true)
+	{
+		return CurrentWeapon->GetAttackMontage ();
+	}
+	return nullptr;
+}
 
 void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 {
@@ -448,10 +483,10 @@ void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 
 	if (IsValid ( WeaponData ))
 	{
-		FTTWeaponData* CurrentWeapon = WeaponData->FindRow<FTTWeaponData> ( WeaponName , TEXT ( "WeaponError" ) );
-		if (CurrentWeapon != nullptr)
+		FTTWeaponData* WeaponRow = WeaponData->FindRow<FTTWeaponData> (WeaponName , TEXT ("WeaponError"));
+		if (WeaponRow != nullptr)
 		{
-			UE_LOG ( LogTemp , Warning , TEXT ( "Current StunAmount is %f" ) , CurrentWeapon->StunAmount );
+			UE_LOG ( LogTemp , Warning , TEXT ( "Current StunAmount is %f" ) , WeaponRow->StunAmount );
 		}
 	}
 
