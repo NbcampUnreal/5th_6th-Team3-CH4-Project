@@ -32,7 +32,17 @@ protected:
 	TSubclassOf<UUserWidget> CustomizeWidgetClass;
 
 	UPROPERTY(meta = (BindWidget))
-	class UScrollBox* ScrollBox_PlayerList;
+	class UScrollBox* ScrollBox_PlayerListRedTeam;
+
+	UPROPERTY(meta = (BindWidget))
+	class UScrollBox* ScrollBox_PlayerListBlueTeam;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* Btn_RedTeam;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* Btn_BlueTeam;
+
 #pragma endregion
 
 private:
@@ -46,7 +56,14 @@ private:
 	UFUNCTION()
 	void OnClickCustomize();
 
+	UFUNCTION()
+	void OnClickRedTeam();
+
+	UFUNCTION()
+	void OnClickBlueTeam();
+
 	void UpdatePlayerList();
+
 	FTimerHandle PlayerListTimerHandle;
 #pragma endregion
 };

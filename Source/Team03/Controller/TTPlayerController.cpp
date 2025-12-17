@@ -159,9 +159,18 @@ void ATTPlayerController::ServerSendChatMessage_Implementation ( const FString& 
 {
 	if (!HasAuthority ())
 		return;
+
 	if (AInGameModeBase* GM = GetWorld ()->GetAuthGameMode<AInGameModeBase> ())
 	{
-		GM->SendChatMessage ( Message );
+		if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( GetPawn ()->GetPlayerState () ))
+		{
+			const FString NameMessage = TTPS->UserNickname + TEXT(" : ") + Message;
+			GM->SendChatMessage ( NameMessage );
+		}
+		else
+		{
+			GM->SendChatMessage ( Message );
+		}
 	}
 }
 

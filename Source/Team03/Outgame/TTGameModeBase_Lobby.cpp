@@ -3,6 +3,7 @@
 #include "TTGameModeBase_Lobby.h"
 #include "GameMapsSettings.h"
 #include "Team03/Character/TTPlayerState.h"
+#include "UW_LobbyLevel.h"
 
 ATTGameModeBase_Lobby::ATTGameModeBase_Lobby()
 {
