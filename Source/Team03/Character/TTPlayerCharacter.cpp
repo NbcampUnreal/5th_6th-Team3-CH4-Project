@@ -30,10 +30,11 @@ FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
 ATTPlayerCharacter::ATTPlayerCharacter () :
 	WalkSpeed ( 200.f ) ,
 	SprintSpeed ( 400.f ) ,
-	MaxHP(100.f),
-	CurrentHP(MaxHP),
-	MaxStun(100.f),
-	CurrentStun(0.f)
+	MaxHP ( 100.f ) ,
+	CurrentHP ( MaxHP ) ,
+	MaxStun ( 100.f ) ,
+	CurrentStun ( 0.f ) ,
+	bIsStunned(false)
 {
 	WeaponName = "Hand";
 	WeaponData = nullptr;
@@ -212,8 +213,10 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
+	DOREPLIFETIME ( ATTPlayerCharacter , bIsStunned );
 
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
+	
 }
 
 #pragma region Input
@@ -459,6 +462,10 @@ void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 
 void ATTPlayerCharacter::HandleOnCheckHit ()
 {
+	if (HasAuthority () == false)
+	{
+		return;
+	}
 	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
 	TArray<FHitResult> HitResults;
 	FCollisionQueryParams Params ( NAME_None , false , this );
@@ -475,12 +482,26 @@ void ATTPlayerCharacter::HandleOnCheckHit ()
 
 	if (HitResults.IsEmpty () == false)
 	{
+		float CurrentStunPower = 0.0f;
+		float CurrentKnockback = 0.0f;
+
+		if (IsValid ( WeaponData ))
+		{
+			FTTWeaponData* WeaponRow = WeaponData->FindRow<FTTWeaponData> ( WeaponName , TEXT ( "CheckHit" ) );
+			if (WeaponRow)
+			{
+				CurrentStunPower = WeaponRow->StunAmount;
+				CurrentKnockback = WeaponRow->KnockbackAmount;
+			}
+		}
+
 		for (FHitResult HitResult : HitResults)
 		{
+		
 			if (IsValid ( HitResult.GetActor () ) == true)
 			{
 				FDamageEvent DamageEvent;
-				HitResult.GetActor ()->TakeDamage ( 10.f , DamageEvent , GetController () , this );
+				HitResult.GetActor ()->TakeDamage ( CurrentStunPower , DamageEvent , GetController () , this );
 				if (1 == ShowAttackMeleeDebug)
 				{
 					UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "Hit Actor Name: %s" ) , *HitResult.GetActor ()->GetName () ) );
@@ -565,6 +586,17 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 	float FinalDamageAmount = Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
 	// 피해자쪽 로직.
 
+	CurrentStun = FMath::Clamp ( CurrentStun + FinalDamageAmount , 0.0f , MaxStun );
+
+	UE_LOG ( LogTemp , Warning , TEXT ( "[%s] Current Stun : %f / %f" ) , *GetName () , CurrentStun , MaxStun );
+
+	if (CurrentStun >= MaxStun)
+	{
+		if (bIsStunned == false)
+		{
+			KnockOut ();
+		}
+	}
 	if (1 == ShowAttackMeleeDebug)
 	{
 		UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "%s was taken damage: %.3f" ) , *GetName () , FinalDamageAmount ) );
@@ -576,5 +608,13 @@ void ATTPlayerCharacter::SetWeaponData ( FName NewWeaponName )
 {
 	WeaponName = NewWeaponName;
 	UE_LOG ( LogTemp , Warning , TEXT ( "Weapon Changed to : %s" ) , *WeaponName.ToString () );
+}
+void ATTPlayerCharacter::KnockOut ()
+{
+	UE_LOG ( LogTemp , Warning , TEXT ( "%s is KNOCKED OUT!" ) , *GetName () );
+
+	bIsStunned = true;
+	CurrentStun = 0.0f;
+
 }
 #pragma endregion
