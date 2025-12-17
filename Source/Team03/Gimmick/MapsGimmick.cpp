@@ -12,6 +12,7 @@
 AMapsGimmick::AMapsGimmick ()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	bReplicates = true;
 
 	GasDetectionVolume = CreateDefaultSubobject<USphereComponent> ( TEXT ( "GasDetectionVolume" ) );
 	RootComponent = GasDetectionVolume;
@@ -48,6 +49,32 @@ void AMapsGimmick::StartGasDamage ()
 	bGasActive = true;
 
 	UE_LOG ( LogTemp , Warning , TEXT ( "Gas damage started" ) );
+
+	TArray<AActor*> OverlappingActors;
+	GasDetectionVolume->GetOverlappingActors (
+		OverlappingActors ,
+		ACharacter::StaticClass () 
+	);
+
+	for (AActor* Actor : OverlappingActors)
+	{
+		if (ACharacter* Char = Cast<ACharacter> ( Actor ))
+		{
+			ActorsInGas.AddUnique ( Char );
+		}
+	}
+
+	if (ActorsInGas.Num () > 0)
+	{
+		GetWorldTimerManager ().SetTimer (
+			GasDamageTimerHandle ,
+			this ,
+			&AMapsGimmick::GasDamage ,
+			DamageInterval ,
+			true ,
+			0.0f
+		);
+	}
 }
 
 void AMapsGimmick::OnOverlapBegin (
@@ -110,9 +137,22 @@ void AMapsGimmick::GasDamage ()
 	if (!HasAuthority ()) return;
 	if (!bGasActive) return;
 
-	for (ACharacter* Char : ActorsInGas)
+	for (int32 i = ActorsInGas.Num () - 1; i >= 0; --i)
 	{
-		UE_LOG ( LogTemp , Warning , TEXT ( "Applying gas damage to character" ) );
+		ACharacter* Char = ActorsInGas[i];
+
+		if (!IsValid ( Char ))
+		{
+			ActorsInGas.RemoveAt ( i );
+			continue;
+		}
+
+		UE_LOG (
+			LogTemp ,
+			Warning ,
+			TEXT ( "Applying gas damage to %s" ) ,
+			*Char->GetName ()
+		);
 
 		UGameplayStatics::ApplyDamage (
 			Char ,
@@ -122,7 +162,13 @@ void AMapsGimmick::GasDamage ()
 			UGas_Damage::StaticClass ()
 		);
 	}
+
+	if (ActorsInGas.Num () == 0)
+	{
+		GetWorldTimerManager ().ClearTimer ( GasDamageTimerHandle );
+	}
 }
+
 
 void AMapsGimmick::Tick ( float DeltaTime )
 {
