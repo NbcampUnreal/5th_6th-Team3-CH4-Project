@@ -18,14 +18,14 @@
 #include "Team03.h"
 #include "TTWeaponData.h"
 
-int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
-
-FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
-	TEXT ( "TT.ShowAttackMeleeDebug" ) ,
-	ATTPlayerCharacter::ShowAttackMeleeDebug ,
-	TEXT ( "" ) ,
-	ECVF_Cheat
-);
+//int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
+//
+//FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
+//	TEXT ( "TT.ShowAttackMeleeDebug" ) ,
+//	ATTPlayerCharacter::ShowAttackMeleeDebug ,
+//	TEXT ( "" ) ,
+//	ECVF_Cheat
+//);
 
 ATTPlayerCharacter::ATTPlayerCharacter () :
 	WalkSpeed ( 200.f ) ,
@@ -462,11 +462,20 @@ void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 
 void ATTPlayerCharacter::HandleOnCheckHit ()
 {
-	if (HasAuthority () == false)
+	if (HasAuthority ())
 	{
-		return;
+		ServerHandleOnCheckHit_Implementation ();
 	}
-	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckHit()" ) );
+	else
+	{
+		ServerHandleOnCheckHit ();
+	}
+
+}
+void ATTPlayerCharacter::ServerHandleOnCheckHit_Implementation ()
+{
+	if (!HasAuthority ()) return;
+
 	TArray<FHitResult> HitResults;
 	FCollisionQueryParams Params ( NAME_None , false , this );
 
@@ -497,39 +506,40 @@ void ATTPlayerCharacter::HandleOnCheckHit ()
 
 		for (FHitResult HitResult : HitResults)
 		{
-		
+
 			if (IsValid ( HitResult.GetActor () ) == true)
 			{
 				FDamageEvent DamageEvent;
 				HitResult.GetActor ()->TakeDamage ( CurrentStunPower , DamageEvent , GetController () , this );
-				if (1 == ShowAttackMeleeDebug)
+			/*	if (1 == ShowAttackMeleeDebug)
 				{
 					UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "Hit Actor Name: %s" ) , *HitResult.GetActor ()->GetName () ) );
-				}
+				}*/
 			}
 		}
 	}
-	if (1 == ShowAttackMeleeDebug)
-	{
-		FVector TraceVector = AttackMeleeRange * GetActorForwardVector ();
-		FVector Center = GetActorLocation () + TraceVector + GetActorUpVector () * 40.f;
-		float HalfHeight = AttackMeleeRange * 0.5f + AttackMeleeRadius;
-		FQuat CapsuleRot = FRotationMatrix::MakeFromZ ( TraceVector ).ToQuat ();
-		FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
-		float DebugLifeTime = 5.f;
+	//if (1 == ShowAttackMeleeDebug)
+	//{
+	//	FVector TraceVector = AttackMeleeRange * GetActorForwardVector ();
+	//	FVector Center = GetActorLocation () + TraceVector + GetActorUpVector () * 40.f;
+	//	float HalfHeight = AttackMeleeRange * 0.5f + AttackMeleeRadius;
+	//	FQuat CapsuleRot = FRotationMatrix::MakeFromZ ( TraceVector ).ToQuat ();
+	//	FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
+	//	float DebugLifeTime = 5.f;
 
-		DrawDebugCapsule (
-			GetWorld () ,
-			Center ,
-			HalfHeight ,
-			AttackMeleeRadius ,
-			CapsuleRot ,
-			DrawColor ,
-			false ,
-			DebugLifeTime
-		);
-	}
+	//	DrawDebugCapsule (
+	//		GetWorld () ,
+	//		Center ,
+	//		HalfHeight ,
+	//		AttackMeleeRadius ,
+	//		CapsuleRot ,
+	//		DrawColor ,
+	//		false ,
+	//		DebugLifeTime
+	//	);
+	//}
 }
+
 void ATTPlayerCharacter::HandleOnCheckInputAttack ()
 {
 	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
@@ -597,10 +607,10 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 			KnockOut ();
 		}
 	}
-	if (1 == ShowAttackMeleeDebug)
-	{
-		UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "%s was taken damage: %.3f" ) , *GetName () , FinalDamageAmount ) );
-	}
+	//if (1 == ShowAttackMeleeDebug)
+	//{
+	//	UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "%s was taken damage: %.3f" ) , *GetName () , FinalDamageAmount ) );
+	//}
 
 	return FinalDamageAmount;
 }

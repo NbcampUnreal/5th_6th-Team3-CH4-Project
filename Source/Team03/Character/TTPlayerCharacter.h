@@ -154,6 +154,8 @@ private:
 public:
 	UFUNCTION ()
 	void HandleOnCheckHit ();
+	UFUNCTION(Server, Reliable)
+	void ServerHandleOnCheckHit ();
 	UFUNCTION ()
 	void HandleOnCheckInputAttack ();
 
@@ -169,7 +171,7 @@ public:
 
 	void KnockOut ();
 
-	static int32 ShowAttackMeleeDebug;
+	//static int32 ShowAttackMeleeDebug;
 protected:
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
 
