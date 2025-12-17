@@ -113,8 +113,10 @@ void UUW_Option::OnWindowModeChanged(FString SelectedItem, ESelectInfo::Type Sel
 
 void UUW_Option::OnMasterVolumeChanged(float Value)
 {
-	// 간단한 오디오 볼륨 - Sound Mix 등을 사용하는 것이 더 좋음
-	// UGameplayStatics::SetSoundMixClassOverride(...);
+	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+	{
+		GI->SetMasterVolume(Value);
+	}
 }
 
 #pragma endregion
