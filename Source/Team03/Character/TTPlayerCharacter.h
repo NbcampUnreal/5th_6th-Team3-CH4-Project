@@ -31,6 +31,7 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Head")
 	TObjectPtr<USkeletalMeshComponent> Head;
 
+
 #pragma region Input
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> InputMove;
@@ -98,9 +99,9 @@ private:
 	UPROPERTY ( EditAnywhere , Replicated )
 	float CurrentHP;
 	UPROPERTY ( EditAnywhere )
-	float MaxSturn;
+	float MaxStun;
 	UPROPERTY ( EditAnywhere )
-	float CurrentSturn;
+	float CurrentStun;
 
 public:
 
@@ -113,10 +114,10 @@ public:
 	float GetMaxHP ();
 	void SetCurrentHP ( float amount );
 	float GetCurrentHP ();
-	void SetMaxSturn ( float amount );
-	float GetMaxSturn ();
-	void SetCurrentSturn (  float amount );
-	float GetCurrentSturn ();
+	void SetMaxStun ( float amount );
+	float GetMaxStun ();
+	void SetCurrentStun (  float amount );
+	float GetCurrentStun ();
 
 #pragma endregion
 
@@ -162,6 +163,9 @@ public:
 
 	virtual float TakeDamage ( float DamageAmount , struct FDamageEvent const& DamageEvent , class AController* EventInstigator , AActor* DamageCauser ) override;
 
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void SetWeaponData ( FName NewWeaponName );
+
 	static int32 ShowAttackMeleeDebug;
 protected:
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
@@ -181,6 +185,11 @@ protected:
 
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
 	float AttackMeleeRadius = 20.f;
+
+	UPROPERTY ( EditAnywhere , Category = "Weapon" )
+	TObjectPtr<UDataTable> WeaponData;
+
+	FName WeaponName;
 #pragma endregion
 
 #pragma region HP
