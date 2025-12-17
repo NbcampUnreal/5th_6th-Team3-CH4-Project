@@ -33,7 +33,6 @@ void AInGameModeBase::PostLogin ( APlayerController* NewPlayer )
 	{
 		if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->GetPlayerState() ))
 		{
-			TTPC->InitializeMesh( TTPS );
 		}
 	}
 }

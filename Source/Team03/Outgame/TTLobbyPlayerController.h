@@ -26,4 +26,9 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void ServerRPC_InitPlayerInfo(const FString& Nickname, const FName& CharacterRowName);
 #pragma endregion
+
+#pragma region Server RPC Team
+	UFUNCTION ( Server , Reliable )
+	void Server_RequestChangeTeam ( enum Teams NewTeam );
+#pragma endregion
 };
