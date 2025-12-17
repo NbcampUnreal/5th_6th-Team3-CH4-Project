@@ -35,6 +35,15 @@ void UUW_LobbyLevel::NativeConstruct()
 		Btn_Customize->OnClicked.AddDynamic(this, &ThisClass::OnClickCustomize);
 	}
 
+	if (Btn_RedTeam)
+	{
+		Btn_RedTeam->OnClicked.AddDynamic(this, &ThisClass::OnClickRedTeam );
+	}
+
+	if (Btn_BlueTeam)
+	{
+		Btn_BlueTeam->OnClicked.AddDynamic(this, &ThisClass::OnClickBlueTeam );
+	}
 	// 플레이어 목록 주기적 업데이트
 	GetWorld()->GetTimerManager().SetTimer(PlayerListTimerHandle, this, &ThisClass::UpdatePlayerList, 1.0f, true);
 	UpdatePlayerList();
@@ -80,14 +89,31 @@ void UUW_LobbyLevel::OnClickCustomize()
 	}
 }
 
+void UUW_LobbyLevel::OnClickRedTeam ()
+{
+	if (ATTLobbyPlayerController* PC = Cast<ATTLobbyPlayerController> ( GetOwningPlayer () ))
+	{
+		PC->Server_RequestChangeTeam(Teams::Red);
+	}
+}
+
+void UUW_LobbyLevel::OnClickBlueTeam ()
+{
+	if (ATTLobbyPlayerController* PC = Cast<ATTLobbyPlayerController> ( GetOwningPlayer () ))
+	{
+		PC->Server_RequestChangeTeam(Teams::Bule );
+	}
+}
+
 void UUW_LobbyLevel::UpdatePlayerList()
 {
-	if (!ScrollBox_PlayerList)
+	if (!ScrollBox_PlayerListRedTeam || !ScrollBox_PlayerListBlueTeam)
 	{
 		return;
 	}
 
-	ScrollBox_PlayerList->ClearChildren();
+	ScrollBox_PlayerListRedTeam->ClearChildren();
+	ScrollBox_PlayerListBlueTeam->ClearChildren();
 
 	if (AGameStateBase* GS = GetWorld()->GetGameState())
 	{
@@ -110,8 +136,20 @@ void UUW_LobbyLevel::UpdatePlayerList()
                 FontInfo.Size = 24.0f; 
                 // FontInfo.TypefaceFontName = FName("Bold"); // Optional
                 TextBlock->SetFont(FontInfo);
-
-				ScrollBox_PlayerList->AddChild(TextBlock);
+				if (TTPS->GetTeam() == Teams::Red)
+				{
+					ScrollBox_PlayerListRedTeam->AddChild(TextBlock);
+				}
+				if (TTPS->GetTeam() == Teams::Bule)
+				{
+					ScrollBox_PlayerListBlueTeam->AddChild ( TextBlock );
+				}
+				else
+				{
+					TTPS->SetTeam ( Teams::Red );
+					ScrollBox_PlayerListRedTeam->AddChild(TextBlock);
+				}
+				
 			}
 			else
 			{

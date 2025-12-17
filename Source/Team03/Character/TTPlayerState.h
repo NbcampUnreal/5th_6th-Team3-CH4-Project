@@ -9,12 +9,22 @@
 /**
  * 
  */
+UENUM ( BlueprintType )
+enum class Teams : uint8
+{
+	Red UMETA ( DisplayName = "Red" ) ,
+	Bule UMETA ( DisplayName = "Blue" )
+};
+
 UCLASS ()
 class TEAM03_API ATTPlayerState : public APlayerState
 {
 	GENERATED_BODY ()
 public:
 	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
+
+	void SetTeam ( Teams NewTeam );
+	Teams GetTeam () const { return Team; };
 public:
 	UPROPERTY ( Replicated )
 	USkeletalMesh* PersistedHeadMesh;
@@ -27,6 +37,11 @@ public:
 	UPROPERTY(Replicated)
 	FName SelectedCharacterRowName;
 
+	UPROPERTY ( ReplicatedUsing = OnRep_Team )
+	Teams Team = Teams::Bule;
+
 	UFUNCTION()
 	void OnRep_UserNickname();
+	UFUNCTION()
+	void OnRep_Team ();
 };
