@@ -59,3 +59,14 @@ bool ATTLobbyPlayerController::ServerRPC_InitPlayerInfo_Validate(const FString& 
 
 #pragma endregion
 
+
+void ATTLobbyPlayerController::Server_RequestChangeTeam_Implementation ( Teams NewTeam )
+{
+	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState>())
+	{
+		PS->SetTeam ( NewTeam );
+	}
+}
+#pragma region Server RPC Team
+
+#pragma endregion
