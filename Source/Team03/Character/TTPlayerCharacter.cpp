@@ -17,6 +17,7 @@
 #include "Engine/DamageEvents.h"
 #include "Team03.h"
 #include "TTWeaponData.h"
+#include "Gimmick/Gas_Damage.h"
 
 int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 
@@ -562,13 +563,29 @@ void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped 
 
 float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
 {
+	if (!HasAuthority ())
+	{
+		return 0.f;
+	}
+
 	float FinalDamageAmount = Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
 	// 피해자쪽 로직.
 
-	if (1 == ShowAttackMeleeDebug)
+	if (DamageEvent.DamageTypeClass == UGas_Damage::StaticClass ())
 	{
-		UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "%s was taken damage: %.3f" ) , *GetName () , FinalDamageAmount ) );
+		CurrentHP -= FinalDamageAmount;
+
+		UE_LOG (LogTemp ,Warning ,TEXT ( "[GAS] %s took %.2f damage (HP: %.2f)" ) ,*GetName () ,FinalDamageAmount ,CurrentHP);
 	}
+
+	else
+	{
+		CurrentHP -= FinalDamageAmount;
+	}
+	//if (1 == ShowAttackMeleeDebug)
+	//{
+	//	UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "%s was taken damage: %.3f" ) , *GetName () , FinalDamageAmount ) );
+	//} 가스 데미지 설정 때문에 주석 처리
 
 	return FinalDamageAmount;
 }

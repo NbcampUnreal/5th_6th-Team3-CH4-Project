@@ -17,6 +17,10 @@ AMapsGimmick::AMapsGimmick ()
 	GasDetectionVolume = CreateDefaultSubobject<USphereComponent> ( TEXT ( "GasDetectionVolume" ) );
 	RootComponent = GasDetectionVolume;
 
+	GasDetectionVolume->SetCollisionEnabled ( ECollisionEnabled::QueryOnly );
+	GasDetectionVolume->SetCollisionResponseToAllChannels ( ECR_Ignore );
+	GasDetectionVolume->SetCollisionResponseToChannel ( ECC_Pawn , ECR_Overlap );
+
 	GasDetectionVolume->SetCollisionProfileName ( TEXT ( "Trigger" ) );
 	GasDetectionVolume->OnComponentBeginOverlap.AddDynamic ( this , &AMapsGimmick::OnOverlapBegin );
 	GasDetectionVolume->OnComponentEndOverlap.AddDynamic ( this , &AMapsGimmick::OnOverlapEnd );
@@ -141,18 +145,13 @@ void AMapsGimmick::GasDamage ()
 	{
 		ACharacter* Char = ActorsInGas[i];
 
+		UE_LOG (LogTemp ,Warning ,TEXT ( "Applying gas damage to %s" ) ,*Char->GetName () );
+
 		if (!IsValid ( Char ))
 		{
 			ActorsInGas.RemoveAt ( i );
 			continue;
 		}
-
-		UE_LOG (
-			LogTemp ,
-			Warning ,
-			TEXT ( "Applying gas damage to %s" ) ,
-			*Char->GetName ()
-		);
 
 		UGameplayStatics::ApplyDamage (
 			Char ,

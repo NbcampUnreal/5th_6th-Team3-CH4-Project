@@ -167,6 +167,7 @@ public:
 	void SetWeaponData ( FName NewWeaponName );
 
 	static int32 ShowAttackMeleeDebug;
+
 protected:
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
 
