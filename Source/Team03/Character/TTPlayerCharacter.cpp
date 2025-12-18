@@ -659,8 +659,8 @@ void ATTPlayerCharacter::OnRep_IsStunned ()
 		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
 
 		GetMesh ()->AttachToComponent ( GetCapsuleComponent () , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
-		GetMesh ()->SetRelativeLocation ( FVector ( 0.0f , 0.0f , -60.0f ) );
-		GetMesh ()->SetRelativeRotation ( FRotator ( 0.0f , 0.0f , -90.0f ) );
+		GetMesh ()->SetRelativeLocation ( FVector ( 0.0f , 0.0f , 10.0f ) );
+		GetMesh ()->SetRelativeRotation ( FRotator ( 0.0f , 0.0f , 0.0f ) );
 	}
 }
 
