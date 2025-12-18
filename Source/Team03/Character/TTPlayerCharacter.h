@@ -119,7 +119,6 @@ public:
 	float GetMaxStun ();
 	void SetCurrentStun (  float amount );
 	float GetCurrentStun ();
-
 #pragma endregion
 
 #pragma region MeshChange

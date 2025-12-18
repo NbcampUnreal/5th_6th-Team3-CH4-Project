@@ -66,6 +66,11 @@ void AInGameModeBase::EndRound ()
 		{
 			if (!IsValid ( TTPS ))
 				continue;
+			if (ATTPlayerCharacter* TTP = Cast<ATTPlayerCharacter> ( TTPS->GetPawn () ))
+			{
+				if (TTP->IsDead ())
+					continue;
+			}
 			if (T == Teams::None)
 				T = TTPS->GetTeam ();
 			else
@@ -76,7 +81,7 @@ void AInGameModeBase::EndRound ()
 		}
 	}
 		
-	if (T == Teams::Bule)
+	if (T == Teams::Blue)
 	{
 		// 블루팀 승리
 		UE_LOG ( LogTemp , Warning , TEXT ( "Win BlueTeam" ) );
