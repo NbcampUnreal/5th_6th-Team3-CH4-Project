@@ -32,6 +32,6 @@ void ATTSword::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 	SetActorEnableCollision ( false );
 	PickupComponent->SetSimulatePhysics ( false );
 
-	InPickUpCharacter->CurrentWeapon = this;
+	//InPickUpCharacter->CurrentWeapon = this;
 }
 

@@ -31,6 +31,6 @@ void UTTAnimInstance::NativeUpdateAnimation ( float DeltaSeconds )
 	Super::NativeUpdateAnimation ( DeltaSeconds );
 	if (IsValid ( OwnerCharacter ) == true && IsValid ( OwnerCharacterMovement ) == true)
 	{
-			bIsUnarmed = OwnerCharacter->GetCurrentWeaponAttackAnimMontage () == nullptr ? true : false;
+			//bIsUnarmed = OwnerCharacter->GetCurrentWeaponAttackAnimMontage () == nullptr ? true : false;
 	}
 }

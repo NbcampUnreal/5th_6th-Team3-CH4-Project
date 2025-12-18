@@ -13,7 +13,6 @@ class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
 class UAnimMontage;
-class ATTSword;
 
 
 
@@ -122,6 +121,7 @@ public:
 	float GetMaxStun ();
 	void SetCurrentStun (  float amount );
 	float GetCurrentStun ();
+
 #pragma endregion
 
 #pragma region MeshChange
@@ -154,11 +154,6 @@ private:
 #pragma region Attack
 
 public:
-	UAnimMontage* GetCurrentWeaponAttackAnimMontage () const;
-
-	UPROPERTY ()
-	TObjectPtr<ATTSword> CurrentWeapon;
-
 	UFUNCTION ()
 	void HandleOnCheckHit ();
 	UFUNCTION(Server, Reliable)
@@ -180,38 +175,15 @@ public:
 
 	//static int32 ShowAttackMeleeDebug;
 protected:
-	// 서버에서 실행될 함수
-	UFUNCTION ( Server , Reliable )
-	void ServerBeginAttack ();
-
-	// 모든 클라이언트에서 실행될 함수 (멀티캐스트)
-	UFUNCTION ( NetMulticast , Reliable )
-	void MulticastBeginAttack ();
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
 
 	int32 MaxComboCount = 3;
-	UPROPERTY ( Replicated )
+
 	int32 CurrentComboCount = 0;
 
 	bool bIsNowAttacking = false;
-	UPROPERTY ( Replicated )
+
 	bool bIsAttackKeyPressed = false;
-	UFUNCTION ( Server , Reliable )
-	void ServerAttackInput ();
-	UFUNCTION ( Server , Reliable )
-	void ServerPlayBlocking ();
-
-	UFUNCTION ( NetMulticast , Reliable )
-	void MulticastPlayBlocking ();
-	UFUNCTION ( NetMulticast , Reliable )
-	void MulticastJumpToSection ( FName SectionName );
-
-	// 피격 시 재생할 몽타주
-	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Anims" )
-	TObjectPtr<UAnimMontage> HitReactionMontage;
-
-	UFUNCTION ( NetMulticast , Unreliable )
-	void MulticastPlayHitReaction ();
 
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , ReplicatedUsing = OnRep_IsStunned )
 	bool bIsStunned;
