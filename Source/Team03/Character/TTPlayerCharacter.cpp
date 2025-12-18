@@ -663,7 +663,7 @@ void ATTPlayerCharacter::OnRep_IsStunned ()
 	{
 		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::NoCollision );
 
-		GetMesh ()->SetCollisionProfileName ( TEXT ( "Ragdoll" ) );
+		GetMesh ()->SetCollisionProfileName ( TEXT ( "TT_Ragdoll" ) );
 		GetMesh ()->SetSimulatePhysics ( true );
 	}
 	else
