@@ -592,7 +592,7 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 	CurrentStun = FMath::Clamp ( CurrentStun + FinalDamageAmount , 0.0f , MaxStun );
 	if (CurrentStun >= MaxStun && !bIsStunned)
 	{
-		KnockOut ();
+		/*KnockOut ();*/
 	}
 	if (FinalDamageAmount > 0.f && CurrentHP > 0.f)
 	{

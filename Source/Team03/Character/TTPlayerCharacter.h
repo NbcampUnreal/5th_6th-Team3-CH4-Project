@@ -172,7 +172,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void SetWeaponData ( FName NewWeaponName );
 
-	void KnockOut ();
+	/*void KnockOut ();*/
 
 	//static int32 ShowAttackMeleeDebug;
 protected:
