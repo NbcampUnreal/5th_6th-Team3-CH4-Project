@@ -50,6 +50,10 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Data")
 	FName SelectedCharacterRowName;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Data")
+	int32 count;
+
 	
 	// 로비 커스터마이징 데이터 (로컬 플레이어 전용)
 	UPROPERTY(BlueprintReadWrite, Category = "Data")

@@ -5,12 +5,24 @@
 #include "Controller/TTPlayerController.h"
 #include "Character/TTPlayerCharacter.h"
 #include "Character/TTPlayerState.h"
+#include "Outgame/TTGameInstance.h"
+#include "InGameMode/TTGameStateBase.h"
+
 
 // ----- Outgame 담당자가 추가함 ----- 
 AInGameModeBase::AInGameModeBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseSeamlessTravel = true;
+}
+
+void AInGameModeBase::BeginPlay ()
+{
+	UTTGameInstance* GI = GetGameInstance<UTTGameInstance> ();
+	if (IsValid ( GI ))
+	{
+		PlayerCount = GI->count;
+	}
 }
 
 void AInGameModeBase::Tick ( float Delatasecond )
@@ -22,6 +34,7 @@ void AInGameModeBase::Tick ( float Delatasecond )
 	}
 	else
 	{
+
 		//EndRound ();
 	}
 }
@@ -52,7 +65,14 @@ void AInGameModeBase::Logout ( AController* ExitPlayer )
 
 void AInGameModeBase::StartRound ()
 {
-	bIsGameStart = true;
+	AGameStateBase* GS = GameState ;
+	if (!GS)
+		return;
+	if (GS->PlayerArray.Num () == PlayerCount)
+	{
+		UE_LOG ( LogTemp , Warning , TEXT ( "StartGame" ) );
+		bIsGameStart = true;
+	}
 }
 
 void AInGameModeBase::EndRound ()

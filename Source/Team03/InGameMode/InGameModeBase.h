@@ -16,6 +16,7 @@ class TEAM03_API AInGameModeBase : public AGameModeBase
 	
 public:
 	AInGameModeBase();
+	virtual void BeginPlay () override;
 	virtual void Tick ( float Delatasecond )override;
 
 	void SendChatMessage ( const FString& Message );
@@ -27,4 +28,5 @@ public:
 	void EndRound ();
 private:
 	uint8 bIsGameStart : 1 = false;
+	int32 PlayerCount;
 };
