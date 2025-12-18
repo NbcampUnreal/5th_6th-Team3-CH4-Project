@@ -78,6 +78,25 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Session")
 	FOnFindSessionsCompleteBP OnFindSessionsCompleteBP;
+
+	// 세션 생성 완료 알림
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCreateSessionCompleteBP, bool, bWasSuccessful);
+	UPROPERTY(BlueprintAssignable, Category = "Session")
+	FOnCreateSessionCompleteBP OnCreateSessionCompleteBP;
+
+	// 세션 참여 완료 알림
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnJoinSessionCompleteBP, bool, bWasSuccessful);
+	UPROPERTY(BlueprintAssignable, Category = "Session")
+	FOnJoinSessionCompleteBP OnJoinSessionCompleteBP;
+
+	UFUNCTION(BlueprintCallable, Category = "Session")
+	void TravelToLobby();
+
+	UFUNCTION(BlueprintCallable, Category = "Session")
+	void TravelToPendingSession();
+
+private:
+    FString PendingConnectString;
 #pragma endregion
 
 protected:
@@ -113,6 +132,10 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	USoundClass* SoundClass_Master;
+
+	// 현재 볼륨 (저장용)
+	UPROPERTY(BlueprintReadWrite, Category = "Audio")
+	float MasterVolume = 1.0f;
 
 	// BGM 관리
 	UPROPERTY()

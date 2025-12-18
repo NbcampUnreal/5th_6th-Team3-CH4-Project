@@ -209,8 +209,12 @@ void UTTGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucces
 
 	if (bWasSuccessful)
 	{
-		UGameplayStatics::OpenLevel(GetWorld(), TEXT("LobbyLevel"), true, TEXT("listen"));
-	}
+		// C++에서 바로 이동하지 않고 UI가 애니메이션 후 이동하도록 변경
+		// UGameplayStatics::OpenLevel(GetWorld(), TEXT("LobbyLevel"), true, TEXT("listen"));
+        
+	// 델리게이트 브로드캐스트
+	OnCreateSessionCompleteBP.Broadcast(bWasSuccessful);
+}
 }
 
 void UTTGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
@@ -247,13 +251,21 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
                 ConnectInfo.Append(TEXT(":7777"));
             }
 
-			APlayerController* PlayerController = GetFirstLocalPlayerController();
-			if (PlayerController)
-			{
-				PlayerController->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
-			}
+            // 즉시 이동하지 않고 저장 후 UI에 알림
+            PendingConnectString = ConnectInfo;
+            OnJoinSessionCompleteBP.Broadcast(true);
+
+			// APlayerController* PlayerController = GetFirstLocalPlayerController();
+			// if (PlayerController)
+			// {
+			// 	PlayerController->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
+			// }
 		}
 	}
+    else
+    {
+        OnJoinSessionCompleteBP.Broadcast(false);
+    }
 }
 
 void UTTGameInstance::OnDestroySessionBeforeJoin(FName SessionName, bool bWasSuccessful)
@@ -301,8 +313,13 @@ void UTTGameInstance::SetMasterVolume(float Volume)
 {
 	if (SoundMix_Master && SoundClass_Master)
 	{
+		MasterVolume = Volume; // 상태 저장
 		UGameplayStatics::SetSoundMixClassOverride(GetWorld(), SoundMix_Master, SoundClass_Master, Volume, 1.0f, 0.0f);
 		UGameplayStatics::PushSoundMixModifier(GetWorld(), SoundMix_Master);
+	}
+	else
+	{
+		// SoundMix or SoundClass is NULL
 	}
 }
 
@@ -350,6 +367,22 @@ void UTTGameInstance::PauseBGM(bool bPause)
 	{
 		BGMComponent->SetPaused(bPause);
 	}
+}
+
+void UTTGameInstance::TravelToLobby()
+{
+	UGameplayStatics::OpenLevel(GetWorld(), TEXT("LobbyLevel"), true, TEXT("listen"));
+}
+
+void UTTGameInstance::TravelToPendingSession()
+{
+    if (!PendingConnectString.IsEmpty())
+    {
+        if (APlayerController* PlayerController = GetFirstLocalPlayerController())
+        {
+            PlayerController->ClientTravel(PendingConnectString, ETravelType::TRAVEL_Absolute);
+        }
+    }
 }
 
 #pragma endregion
