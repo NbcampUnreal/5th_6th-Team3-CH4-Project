@@ -13,6 +13,11 @@
 void UUW_LobbyLevel::NativeConstruct()
 {
 	Super::NativeConstruct();
+	
+	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+	{
+		GI->PlayBGM(LobbyBGM);
+	}
 
 	if (Btn_StartGame)
 	{
@@ -53,6 +58,8 @@ void UUW_LobbyLevel::NativeConstruct()
 
 void UUW_LobbyLevel::OnClickStartGame()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	if (ATTLobbyPlayerController* PC = Cast<ATTLobbyPlayerController>(GetOwningPlayer()))
 	{
 		PC->ServerRPC_StartGame();
@@ -61,6 +68,8 @@ void UUW_LobbyLevel::OnClickStartGame()
 
 void UUW_LobbyLevel::OnClickLeave()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
 		GI->DestroyGameSession();
@@ -69,6 +78,8 @@ void UUW_LobbyLevel::OnClickLeave()
 
 void UUW_LobbyLevel::OnClickCustomize()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	if (CustomizeWidgetClass)
 	{
 		UUserWidget* Widget = CreateWidget<UUserWidget>(GetOwningPlayer(), CustomizeWidgetClass);
@@ -91,6 +102,8 @@ void UUW_LobbyLevel::OnClickCustomize()
 
 void UUW_LobbyLevel::OnClickRedTeam ()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	if (ATTLobbyPlayerController* PC = Cast<ATTLobbyPlayerController> ( GetOwningPlayer () ))
 	{
 		PC->Server_RequestChangeTeam(Teams::Red);
@@ -99,9 +112,11 @@ void UUW_LobbyLevel::OnClickRedTeam ()
 
 void UUW_LobbyLevel::OnClickBlueTeam ()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	if (ATTLobbyPlayerController* PC = Cast<ATTLobbyPlayerController> ( GetOwningPlayer () ))
 	{
-		PC->Server_RequestChangeTeam(Teams::Bule );
+		PC->Server_RequestChangeTeam(Teams::Blue );
 	}
 }
 
@@ -140,7 +155,7 @@ void UUW_LobbyLevel::UpdatePlayerList()
 				{
 					ScrollBox_PlayerListRedTeam->AddChild(TextBlock);
 				}
-				if (TTPS->GetTeam() == Teams::Bule)
+				if (TTPS->GetTeam() == Teams::Blue)
 				{
 					ScrollBox_PlayerListBlueTeam->AddChild ( TextBlock );
 				}
