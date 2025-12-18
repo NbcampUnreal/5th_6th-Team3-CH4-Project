@@ -61,6 +61,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UUW_LobbyEntry> LobbyEntryClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* TitleBGM;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* ClickSound;
 #pragma endregion
 
 #pragma region Callbacks

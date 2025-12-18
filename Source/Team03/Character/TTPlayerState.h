@@ -14,7 +14,7 @@ enum class Teams : uint8
 {
 	None UMETA ( DisplayName = "None" ) ,
 	Red UMETA ( DisplayName = "Red" ) ,
-	Bule UMETA ( DisplayName = "Blue" )
+	Blue UMETA ( DisplayName = "Blue" )
 };
 
 UCLASS ()
@@ -39,7 +39,7 @@ public:
 	FName SelectedCharacterRowName;
 
 	UPROPERTY ( ReplicatedUsing = OnRep_Team )
-	Teams Team = Teams::Bule;
+	Teams Team = Teams::Blue;
 
 	UFUNCTION()
 	void OnRep_UserNickname();

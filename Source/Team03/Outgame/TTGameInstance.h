@@ -102,5 +102,32 @@ private:
     // 정리 후 참여할 세션 인덱스
     int32 PendingJoinSessionIndex = -1;
 
+	// 네트워크 실패 처리 (예: 타이틀로 복귀)
 	void OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString);
+
+#pragma region Audio System
+public:
+	// 사운드 믹스 및 클래스 (에디터에서 할당 필요)
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundMix* SoundMix_Master;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundClass* SoundClass_Master;
+
+	// BGM 관리
+	UPROPERTY()
+	UAudioComponent* BGMComponent;
+
+	UFUNCTION(BlueprintCallable, Category = "Audio")
+	void SetMasterVolume(float Volume);
+
+	UFUNCTION(BlueprintCallable, Category = "Audio")
+	void PlayBGM(USoundBase* NewBGM);
+
+	UFUNCTION(BlueprintCallable, Category = "Audio")
+	void StopBGM();
+
+	UFUNCTION(BlueprintCallable, Category = "Audio")
+	void PauseBGM(bool bPause);
+#pragma endregion
 };

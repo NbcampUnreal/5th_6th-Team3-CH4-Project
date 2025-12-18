@@ -28,7 +28,7 @@ protected:
 	float DamageInterval = 1.0f;
 
 	UPROPERTY ( EditAnywhere , Category = "Gas Stats" )
-	float DamagePerTick = 5.0f;
+	float DamagePerTick = 50.0f;
 
 	void GasDamage ();
 
