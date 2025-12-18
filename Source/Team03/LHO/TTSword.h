@@ -9,7 +9,7 @@
 
 class ATTPlayerCharacter;
 class UTTPickupComponent;
-
+class UAnimMontage;
 UCLASS()
 class TEAM03_API ATTSword : public AActor
 {
@@ -19,7 +19,7 @@ public:
 	ATTSword ();
 
 	UTTPickupComponent* GetPickupComponent () const { return PickupComponent; }
-
+	UAnimMontage* GetAttackMontage () const { return AttackMontage; }
 protected:
 	virtual void BeginPlay () override;
 
@@ -30,5 +30,6 @@ protected:
 	UPROPERTY ( EditDefaultsOnly , BlueprintReadOnly )
 	TObjectPtr<UTTPickupComponent> PickupComponent;
 
-
+	UPROPERTY ( EditDefaultsOnly , BlueprintReadOnly )
+	TObjectPtr<UAnimMontage> AttackMontage;
 };

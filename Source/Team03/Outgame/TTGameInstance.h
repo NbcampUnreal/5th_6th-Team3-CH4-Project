@@ -50,6 +50,10 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Data")
 	FName SelectedCharacterRowName;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Data")
+	int32 count;
+
 	
 	// 로비 커스터마이징 데이터 (로컬 플레이어 전용)
 	UPROPERTY(BlueprintReadWrite, Category = "Data")
@@ -78,6 +82,25 @@ public:
 
 	UPROPERTY(BlueprintAssignable, Category = "Session")
 	FOnFindSessionsCompleteBP OnFindSessionsCompleteBP;
+
+	// 세션 생성 완료 알림
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCreateSessionCompleteBP, bool, bWasSuccessful);
+	UPROPERTY(BlueprintAssignable, Category = "Session")
+	FOnCreateSessionCompleteBP OnCreateSessionCompleteBP;
+
+	// 세션 참여 완료 알림
+	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnJoinSessionCompleteBP, bool, bWasSuccessful);
+	UPROPERTY(BlueprintAssignable, Category = "Session")
+	FOnJoinSessionCompleteBP OnJoinSessionCompleteBP;
+
+	UFUNCTION(BlueprintCallable, Category = "Session")
+	void TravelToLobby();
+
+	UFUNCTION(BlueprintCallable, Category = "Session")
+	void TravelToPendingSession();
+
+private:
+    FString PendingConnectString;
 #pragma endregion
 
 protected:
@@ -102,5 +125,36 @@ private:
     // 정리 후 참여할 세션 인덱스
     int32 PendingJoinSessionIndex = -1;
 
+	// 네트워크 실패 처리 (예: 타이틀로 복귀)
 	void OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString);
+
+#pragma region Audio System
+public:
+	// 사운드 믹스 및 클래스 (에디터에서 할당 필요)
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundMix* SoundMix_Master;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundClass* SoundClass_Master;
+
+	// 현재 볼륨 (저장용)
+	UPROPERTY(BlueprintReadWrite, Category = "Audio")
+	float MasterVolume = 1.0f;
+
+	// BGM 관리
+	UPROPERTY()
+	UAudioComponent* BGMComponent;
+
+	UFUNCTION(BlueprintCallable, Category = "Audio")
+	void SetMasterVolume(float Volume);
+
+	UFUNCTION(BlueprintCallable, Category = "Audio")
+	void PlayBGM(USoundBase* NewBGM);
+
+	UFUNCTION(BlueprintCallable, Category = "Audio")
+	void StopBGM();
+
+	UFUNCTION(BlueprintCallable, Category = "Audio")
+	void PauseBGM(bool bPause);
+#pragma endregion
 };

@@ -17,16 +17,10 @@
 #include "Engine/DamageEvents.h"
 #include "Team03.h"
 #include "TTWeaponData.h"
+#include "LHO/TTSword.h"
+#include "Gimmick/Gas_Damage.h"
 #include "Components/CapsuleComponent.h"
 
-//int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
-//
-//FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
-//	TEXT ( "TT.ShowAttackMeleeDebug" ) ,
-//	ATTPlayerCharacter::ShowAttackMeleeDebug ,
-//	TEXT ( "" ) ,
-//	ECVF_Cheat
-//);
 
 ATTPlayerCharacter::ATTPlayerCharacter () :
 	WalkSpeed ( 200.f ) ,
@@ -68,6 +62,7 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	BodyMeshToReplicate = nullptr;
 
 	bIsDead = false;
+
 }
 
 
@@ -215,6 +210,8 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsStunned );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentComboCount );
+	DOREPLIFETIME ( ATTPlayerCharacter , bIsAttackKeyPressed );
 
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
@@ -241,7 +238,6 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputEnter , ETriggerEvent::Started , this , &ATTPlayerCharacter::InChat );
 		EnhancedInputComponent->BindAction ( InputESC , ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu );
 		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey );
-
 	}
 }
 
@@ -322,26 +318,13 @@ void ATTPlayerCharacter::SprintEnd ()
 	ServerSprintEnd ();
 }
 
-void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
-{
-	if (bIsStunned) return;
-	if (GetCharacterMovement ()->IsFalling () == true)
-	{
-		return;
-	}
 
-	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	if (IsValid ( AnimInstance ) == true && IsValid ( BlockingMontage ) == true && AnimInstance->Montage_IsPlaying ( BlockingMontage ) == false)
-	{
-		AnimInstance->Montage_Play ( BlockingMontage );
-	}
-}
 
-void ATTPlayerCharacter::JumpStart ()
+void ATTPlayerCharacter::JumpStart()
 {
 	if (bIsStunned) return;
 
-	Super::Jump ();
+	Super::Jump();
 }
 
 void ATTPlayerCharacter::JumpEnd ()
@@ -442,42 +425,63 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 
 
 #pragma region Attack
-
+UAnimMontage* ATTPlayerCharacter::GetCurrentWeaponAttackAnimMontage () const
+{
+	if (IsValid ( CurrentWeapon ) == true)
+	{
+		return CurrentWeapon->GetAttackMontage ();
+	}
+	return nullptr;
+}
 
 void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 {
 	if (bIsStunned) return;
-	if (GetCharacterMovement ()->IsFalling () == true)
-	{
-		return;
-	}
+	if (GetCharacterMovement ()->IsFalling ()) return;
 
-	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	//if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
-	//{
-	//	AnimInstance->Montage_Play ( AttackMeleeMontage );
-	//}
-	if (0 == CurrentComboCount)
-	{
-		BeginAttack ();
-	}
-	else
-	{
-		ensure ( FMath::IsWithinInclusive<int32> ( CurrentComboCount , 1 , MaxComboCount ) );
-		bIsAttackKeyPressed = true;
-	}
+	ServerAttackInput ();
 
 	if (IsValid ( WeaponData ))
 	{
-		FTTWeaponData* CurrentWeapon = WeaponData->FindRow<FTTWeaponData> ( WeaponName , TEXT ( "WeaponError" ) );
-		if (CurrentWeapon != nullptr)
+		FTTWeaponData* WeaponRow = WeaponData->FindRow<FTTWeaponData> (WeaponName , TEXT ("WeaponError"));
+		if (WeaponRow != nullptr)
 		{
-			UE_LOG ( LogTemp , Warning , TEXT ( "Current StunAmount is %f" ) , CurrentWeapon->StunAmount );
+			UE_LOG ( LogTemp , Warning , TEXT ( "Current StunAmount is %f" ) , WeaponRow->StunAmount );
 		}
 	}
 
 }
+void ATTPlayerCharacter::ServerBeginAttack_Implementation ()
+{
+	bIsNowAttacking = true;
+	CurrentComboCount = 1;
 
+	MulticastBeginAttack ();
+}
+
+// 3. 모든 클라이언트(나 자신 포함) 실행 구현
+void ATTPlayerCharacter::MulticastBeginAttack_Implementation ()
+{
+	// 실제 애니메이션 재생 로직인 BeginAttack을 호출합니다.
+	BeginAttack ();
+}
+void ATTPlayerCharacter::ServerAttackInput_Implementation ()
+{
+	if (CurrentComboCount == 0 && !bIsNowAttacking)
+	{
+		// 첫 공격 시작 시점의 변수 설정은 서버에서 수행
+		bIsNowAttacking = true;
+		CurrentComboCount = 1;
+		bIsAttackKeyPressed = false;
+
+		MulticastBeginAttack ();
+	}
+	else if (CurrentComboCount < MaxComboCount)
+	{
+		// 공격 중일 때 클릭하면 '예약'
+		bIsAttackKeyPressed = true;
+	}
+}
 void ATTPlayerCharacter::HandleOnCheckHit ()
 {
 	if (HasAuthority ())
@@ -496,7 +500,7 @@ void ATTPlayerCharacter::ServerHandleOnCheckHit_Implementation ()
 
 	TArray<FHitResult> HitResults;
 	FCollisionQueryParams Params ( NAME_None , false , this );
-
+	Params.AddIgnoredActor ( this );
 	bool bResult = GetWorld ()->SweepMultiByChannel (
 		HitResults ,
 		GetActorLocation () ,
@@ -507,85 +511,70 @@ void ATTPlayerCharacter::ServerHandleOnCheckHit_Implementation ()
 		Params
 	);
 
-	if (HitResults.IsEmpty () == false)
+	if (!HitResults.IsEmpty ())
 	{
-		float CurrentStunPower = 0.0f;
-		float CurrentKnockback = 0.0f;
+		float DamageAmount = 0.0f;
 
 		if (IsValid ( WeaponData ))
 		{
 			FTTWeaponData* WeaponRow = WeaponData->FindRow<FTTWeaponData> ( WeaponName , TEXT ( "CheckHit" ) );
 			if (WeaponRow)
 			{
-				CurrentStunPower = WeaponRow->StunAmount;
-				CurrentKnockback = WeaponRow->KnockbackAmount;
+				DamageAmount = WeaponRow->StunAmount;
 			}
 		}
-
-		for (FHitResult HitResult : HitResults)
+		//3번쨰 콤보 1.5배 아픔
+		if (CurrentComboCount == 3)
 		{
+			DamageAmount *= 1.5f;
+		}
 
-			if (IsValid ( HitResult.GetActor () ) == true)
+		for (const FHitResult& HitResult : HitResults)
+		{
+			AActor* HitActor = HitResult.GetActor ();
+			if (IsValid ( HitActor ))
 			{
 				FDamageEvent DamageEvent;
-				HitResult.GetActor ()->TakeDamage ( CurrentStunPower , DamageEvent , GetController () , this );
-			/*	if (1 == ShowAttackMeleeDebug)
-				{
-					UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "Hit Actor Name: %s" ) , *HitResult.GetActor ()->GetName () ) );
-				}*/
+				HitActor->TakeDamage ( DamageAmount , DamageEvent , GetController () , this );
+
 			}
 		}
 	}
-	//if (1 == ShowAttackMeleeDebug)
-	//{
-	//	FVector TraceVector = AttackMeleeRange * GetActorForwardVector ();
-	//	FVector Center = GetActorLocation () + TraceVector + GetActorUpVector () * 40.f;
-	//	float HalfHeight = AttackMeleeRange * 0.5f + AttackMeleeRadius;
-	//	FQuat CapsuleRot = FRotationMatrix::MakeFromZ ( TraceVector ).ToQuat ();
-	//	FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
-	//	float DebugLifeTime = 5.f;
-
-	//	DrawDebugCapsule (
-	//		GetWorld () ,
-	//		Center ,
-	//		HalfHeight ,
-	//		AttackMeleeRadius ,
-	//		CapsuleRot ,
-	//		DrawColor ,
-	//		false ,
-	//		DebugLifeTime
-	//	);
-	//}
 }
 
 void ATTPlayerCharacter::HandleOnCheckInputAttack ()
 {
-	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
-	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
+	if (!HasAuthority ()) return;
 
-	if (bIsAttackKeyPressed == true)
+	if (bIsAttackKeyPressed)
 	{
 		CurrentComboCount = FMath::Clamp ( CurrentComboCount + 1 , 1 , MaxComboCount );
 
 		FName NextSectionName = *FString::Printf ( TEXT ( "%s%02d" ) , *AttackAnimMontageSectionPrefix , CurrentComboCount );
-		AnimInstance->Montage_JumpToSection ( NextSectionName , AttackMeleeMontage );
+
+		MulticastJumpToSection ( NextSectionName );
+
 		bIsAttackKeyPressed = false;
+	}
+}
+void ATTPlayerCharacter::MulticastJumpToSection_Implementation ( FName SectionName )
+{
+	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
+	if (AnimInstance && AttackMeleeMontage)
+	{
+		AnimInstance->Montage_JumpToSection ( SectionName , AttackMeleeMontage );
 	}
 }
 void ATTPlayerCharacter::BeginAttack ()
 {
-	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
-
-	/*GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_None );*/
-	bIsNowAttacking = true;
-	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
+	if (IsValid ( AnimInstance ) && IsValid ( AttackMeleeMontage ))
 	{
-		AnimInstance->Montage_Play ( AttackMeleeMontage );
+		if (AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+		{
+			AnimInstance->Montage_Play ( AttackMeleeMontage );
+		}
 	}
-
-	CurrentComboCount = 1;
 
 	if (OnMeleeAttackMontageEndedDelegate.IsBound () == false)
 	{
@@ -596,8 +585,6 @@ void ATTPlayerCharacter::BeginAttack ()
 
 void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped )
 {
-	ensureMsgf ( CurrentComboCount != 0 , TEXT ( "CurrentComboCount == 0" ) );
-
 	CurrentComboCount = 0;
 	bIsAttackKeyPressed = false;
 	bIsNowAttacking = false;
@@ -611,24 +598,29 @@ void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped 
 
 float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
 {
+	if (!HasAuthority ())
+	{
+		return 0.f;
+	}
+
 	float FinalDamageAmount = Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
 	// 피해자쪽 로직.
 
+	CurrentHP = FMath::Clamp ( CurrentHP - FinalDamageAmount , 0.0f , MaxHP );
 	CurrentStun = FMath::Clamp ( CurrentStun + FinalDamageAmount , 0.0f , MaxStun );
-
-	UE_LOG ( LogTemp , Warning , TEXT ( "[%s] Current Stun : %f / %f" ) , *GetName () , CurrentStun , MaxStun );
-
-	if (CurrentStun >= MaxStun)
+	if (CurrentStun >= MaxStun && !bIsStunned)
 	{
-		if (bIsStunned == false)
-		{
-			KnockOut ();
-		}
+		/*KnockOut ();*/
 	}
-	//if (1 == ShowAttackMeleeDebug)
-	//{
-	//	UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "%s was taken damage: %.3f" ) , *GetName () , FinalDamageAmount ) );
-	//}
+	if (FinalDamageAmount > 0.f && CurrentHP > 0.f)
+	{
+		MulticastPlayHitReaction ();
+	}
+
+	if (CurrentHP <= 0.f && !bIsDead)
+	{
+		// 사망
+	}
 
 	return FinalDamageAmount;
 }
@@ -637,53 +629,92 @@ void ATTPlayerCharacter::SetWeaponData ( FName NewWeaponName )
 	WeaponName = NewWeaponName;
 	UE_LOG ( LogTemp , Warning , TEXT ( "Weapon Changed to : %s" ) , *WeaponName.ToString () );
 }
-void ATTPlayerCharacter::KnockOut ()
+
+void ATTPlayerCharacter::MulticastPlayHitReaction_Implementation ()
+{
+	// 이미 사망했거나 스턴 상태라면 피격 모션을 무시할 수도 있습니다.
+	if (bIsDead || bIsStunned) return;
+
+	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
+	if (AnimInstance && HitReactionMontage)
+	{
+		// 현재 공격 중이라도 피격 모션이 우선순위가 높다면 기존 몽타주를 끊고 재생합니다.
+		AnimInstance->Montage_Play ( HitReactionMontage );
+	}
+}
+
+void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
+{
+	if (GetCharacterMovement ()->IsFalling ()) return;
+
+	ServerPlayBlocking ();
+}
+
+void ATTPlayerCharacter::ServerPlayBlocking_Implementation ()
+{
+	MulticastPlayBlocking ();
+}
+
+void ATTPlayerCharacter::MulticastPlayBlocking_Implementation()
+{
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance>(GetMesh()->GetAnimInstance());
+	if (IsValid(AnimInstance) && IsValid(BlockingMontage))
+	{
+		// 이미 재생 중이지 않을 때만 재생
+		if (!AnimInstance->Montage_IsPlaying(BlockingMontage))
+		{
+			AnimInstance->Montage_Play(BlockingMontage);
+		}
+	}
+}
+
+void ATTPlayerCharacter::KnockOut()
 {
 	if (bIsStunned) return;
-	UE_LOG ( LogTemp , Warning , TEXT ( "%s is KNOCKED OUT!" ) , *GetName () );
+	UE_LOG(LogTemp, Warning, TEXT("%s is KNOCKED OUT!"), *GetName());
 
 	bIsStunned = true;
 	CurrentStun = 0.0f;
 
-	OnRep_IsStunned ();
+	OnRep_IsStunned();
 
 	FTimerHandle StunTimerHandle;
-	GetWorld ()->GetTimerManager ().SetTimer (
-		StunTimerHandle ,
-		this ,
-		&ATTPlayerCharacter::WakeUp ,
-		StunDuration ,
+	GetWorld()->GetTimerManager().SetTimer(
+		StunTimerHandle,
+		this,
+		&ATTPlayerCharacter::WakeUp,
+		StunDuration,
 		false
 	);
 }
 
-void ATTPlayerCharacter::OnRep_IsStunned ()
+void ATTPlayerCharacter::OnRep_IsStunned()
 {
 	if (bIsStunned)
 	{
-		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::NoCollision );
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-		GetMesh ()->SetCollisionProfileName ( TEXT ( "TT_Ragdoll" ) );
-		GetMesh ()->SetSimulatePhysics ( true );
+		GetMesh()->SetCollisionProfileName(TEXT("TT_Ragdoll"));
+		GetMesh()->SetSimulatePhysics(true);
 	}
 	else
 	{
-		GetMesh ()->SetSimulatePhysics ( false );
-		GetMesh ()->SetCollisionProfileName ( TEXT ( "CharacterMesh" ) );
-		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
+		GetMesh()->SetSimulatePhysics(false);
+		GetMesh()->SetCollisionProfileName(TEXT("CharacterMesh"));
+		GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
-		GetMesh ()->AttachToComponent ( GetCapsuleComponent () , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
-		GetMesh ()->SetRelativeLocation ( FVector ( 0.0f , 0.0f , -60.0f ) );
-		GetMesh ()->SetRelativeRotation ( FRotator ( 0.0f , -90.0f , 0.0f ) );
+		GetMesh()->AttachToComponent(GetCapsuleComponent(), FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		GetMesh()->SetRelativeLocation(FVector(0.0f, 0.0f, -60.0f));
+		GetMesh()->SetRelativeRotation(FRotator(0.0f, -90.0f, 0.0f));
 	}
 }
 
-void ATTPlayerCharacter::WakeUp ()
+void ATTPlayerCharacter::WakeUp()
 {
-	UE_LOG ( LogTemp , Warning , TEXT ( "%s Woke Up!" ) , *GetName () );
+	UE_LOG(LogTemp, Warning, TEXT("%s Woke Up!"), *GetName());
 
 	bIsStunned = false;
 
-	OnRep_IsStunned ();
+	OnRep_IsStunned();
 }
 #pragma endregion

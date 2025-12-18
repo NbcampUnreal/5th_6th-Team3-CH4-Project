@@ -27,6 +27,10 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* Btn_Customize;
+    
+    // 시작 메뉴 컨테이너 (커스터마이즈 시 숨김)
+    UPROPERTY(meta = (BindWidget))
+    class UVerticalBox* VerticalBox_Start;
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UUserWidget> CustomizeWidgetClass;
@@ -43,6 +47,12 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UButton* Btn_BlueTeam;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* LobbyBGM;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* ClickSound;
+
 #pragma endregion
 
 private:
@@ -55,6 +65,9 @@ private:
 
 	UFUNCTION()
 	void OnClickCustomize();
+    
+    UFUNCTION()
+    void OnCustomizeClosedCallback();
 
 	UFUNCTION()
 	void OnClickRedTeam();

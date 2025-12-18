@@ -20,6 +20,11 @@ class TEAM03_API UUW_Customize : public UUserWidget
 	
 public:
 	virtual void NativeConstruct() override;
+    
+    // 닫힘 알림 델리게이트
+    DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCustomizeClosed);
+    UPROPERTY(BlueprintAssignable, Category = "Events")
+    FOnCustomizeClosed OnCustomizeClosed;
 
 protected:
 #pragma region Widgets

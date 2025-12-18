@@ -1,8 +1,10 @@
 ﻿// (c) 2024. Team03. All rights reserved.
 
 #include "UW_LobbyLevel.h"
+#include "UW_Customize.h"
 #include "Components/Button.h"
 #include "Components/ScrollBox.h"
+#include "Components/VerticalBox.h"
 #include "Components/TextBlock.h"
 #include "TTLobbyPlayerController.h"
 #include "TTGameInstance.h"
@@ -13,6 +15,11 @@
 void UUW_LobbyLevel::NativeConstruct()
 {
 	Super::NativeConstruct();
+	
+	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+	{
+		GI->PlayBGM(LobbyBGM);
+	}
 
 	if (Btn_StartGame)
 	{
@@ -53,6 +60,8 @@ void UUW_LobbyLevel::NativeConstruct()
 
 void UUW_LobbyLevel::OnClickStartGame()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	if (ATTLobbyPlayerController* PC = Cast<ATTLobbyPlayerController>(GetOwningPlayer()))
 	{
 		PC->ServerRPC_StartGame();
@@ -61,6 +70,8 @@ void UUW_LobbyLevel::OnClickStartGame()
 
 void UUW_LobbyLevel::OnClickLeave()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
 		GI->DestroyGameSession();
@@ -69,12 +80,26 @@ void UUW_LobbyLevel::OnClickLeave()
 
 void UUW_LobbyLevel::OnClickCustomize()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
+    // 버튼 영역 숨김
+    if (VerticalBox_Start)
+    {
+        VerticalBox_Start->SetVisibility(ESlateVisibility::Hidden);
+    }
+
 	if (CustomizeWidgetClass)
 	{
 		UUserWidget* Widget = CreateWidget<UUserWidget>(GetOwningPlayer(), CustomizeWidgetClass);
 		if (Widget)
 		{
 			Widget->AddToViewport();
+            
+            // 닫힘 이벤트 바인딩
+            if (UUW_Customize* CustomWidget = Cast<UUW_Customize>(Widget))
+            {
+                CustomWidget->OnCustomizeClosed.AddDynamic(this, &ThisClass::OnCustomizeClosedCallback);
+            }
             
              // 게임 및 UI 입력 모드 설정
             if (APlayerController* PC = GetOwningPlayer())
@@ -89,8 +114,19 @@ void UUW_LobbyLevel::OnClickCustomize()
 	}
 }
 
+void UUW_LobbyLevel::OnCustomizeClosedCallback()
+{
+    // 버튼 영역 복구
+    if (VerticalBox_Start)
+    {
+        VerticalBox_Start->SetVisibility(ESlateVisibility::Visible);
+    }
+}
+
 void UUW_LobbyLevel::OnClickRedTeam ()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	if (ATTLobbyPlayerController* PC = Cast<ATTLobbyPlayerController> ( GetOwningPlayer () ))
 	{
 		PC->Server_RequestChangeTeam(Teams::Red);
@@ -99,9 +135,11 @@ void UUW_LobbyLevel::OnClickRedTeam ()
 
 void UUW_LobbyLevel::OnClickBlueTeam ()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	if (ATTLobbyPlayerController* PC = Cast<ATTLobbyPlayerController> ( GetOwningPlayer () ))
 	{
-		PC->Server_RequestChangeTeam(Teams::Bule );
+		PC->Server_RequestChangeTeam(Teams::Blue );
 	}
 }
 
@@ -140,7 +178,7 @@ void UUW_LobbyLevel::UpdatePlayerList()
 				{
 					ScrollBox_PlayerListRedTeam->AddChild(TextBlock);
 				}
-				if (TTPS->GetTeam() == Teams::Bule)
+				if (TTPS->GetTeam() == Teams::Blue)
 				{
 					ScrollBox_PlayerListBlueTeam->AddChild ( TextBlock );
 				}

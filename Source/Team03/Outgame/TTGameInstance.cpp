@@ -5,6 +5,9 @@
 #include "OnlineSessionSettings.h"
 #include "Online/CoreOnline.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundMix.h"
+#include "Sound/SoundClass.h"
 
 UTTGameInstance::UTTGameInstance()
 {
@@ -19,6 +22,12 @@ void UTTGameInstance::Init()
 	if (GEngine)
 	{
 		GEngine->OnNetworkFailure().AddUObject(this, &UTTGameInstance::OnNetworkFailure);
+	}
+	
+	// 사운드 믹스 초기화 (볼륨 제어를 위해)
+	if (SoundMix_Master)
+	{
+		UGameplayStatics::PushSoundMixModifier(GetWorld(), SoundMix_Master);
 	}
 }
 
@@ -200,8 +209,12 @@ void UTTGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucces
 
 	if (bWasSuccessful)
 	{
-		UGameplayStatics::OpenLevel(GetWorld(), TEXT("LobbyLevel"), true, TEXT("listen"));
-	}
+		// C++에서 바로 이동하지 않고 UI가 애니메이션 후 이동하도록 변경
+		// UGameplayStatics::OpenLevel(GetWorld(), TEXT("LobbyLevel"), true, TEXT("listen"));
+        
+	// 델리게이트 브로드캐스트
+	OnCreateSessionCompleteBP.Broadcast(bWasSuccessful);
+}
 }
 
 void UTTGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
@@ -238,13 +251,21 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
                 ConnectInfo.Append(TEXT(":7777"));
             }
 
-			APlayerController* PlayerController = GetFirstLocalPlayerController();
-			if (PlayerController)
-			{
-				PlayerController->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
-			}
+            // 즉시 이동하지 않고 저장 후 UI에 알림
+            PendingConnectString = ConnectInfo;
+            OnJoinSessionCompleteBP.Broadcast(true);
+
+			// APlayerController* PlayerController = GetFirstLocalPlayerController();
+			// if (PlayerController)
+			// {
+			// 	PlayerController->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
+			// }
 		}
 	}
+    else
+    {
+        OnJoinSessionCompleteBP.Broadcast(false);
+    }
 }
 
 void UTTGameInstance::OnDestroySessionBeforeJoin(FName SessionName, bool bWasSuccessful)
@@ -282,6 +303,86 @@ void UTTGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSucce
 void UTTGameInstance::OnNetworkFailure(UWorld* World, UNetDriver* NetDriver, ENetworkFailure::Type FailureType, const FString& ErrorString)
 {
     // 네트워크 실패 처리 (예: 타이틀로 복귀)
+}
+
+#pragma endregion
+
+#pragma region Audio System
+
+void UTTGameInstance::SetMasterVolume(float Volume)
+{
+	if (SoundMix_Master && SoundClass_Master)
+	{
+		MasterVolume = Volume; // 상태 저장
+		UGameplayStatics::SetSoundMixClassOverride(GetWorld(), SoundMix_Master, SoundClass_Master, Volume, 1.0f, 0.0f);
+		UGameplayStatics::PushSoundMixModifier(GetWorld(), SoundMix_Master);
+	}
+	else
+	{
+		// SoundMix or SoundClass is NULL
+	}
+}
+
+void UTTGameInstance::PlayBGM(USoundBase* NewBGM)
+{
+	if (!NewBGM) return;
+
+	// 이미 재생 중인 BGM이 있다면
+	if (BGMComponent)
+	{
+		if (BGMComponent->GetSound() == NewBGM && BGMComponent->IsPlaying())
+		{
+			return; // 같은 음악이면 계속 재생
+		}
+		BGMComponent->Stop();
+	}
+	else
+	{
+		BGMComponent = UGameplayStatics::CreateSound2D(GetWorld(), NewBGM);
+		if (BGMComponent)
+		{
+			BGMComponent->bIsUISound = true; // UI 사운드로 설정 (일시정지 영향 X 등)
+			BGMComponent->bAutoDestroy = false; // 수동 관리
+		}
+	}
+
+	if (BGMComponent)
+	{
+		BGMComponent->SetSound(NewBGM);
+		BGMComponent->Play();
+	}
+}
+
+void UTTGameInstance::StopBGM()
+{
+	if (BGMComponent)
+	{
+		BGMComponent->Stop();
+	}
+}
+
+void UTTGameInstance::PauseBGM(bool bPause)
+{
+	if (BGMComponent)
+	{
+		BGMComponent->SetPaused(bPause);
+	}
+}
+
+void UTTGameInstance::TravelToLobby()
+{
+	UGameplayStatics::OpenLevel(GetWorld(), TEXT("LobbyLevel"), true, TEXT("listen"));
+}
+
+void UTTGameInstance::TravelToPendingSession()
+{
+    if (!PendingConnectString.IsEmpty())
+    {
+        if (APlayerController* PlayerController = GetFirstLocalPlayerController())
+        {
+            PlayerController->ClientTravel(PendingConnectString, ETravelType::TRAVEL_Absolute);
+        }
+    }
 }
 
 #pragma endregion

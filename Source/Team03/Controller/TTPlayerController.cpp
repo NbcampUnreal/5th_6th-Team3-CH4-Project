@@ -17,7 +17,8 @@ ATTPlayerController::ATTPlayerController ()
 	JumpAction ( nullptr ) ,
 	SprintAction ( nullptr ) ,
 	AttackAction ( nullptr ) ,
-	BlockingAction ( nullptr ) 
+	BlockingAction ( nullptr ),
+	AttackHandAction ( nullptr )
 {
 	bReplicates = true;
 }

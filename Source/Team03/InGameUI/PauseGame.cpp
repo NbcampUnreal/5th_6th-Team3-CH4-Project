@@ -6,6 +6,8 @@
 #include "../Controller/TTPlayerController.h"
 #include "../Outgame/UW_TitleLevel.h"
 #include "Kismet/GameplayStatics.h"
+#include "Outgame/UW_Option.h"
+#include "Animation/WidgetAnimation.h"
 //#include "Kismet/KismetSystemLibrary.h"
 
 void UPauseGame::NativeConstruct ()
@@ -20,6 +22,20 @@ void UPauseGame::NativeConstruct ()
 	{
 		ExitButton->OnClicked.AddDynamic ( this , &ThisClass::OnExitButtonClicked );
 	}
+	if (OptionWidgetClass)
+	{
+		OptionWidget = CreateWidget<UUW_Option> (GetWorld(), OptionWidgetClass );
+	}
+	if (OptionButton)
+	{
+		OptionButton->OnClicked.AddDynamic ( this , &ThisClass::OnOptionButtonClicked );
+	}
+
+	if (Anim_SlideIn)
+	{
+		PlayAnimation ( Anim_SlideIn );
+	}
+
 }
 
 void UPauseGame::OnContinueButtonClicked ()
@@ -40,4 +56,9 @@ void UPauseGame::OnExitButtonClicked ()
 	//UKismetSystemLibrary::QuitGame ( this , nullptr , EQuitPreference::Quit , false );
 	RemoveFromParent ();
 	UGameplayStatics::OpenLevel ( this , FName ( TEXT ( "TitleLevel" ) ) );
+}
+
+void UPauseGame::OnOptionButtonClicked ()
+{
+	OptionWidget->AddToViewport ();
 }
