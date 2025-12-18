@@ -154,6 +154,11 @@ private:
 #pragma region Attack
 
 public:
+	UAnimMontage* GetCurrentWeaponAttackAnimMontage () const;
+
+	UPROPERTY ()
+	TObjectPtr<ATTSword> CurrentWeapon;
+
 	UFUNCTION ()
 	void HandleOnCheckHit ();
 	UFUNCTION(Server, Reliable)
