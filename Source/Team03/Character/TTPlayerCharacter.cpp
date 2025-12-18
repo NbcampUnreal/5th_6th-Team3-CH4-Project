@@ -235,8 +235,8 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::SprintStart );
 		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Completed , this , &ATTPlayerCharacter::SprintEnd );
 
-		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Jump );
-		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::StopJumping );
+		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::JumpStart );
+		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::JumpEnd );
 
 		EnhancedInputComponent->BindAction ( InputEnter , ETriggerEvent::Started , this , &ATTPlayerCharacter::InChat );
 		EnhancedInputComponent->BindAction ( InputESC , ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu );
@@ -335,6 +335,20 @@ void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 	{
 		AnimInstance->Montage_Play ( BlockingMontage );
 	}
+}
+
+void ATTPlayerCharacter::JumpStart ()
+{
+	if (bIsStunned) return;
+
+	Super::Jump ();
+}
+
+void ATTPlayerCharacter::JumpEnd ()
+{
+	if (bIsStunned) return;
+
+	Super::StopJumping ();
 }
 
 void ATTPlayerCharacter::SetSprintSpeed ( bool bIsSprinting )

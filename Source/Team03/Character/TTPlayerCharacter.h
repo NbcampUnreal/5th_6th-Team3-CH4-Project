@@ -68,6 +68,8 @@ protected:
 	void SprintStart ();
 	void SprintEnd ();
 	void PlayerBlocking ( const FInputActionValue& Value );
+	void JumpStart ();
+	void JumpEnd ();
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
