@@ -5,8 +5,6 @@
 #include "Components/ComboBoxString.h"
 #include "Components/Slider.h"
 #include "GameFramework/GameUserSettings.h"
-#include "Components/Slider.h"
-#include "GameFramework/GameUserSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "Animation/WidgetAnimation.h"
 #include "TTGameInstance.h"
