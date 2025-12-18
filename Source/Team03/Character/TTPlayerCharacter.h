@@ -53,8 +53,6 @@ public:
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputBlocking;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
-	TObjectPtr<UInputAction> InputHandAttack;
-	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputMappingContext> IMC_Character;
 
 public:
@@ -71,7 +69,6 @@ protected:
 	void SprintStart ();
 	void SprintEnd ();
 	void PlayerBlocking ( const FInputActionValue& Value );
-	void HandAttack ( const FInputActionValue& InValue );
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
 
@@ -180,16 +177,44 @@ public:
 
 	//static int32 ShowAttackMeleeDebug;
 protected:
+	// 서버에서 실행될 함수
+	UFUNCTION ( Server , Reliable )
+	void ServerBeginAttack ();
+
+	// 모든 클라이언트에서 실행될 함수 (멀티캐스트)
+	UFUNCTION ( NetMulticast , Reliable )
+	void MulticastBeginAttack ();
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
 
 	int32 MaxComboCount = 3;
-
+	UPROPERTY ( Replicated )
 	int32 CurrentComboCount = 0;
 
 	bool bIsNowAttacking = false;
-
+	UPROPERTY ( Replicated )
 	bool bIsAttackKeyPressed = false;
+	UFUNCTION ( Server , Reliable )
+	void ServerAttackInput ();
+	UFUNCTION ( Server , Reliable )
+	void ServerPlayBlocking ();
 
+	UFUNCTION ( NetMulticast , Reliable )
+	void MulticastPlayBlocking ();
+	UFUNCTION ( NetMulticast , Reliable )
+	void MulticastJumpToSection ( FName SectionName );
+
+	// 피격 시 재생할 몽타주
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Anims" )
+	TObjectPtr<UAnimMontage> HitReactionMontage;
+
+	UFUNCTION ( NetMulticast , Unreliable )
+	void MulticastPlayHitReaction ();
+	// 기절 시 재생할 몽타주
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Anims" )
+	TObjectPtr<UAnimMontage> KnockOutMontage;
+
+	UFUNCTION ( NetMulticast , Reliable )
+	void MulticastPlayKnockOut ();
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Replicated )
 	bool bIsStunned;
 
