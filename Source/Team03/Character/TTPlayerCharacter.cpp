@@ -17,6 +17,7 @@
 #include "Engine/DamageEvents.h"
 #include "Team03.h"
 #include "TTWeaponData.h"
+#include "Components/CapsuleComponent.h"
 
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 //
@@ -44,7 +45,7 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	bReplicates = true;
 
 	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
-	Head->SetupAttachment ( GetRootComponent () );
+	Head->SetupAttachment ( GetMesh () );
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
@@ -257,6 +258,7 @@ void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
 
 void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 {
+	if (bIsStunned) return;
 	FVector2D MovementVector = Value.Get<FVector2D> ();
 	if (IsValid ( Controller ) == true)
 	{
@@ -322,6 +324,7 @@ void ATTPlayerCharacter::SprintEnd ()
 
 void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 {
+	if (bIsStunned) return;
 	if (GetCharacterMovement ()->IsFalling () == true)
 	{
 		return;
@@ -429,6 +432,7 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 
 void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 {
+	if (bIsStunned) return;
 	if (GetCharacterMovement ()->IsFalling () == true)
 	{
 		return;
@@ -621,10 +625,51 @@ void ATTPlayerCharacter::SetWeaponData ( FName NewWeaponName )
 }
 void ATTPlayerCharacter::KnockOut ()
 {
+	if (bIsStunned) return;
 	UE_LOG ( LogTemp , Warning , TEXT ( "%s is KNOCKED OUT!" ) , *GetName () );
 
 	bIsStunned = true;
 	CurrentStun = 0.0f;
 
+	OnRep_IsStunned ();
+
+	FTimerHandle StunTimerHandle;
+	GetWorld ()->GetTimerManager ().SetTimer (
+		StunTimerHandle ,
+		this ,
+		&ATTPlayerCharacter::WakeUp ,
+		StunDuration ,
+		false
+	);
+}
+
+void ATTPlayerCharacter::OnRep_IsStunned ()
+{
+	if (bIsStunned)
+	{
+		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::NoCollision );
+
+		GetMesh ()->SetCollisionProfileName ( TEXT ( "Ragdoll" ) );
+		GetMesh ()->SetSimulatePhysics ( true );
+	}
+	else
+	{
+		GetMesh ()->SetSimulatePhysics ( false );
+		GetMesh ()->SetCollisionProfileName ( TEXT ( "CharacterMesh" ) );
+		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
+
+		GetMesh ()->AttachToComponent ( GetCapsuleComponent () , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+		GetMesh ()->SetRelativeLocation ( FVector ( 0.0f , 0.0f , -60.0f ) );
+		GetMesh ()->SetRelativeRotation ( FRotator ( 0.0f , 0.0f , -90.0f ) );
+	}
+}
+
+void ATTPlayerCharacter::WakeUp ()
+{
+	UE_LOG ( LogTemp , Warning , TEXT ( "%s Woke Up!" ) , *GetName () );
+
+	bIsStunned = false;
+
+	OnRep_IsStunned ();
 }
 #pragma endregion

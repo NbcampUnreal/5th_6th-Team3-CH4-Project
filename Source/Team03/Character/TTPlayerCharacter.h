@@ -183,7 +183,7 @@ protected:
 
 	bool bIsAttackKeyPressed = false;
 
-	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Replicated )
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , ReplicatedUsing = OnRep_IsStunned )
 	bool bIsStunned;
 
 	FOnMontageEnded OnMeleeAttackMontageEndedDelegate;
@@ -198,6 +198,13 @@ protected:
 	TObjectPtr<UDataTable> WeaponData;
 
 	FName WeaponName;
+
+	UFUNCTION ()
+	void OnRep_IsStunned();
+
+	void WakeUp ();
+
+	float StunDuration = 10.0f;
 #pragma endregion
 
 #pragma region HP
