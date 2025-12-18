@@ -1,4 +1,4 @@
-// (c) 2024. Team03. All rights reserved.
+﻿// (c) 2024. Team03. All rights reserved.
 
 #pragma once
 
@@ -80,5 +80,4 @@ public:
 	int32 GetCurrentHeadIndex() const { return CurrentHeadIndex; }
 	int32 GetCurrentBodyIndex() const { return CurrentBodyIndex; }
 #pragma endregion
-
 };

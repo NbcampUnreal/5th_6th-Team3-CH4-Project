@@ -208,5 +208,20 @@ protected:
 	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly )
 	uint8 bIsDead : 1;
 
-#pragma endregion
+#pragma endregion Throw
+public:
+
+	void ApplySlow ( float Amount , float Duration );
+	void ApplyStun ( float Amount );
+
+protected:
+
+	float BaseWalkSpeed;
+
+	FTimerHandle SlowTimerHandle;
+	FTimerHandle StunTimerHandle;
+
+	void ClearSlow ();
+	void EndStun ();
+
 };

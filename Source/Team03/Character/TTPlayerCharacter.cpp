@@ -81,6 +81,7 @@ void ATTPlayerCharacter::BeginPlay ()
 	//{
 	//	AnimInstance->OnCheckHit.AddDynamic ( this , &ThisClass::HandleOnCheckHit );
 	//}
+	BaseWalkSpeed = GetCharacterMovement ()->MaxWalkSpeed;
 
 	ATTPlayerController* PlayerController = Cast<ATTPlayerController> ( GetController () );
 
@@ -633,4 +634,48 @@ void ATTPlayerCharacter::KnockOut ()
 	CurrentStun = 0.0f;
 
 }
+
+void ATTPlayerCharacter::ApplySlow ( float Amount , float Duration )
+{
+	if (!HasAuthority ()) return;
+
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement ();
+	if (!MoveComp) return;
+
+	// 🔧 변경: 중첩 방지
+	GetWorldTimerManager ().ClearTimer ( SlowTimerHandle );
+
+	MoveComp->MaxWalkSpeed = BaseWalkSpeed * (1.f - Amount);
+
+	GetWorldTimerManager ().SetTimer (
+		SlowTimerHandle ,
+		this ,
+		&ATTPlayerCharacter::ClearSlow ,
+		Duration ,
+		false
+	);
+}
+
+void ATTPlayerCharacter::ApplyStun ( float Amount )
+{
+	if (!HasAuthority ()) return;
+
+	CurrentStun = FMath::Clamp ( CurrentStun + Amount , 0.f , MaxStun );
+
+	UE_LOG ( LogTemp , Warning ,
+		TEXT ( "[%s] Stun: %f / %f" ) ,
+		*GetName () , CurrentStun , MaxStun
+	);
+
+	if (CurrentStun >= MaxStun && !bIsStunned)
+	{
+		KnockOut ();
+	}
+}
+
+void ATTPlayerCharacter::ClearSlow ()
+{
+	GetCharacterMovement ()->MaxWalkSpeed = BaseWalkSpeed;
+}
+
 #pragma endregion

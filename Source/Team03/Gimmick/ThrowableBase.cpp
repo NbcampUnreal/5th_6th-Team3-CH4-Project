@@ -3,6 +3,7 @@
 #include "ThrowableBase.h"
 #include "Net/UnrealNetwork.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/StaticMeshComponent.h"
 
 AThrowableBase::AThrowableBase ()
 {
@@ -14,6 +15,9 @@ AThrowableBase::AThrowableBase ()
 	MeshComp->SetSimulatePhysics ( true );
 	MeshComp->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
 	MeshComp->SetCollisionObjectType ( ECC_PhysicsBody );
+
+	MeshComp->SetNotifyRigidBodyCollision(true);
+	MeshComp->SetGenerateOverlapEvents(false);
 
 	bReplicates = true;
 	SetReplicateMovement ( true );
@@ -28,6 +32,11 @@ AThrowableBase::AThrowableBase ()
 void AThrowableBase::BeginPlay ()
 {
 	Super::BeginPlay ();
+
+	if (MeshComp)
+	{
+		MeshComp->OnComponentHit.AddDynamic(this, &AThrowableBase::OnHit);
+	}
 
 	if (HasAuthority ())
 	{
@@ -46,6 +55,24 @@ void AThrowableBase::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
 
 	DOREPLIFETIME ( AThrowableBase , bExploded );
+}
+
+void AThrowableBase::OnHit(UPrimitiveComponent* HitComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,FVector NormalImpulse,const FHitResult& Hit)
+{
+	if (!HasAuthority())
+	{
+		return;
+	}
+
+	if (bExploded)
+	{
+		return;
+	}
+
+	bExploded = true;
+
+	Multicast_ExplodeEffects();
+	Destruct();       
 }
 
 
