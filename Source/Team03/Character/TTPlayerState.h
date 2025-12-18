@@ -12,6 +12,7 @@
 UENUM ( BlueprintType )
 enum class Teams : uint8
 {
+	None UMETA ( DisplayName = "None" ) ,
 	Red UMETA ( DisplayName = "Red" ) ,
 	Bule UMETA ( DisplayName = "Blue" )
 };

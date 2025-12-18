@@ -16,8 +16,15 @@ class TEAM03_API AInGameModeBase : public AGameModeBase
 	
 public:
 	AInGameModeBase();
-	
+	virtual void Tick ( float Delatasecond )override;
+
 	void SendChatMessage ( const FString& Message );
 
 	virtual void PostLogin ( APlayerController* NewPlayer ) override;
+	virtual void Logout ( AController* ExitPlayer ) override;
+
+	void StartRound ();
+	void EndRound ();
+private:
+	uint8 bIsGameStart : 1 = false;
 };
