@@ -15,6 +15,10 @@ void UUW_TitleLevel::NativeConstruct()
 	Super::NativeConstruct();
 
 	// 이벤트 바인딩
+	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+	{
+		GI->PlayBGM(TitleBGM);
+	}
 	if (Btn_Create)
 	{
 		Btn_Create->OnClicked.AddDynamic(this, &UUW_TitleLevel::OnCreateClicked);
@@ -89,6 +93,8 @@ void UUW_TitleLevel::NativeDestruct()
 
 void UUW_TitleLevel::OnCreateClicked()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	SetLoadingState(true);
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
@@ -99,6 +105,8 @@ void UUW_TitleLevel::OnCreateClicked()
 
 void UUW_TitleLevel::OnFindClicked()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	SetLoadingState(true);
     
     // 오버레이 표시
@@ -119,6 +127,8 @@ void UUW_TitleLevel::OnFindClicked()
 
 void UUW_TitleLevel::OnCloseOverlayClicked()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
     if (Widget_SessionOverlay)
     	{
         Widget_SessionOverlay->SetVisibility(ESlateVisibility::Collapsed);
@@ -127,6 +137,8 @@ void UUW_TitleLevel::OnCloseOverlayClicked()
 
 void UUW_TitleLevel::OnOptionClicked()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	if (OptionWidgetClass)
 	{
 		UUserWidget* Widget = CreateWidget<UUserWidget>(GetOwningPlayer(), OptionWidgetClass);
@@ -147,6 +159,8 @@ void UUW_TitleLevel::OnOptionClicked()
 
 void UUW_TitleLevel::OnExitClicked()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	UKismetSystemLibrary::QuitGame(GetWorld(), GetOwningPlayer(), EQuitPreference::Quit, false);
 }
 

@@ -43,6 +43,12 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UButton* Btn_BlueTeam;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* LobbyBGM;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* ClickSound;
+
 #pragma endregion
 
 private:
