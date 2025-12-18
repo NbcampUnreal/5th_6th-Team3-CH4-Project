@@ -645,30 +645,4 @@ void ATTPlayerCharacter::MulticastPlayBlocking_Implementation ()
 		}
 	}
 }
-void ATTPlayerCharacter::KnockOut ()
-{
-	// 서버에서만 상태를 변경하고 멀티캐스트 호출
-	if (!HasAuthority ()) return;
-
-	UE_LOG ( LogTemp , Warning , TEXT ( "%s  KNOCKED OUT!" ) , *GetName () );
-
-	bIsStunned = true;
-	CurrentStun = 0.0f;
-
-	// 모든 클라이언트에게 애니메이션 재생 명령
-	MulticastPlayKnockOut ();
-}
-
-void ATTPlayerCharacter::MulticastPlayKnockOut_Implementation ()
-{
-	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
-	if (IsValid ( AnimInstance ) && IsValid ( KnockOutMontage ))
-	{
-		// 공격 중이거나 방어 중인 동작을 모두 끊고 기절 모션 재생
-		AnimInstance->Montage_Play ( KnockOutMontage );
-
-		// 만약 기절 시 특정 루프 섹션으로 보내고 싶다면:
-		// AnimInstance->Montage_JumpToSection(FName("StunLoop"), KnockOutMontage);
-	}
-}
 #pragma endregion

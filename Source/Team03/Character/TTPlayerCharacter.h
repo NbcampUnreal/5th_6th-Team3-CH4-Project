@@ -208,12 +208,7 @@ protected:
 
 	UFUNCTION ( NetMulticast , Unreliable )
 	void MulticastPlayHitReaction ();
-	// 기절 시 재생할 몽타주
-	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Anims" )
-	TObjectPtr<UAnimMontage> KnockOutMontage;
 
-	UFUNCTION ( NetMulticast , Reliable )
-	void MulticastPlayKnockOut ();
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Replicated )
 	bool bIsStunned;
 
