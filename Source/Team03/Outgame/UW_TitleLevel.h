@@ -61,6 +61,16 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UUW_LobbyEntry> LobbyEntryClass;
+    
+    // 애니메이션 바인딩
+    UPROPERTY(Transient, meta = (BindWidgetAnim))
+    UWidgetAnimation* Anim_FindInfoSlide; // 이름 일치 필요
+
+    UPROPERTY(Transient, meta = (BindWidgetAnim))
+    UWidgetAnimation* Anim_FadeOut;       // 이름 일치 필요
+
+    UPROPERTY(Transient, meta = (BindWidgetAnim))
+    UWidgetAnimation* Anim_FadeIn;        // 이름 일치 필요
 
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	USoundBase* TitleBGM;
@@ -95,6 +105,14 @@ protected:
 	// BP에서 목록을 채우는 함수
 	UFUNCTION(BlueprintImplementableEvent, Category = "UI")
 	void UpdateSessionList(const TArray<FTTSessionInfo>& SessionResults);
+
+    // 세션 생성 완료 처리
+	UFUNCTION()
+	void OnSessionCreated(bool bWasSuccessful);
+
+    // 세션 참여 완료 처리
+    UFUNCTION()
+    void OnSessionJoined(bool bWasSuccessful);
 #pragma endregion
     
 #pragma region UI State

@@ -1,8 +1,10 @@
 ﻿// (c) 2024. Team03. All rights reserved.
 
 #include "UW_LobbyLevel.h"
+#include "UW_Customize.h"
 #include "Components/Button.h"
 #include "Components/ScrollBox.h"
+#include "Components/VerticalBox.h"
 #include "Components/TextBlock.h"
 #include "TTLobbyPlayerController.h"
 #include "TTGameInstance.h"
@@ -80,12 +82,24 @@ void UUW_LobbyLevel::OnClickCustomize()
 {
 	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
 
+    // 버튼 영역 숨김
+    if (VerticalBox_Start)
+    {
+        VerticalBox_Start->SetVisibility(ESlateVisibility::Hidden);
+    }
+
 	if (CustomizeWidgetClass)
 	{
 		UUserWidget* Widget = CreateWidget<UUserWidget>(GetOwningPlayer(), CustomizeWidgetClass);
 		if (Widget)
 		{
 			Widget->AddToViewport();
+            
+            // 닫힘 이벤트 바인딩
+            if (UUW_Customize* CustomWidget = Cast<UUW_Customize>(Widget))
+            {
+                CustomWidget->OnCustomizeClosed.AddDynamic(this, &ThisClass::OnCustomizeClosedCallback);
+            }
             
              // 게임 및 UI 입력 모드 설정
             if (APlayerController* PC = GetOwningPlayer())
@@ -98,6 +112,15 @@ void UUW_LobbyLevel::OnClickCustomize()
             }
 		}
 	}
+}
+
+void UUW_LobbyLevel::OnCustomizeClosedCallback()
+{
+    // 버튼 영역 복구
+    if (VerticalBox_Start)
+    {
+        VerticalBox_Start->SetVisibility(ESlateVisibility::Visible);
+    }
 }
 
 void UUW_LobbyLevel::OnClickRedTeam ()
