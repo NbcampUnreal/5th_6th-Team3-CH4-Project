@@ -88,10 +88,18 @@ void ATTLobbyCharacter::Tick(float DeltaTime)
              {
                  if (UTextBlock* TextBlock = Cast<UTextBlock>(WidgetObject->GetWidgetFromName(TEXT("NicknameText"))))
                  {
+                     // 텍스트 업데이트
                      if (TextBlock->GetText().ToString() != PS->UserNickname)
                      {
                          TextBlock->SetText(FText::FromString(PS->UserNickname));
                      }
+                     
+                     // 색상 업데이트
+                     FLinearColor TextColor = FLinearColor::White;
+                     if (PS->GetTeam() == Teams::Red) TextColor = FLinearColor::Red;
+                     else if (PS->GetTeam() == Teams::Blue) TextColor = FLinearColor::Blue;
+                     
+                     TextBlock->SetColorAndOpacity(FSlateColor(TextColor));
                  }
              }
         }
