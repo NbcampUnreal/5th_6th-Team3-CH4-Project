@@ -16,10 +16,12 @@ void UPauseGame::NativeConstruct ()
 
 	if (ContinueButton)
 	{
+		ContinueButton->OnHovered.AddDynamic ( this , &ThisClass::OnButtonHovered );
 		ContinueButton->OnClicked.AddDynamic ( this , &ThisClass::OnContinueButtonClicked );
 	}
 	if (ExitButton)
 	{
+		ExitButton->OnHovered.AddDynamic ( this , &ThisClass::OnButtonHovered );
 		ExitButton->OnClicked.AddDynamic ( this , &ThisClass::OnExitButtonClicked );
 	}
 	if (OptionWidgetClass)
@@ -28,6 +30,7 @@ void UPauseGame::NativeConstruct ()
 	}
 	if (OptionButton)
 	{
+		OptionButton->OnHovered.AddDynamic ( this , &ThisClass::OnButtonHovered );
 		OptionButton->OnClicked.AddDynamic ( this , &ThisClass::OnOptionButtonClicked );
 	}
 
@@ -41,6 +44,7 @@ void UPauseGame::NativeConstruct ()
 void UPauseGame::OnContinueButtonClicked ()
 {
 	// TODO : UI 없애기	, 게임 재개
+	SoundClicked ();
 	RemoveFromParent ();
 	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetOwningPlayer () ))
 	{
@@ -54,11 +58,29 @@ void UPauseGame::OnExitButtonClicked ()
 {
 	// TODO : 메인화면으로 이동, 일단 강제 종료
 	//UKismetSystemLibrary::QuitGame ( this , nullptr , EQuitPreference::Quit , false );
+	SoundClicked ();
 	RemoveFromParent ();
 	UGameplayStatics::OpenLevel ( this , FName ( TEXT ( "TitleLevel" ) ) );
 }
 
 void UPauseGame::OnOptionButtonClicked ()
 {
+	SoundClicked ();
 	OptionWidget->AddToViewport ();
+}
+
+void UPauseGame::OnButtonHovered ()
+{
+	if (HoverSound)
+	{
+		UGameplayStatics::PlaySound2D ( this , HoverSound );
+	}
+}
+
+void UPauseGame::SoundClicked ()
+{
+	if (ClickedSound)
+	{
+		UGameplayStatics::PlaySound2D ( this , ClickedSound );
+	}
 }

@@ -84,4 +84,17 @@ public:
 	void LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex );
 
 #pragma endregion
+
+#pragma region Notification
+public:
+	UFUNCTION ( Client , Reliable )
+	void ClientPlayStartAnim ();
+	UFUNCTION ( Server , Reliable )
+	void ServerClientReady ();
+protected:
+
+	bool bClientReady = false;
+#pragma endregion
+
+
 };
