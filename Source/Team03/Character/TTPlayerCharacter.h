@@ -224,6 +224,15 @@ protected:
 	UFUNCTION()
 	void OnRep_ServerRagdollLocation ();
 
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Animation" )
+	TObjectPtr<UAnimMontage> HitMontage;
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Sound" )
+	TObjectPtr<USoundBase> HitSound;
+
+	UFUNCTION ( NetMulticast , Unreliable )
+	void MulticastPlayHitMontage ();
+
 #pragma endregion
 
 #pragma region HP

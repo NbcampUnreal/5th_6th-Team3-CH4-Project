@@ -724,4 +724,18 @@ void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 		GetMesh ()->SetPhysicsLinearVelocity ( NewVelocity );
 	}
 }
+void ATTPlayerCharacter::MulticastPlayHitMontage_Implementation ()
+{
+	if (bIsStunned || bIsDead) return;
+
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	if (IsValid ( AnimInstance ) && IsValid ( HitMontage ))
+	{
+		AnimInstance->Montage_Play ( HitMontage );
+	}
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation ( this , HitSound , GetActorLocation () );
+	}
+}
 #pragma endregion
