@@ -68,6 +68,7 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	BodyMeshToReplicate = nullptr;
 
 	bIsDead = false;
+
 }
 
 
@@ -157,6 +158,11 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	//		InitializeMesh ( PS );
 	//	}
 	//}
+	if (bIsStunned && HasAuthority ())
+	{
+		ServerRagdollLocation = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
+		ServerRagdollVelocity = GetMesh ()->GetPhysicsLinearVelocity ( TEXT ( "pelvis" ) );
+	}
 }
 
 #pragma region Get,Set
@@ -215,6 +221,8 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsStunned );
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollLocation );
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollVelocity );
 
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
@@ -661,20 +669,38 @@ void ATTPlayerCharacter::OnRep_IsStunned ()
 {
 	if (bIsStunned)
 	{
+		GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_None );
 		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::NoCollision );
 
 		GetMesh ()->SetCollisionProfileName ( TEXT ( "TT_Ragdoll" ) );
 		GetMesh ()->SetSimulatePhysics ( true );
+
+		SpringArm->AttachToComponent ( GetMesh () , FAttachmentTransformRules::KeepWorldTransform , TEXT ( "pelvis" ) );
 	}
 	else
 	{
+		FVector RagdollLoc = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
+		float CapsuleHalfHeight = GetCapsuleComponent ()->GetScaledCapsuleHalfHeight ();
+
+		FVector TargetLoc = FVector ( RagdollLoc.X , RagdollLoc.Y , RagdollLoc.Z + CapsuleHalfHeight +20.0f);
+
+		SetActorLocation ( TargetLoc , false , nullptr , ETeleportType::TeleportPhysics );
+
 		GetMesh ()->SetSimulatePhysics ( false );
 		GetMesh ()->SetCollisionProfileName ( TEXT ( "CharacterMesh" ) );
-		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
 
 		GetMesh ()->AttachToComponent ( GetCapsuleComponent () , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
 		GetMesh ()->SetRelativeLocation ( FVector ( 0.0f , 0.0f , -60.0f ) );
 		GetMesh ()->SetRelativeRotation ( FRotator ( 0.0f , -90.0f , 0.0f ) );
+
+		SpringArm->AttachToComponent ( GetCapsuleComponent () , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+		SpringArm->SetRelativeLocation ( FVector ( 0.0f , 0.0f , 0.0f ) );
+
+		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
+		GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_Walking );
+
+		GetMesh ()->UpdateBounds ();
+		GetMesh ()->RefreshBoneTransforms ();
 	}
 }
 
@@ -685,5 +711,21 @@ void ATTPlayerCharacter::WakeUp ()
 	bIsStunned = false;
 
 	OnRep_IsStunned ();
+}
+void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
+{
+	if (!bIsStunned || HasAuthority ()) return;
+
+	FVector CurrentLoc = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
+
+	float Dist = FVector::Dist ( CurrentLoc , ServerRagdollLocation );
+
+	if (Dist > 5.0f)
+	{
+		FVector Diff = ServerRagdollLocation - CurrentLoc;
+		GetMesh ()->AddWorldOffset ( Diff );
+
+		GetMesh ()->SetPhysicsLinearVelocity ( ServerRagdollVelocity );
+	}
 }
 #pragma endregion

@@ -196,17 +196,28 @@ protected:
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
 	float AttackMeleeRadius = 20.f;
 
+
+	float StunDuration = 10.0f;
+
 	UPROPERTY ( EditAnywhere , Category = "Weapon" )
 	TObjectPtr<UDataTable> WeaponData;
 
 	FName WeaponName;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ServerRagdollLocation)
+	FVector ServerRagdollLocation;
+
+	UPROPERTY(Replicated)
+	FVector ServerRagdollVelocity;
 
 	UFUNCTION ()
 	void OnRep_IsStunned();
 
 	void WakeUp ();
 
-	float StunDuration = 10.0f;
+	UFUNCTION()
+	void OnRep_ServerRagdollLocation ();
+
 #pragma endregion
 
 #pragma region HP
