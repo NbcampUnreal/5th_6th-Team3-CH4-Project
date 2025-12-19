@@ -206,7 +206,17 @@ protected:
 
 	void WakeUp ();
 
+
 	float StunDuration = 10.0f;
+
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Animation" )
+	TObjectPtr<class UAnimMontage> HitMontage;
+
+	UFUNCTION ( NetMulticast , Unreliable )
+	void MulticastPlayHitMontage ();
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Sound" )
+	TObjectPtr<USoundBase> HitSound;
+
 #pragma endregion
 
 #pragma region HP

@@ -54,7 +54,7 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	SpringArm->bEnableCameraLag = true;
 	SpringArm->CameraLagSpeed = 3.0f;
 	SpringArm->CameraLagMaxDistance = 100.0f;
-	
+
 	Camera = CreateDefaultSubobject<UCameraComponent> ( TEXT ( "Camera" ) );
 	Camera->SetupAttachment ( SpringArm );
 
@@ -529,33 +529,9 @@ void ATTPlayerCharacter::ServerHandleOnCheckHit_Implementation ()
 			{
 				FDamageEvent DamageEvent;
 				HitResult.GetActor ()->TakeDamage ( CurrentStunPower , DamageEvent , GetController () , this );
-			/*	if (1 == ShowAttackMeleeDebug)
-				{
-					UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "Hit Actor Name: %s" ) , *HitResult.GetActor ()->GetName () ) );
-				}*/
 			}
 		}
 	}
-	//if (1 == ShowAttackMeleeDebug)
-	//{
-	//	FVector TraceVector = AttackMeleeRange * GetActorForwardVector ();
-	//	FVector Center = GetActorLocation () + TraceVector + GetActorUpVector () * 40.f;
-	//	float HalfHeight = AttackMeleeRange * 0.5f + AttackMeleeRadius;
-	//	FQuat CapsuleRot = FRotationMatrix::MakeFromZ ( TraceVector ).ToQuat ();
-	//	FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
-	//	float DebugLifeTime = 5.f;
-
-	//	DrawDebugCapsule (
-	//		GetWorld () ,
-	//		Center ,
-	//		HalfHeight ,
-	//		AttackMeleeRadius ,
-	//		CapsuleRot ,
-	//		DrawColor ,
-	//		false ,
-	//		DebugLifeTime
-	//	);
-	//}
 }
 
 void ATTPlayerCharacter::HandleOnCheckInputAttack ()
@@ -565,6 +541,7 @@ void ATTPlayerCharacter::HandleOnCheckInputAttack ()
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
 
 	if (bIsAttackKeyPressed == true)
+
 	{
 		CurrentComboCount = FMath::Clamp ( CurrentComboCount + 1 , 1 , MaxComboCount );
 
@@ -617,7 +594,10 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 	CurrentStun = FMath::Clamp ( CurrentStun + FinalDamageAmount , 0.0f , MaxStun );
 
 	UE_LOG ( LogTemp , Warning , TEXT ( "[%s] Current Stun : %f / %f" ) , *GetName () , CurrentStun , MaxStun );
-
+	if (FinalDamageAmount > 0.0f && !bIsStunned)
+	{
+		MulticastPlayHitMontage ();
+	}
 	if (CurrentStun >= MaxStun)
 	{
 		if (bIsStunned == false)
@@ -685,5 +665,20 @@ void ATTPlayerCharacter::WakeUp ()
 	bIsStunned = false;
 
 	OnRep_IsStunned ();
+}
+
+void ATTPlayerCharacter::MulticastPlayHitMontage_Implementation ()
+{
+	if (bIsStunned || bIsDead) return;
+
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	if (IsValid ( AnimInstance ) && IsValid ( HitMontage ))
+	{
+		AnimInstance->Montage_Play ( HitMontage );
+	}
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation ( this , HitSound , GetActorLocation () );
+	}
 }
 #pragma endregion
