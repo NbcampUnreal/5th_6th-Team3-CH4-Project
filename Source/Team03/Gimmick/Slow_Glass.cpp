@@ -2,7 +2,7 @@
 
 #include "Slow_Glass.h"
 #include "Character/TTPlayerCharacter.h"
-#include "Kismet/KismetSystemLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 ASlow_Glass::ASlow_Glass ()
 {
@@ -12,32 +12,20 @@ ASlow_Glass::ASlow_Glass ()
 
 void ASlow_Glass::Explode_Implementation ()
 {
-	if (!HasAuthority ())
-	{
-		return;
-	}
+	Super::Explode_Implementation ();
 
-	const FVector Center = GetActorLocation ();
-
-	TArray<AActor*> OverlappedActors;
-
-	UKismetSystemLibrary::SphereOverlapActors (
+	TArray<AActor*> Overlaps;
+	UGameplayStatics::GetAllActorsOfClass (
 		GetWorld () ,
-		Center ,
-		DamageRadius , 
-		TArray<TEnumAsByte<EObjectTypeQuery>> () ,
 		ATTPlayerCharacter::StaticClass () ,
-		TArray<AActor*> () ,
-		OverlappedActors
+		Overlaps
 	);
 
-	for (AActor* Actor : OverlappedActors)
+	for (AActor* Actor : Overlaps)
 	{
-		if (ATTPlayerCharacter* Character = Cast<ATTPlayerCharacter> ( Actor ))
+		if (ATTPlayerCharacter* Player = Cast<ATTPlayerCharacter> ( Actor ))
 		{
-			Character->ApplySlow ( SlowAmount , SlowDuration );
+
 		}
 	}
-
-	Super::Explode_Implementation ();
 }

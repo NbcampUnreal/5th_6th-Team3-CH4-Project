@@ -2,8 +2,9 @@
 
 #include "ThrowableBase.h"
 #include "Net/UnrealNetwork.h"
-#include "Kismet/GameplayStatics.h"
 #include "Components/StaticMeshComponent.h"
+#include "Character/TTPlayerCharacter.h"
+#include "LHO/TTPickupComponent.h"
 
 AThrowableBase::AThrowableBase ()
 {
@@ -15,18 +16,15 @@ AThrowableBase::AThrowableBase ()
 	MeshComp->SetSimulatePhysics ( true );
 	MeshComp->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
 	MeshComp->SetCollisionObjectType ( ECC_PhysicsBody );
+	MeshComp->SetNotifyRigidBodyCollision ( true );
+	MeshComp->SetGenerateOverlapEvents ( false );
 
-	MeshComp->SetNotifyRigidBodyCollision(true);
-	MeshComp->SetGenerateOverlapEvents(false);
+	PickupComponent = CreateDefaultSubobject<UTTPickupComponent> ( TEXT ( "PickupComponent" ) );
 
 	bReplicates = true;
 	SetReplicateMovement ( true );
 
-	FuseTime;
-	Damage;
-	DamageRadius;
-
-	bExploded = false;
+	bDestroyed = false;
 }
 
 void AThrowableBase::BeginPlay ()
@@ -35,109 +33,66 @@ void AThrowableBase::BeginPlay ()
 
 	if (MeshComp)
 	{
-		MeshComp->OnComponentHit.AddDynamic(this, &AThrowableBase::OnHit);
-	}
-
-	if (HasAuthority ())
-	{
-		GetWorld ()->GetTimerManager ().SetTimer (
-			FuseTimerHandle ,
+		MeshComp->OnComponentHit.AddDynamic (
 			this ,
-			&AThrowableBase::Explode ,
-			FuseTime ,
-			false
+			&AThrowableBase::OnHit
 		);
 	}
 }
 
-void AThrowableBase::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const
+void AThrowableBase::GetLifetimeReplicatedProps (TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
 
-	DOREPLIFETIME ( AThrowableBase , bExploded );
+	DOREPLIFETIME ( AThrowableBase , bDestroyed );
 }
 
-void AThrowableBase::OnHit(UPrimitiveComponent* HitComp,AActor* OtherActor,UPrimitiveComponent* OtherComp,FVector NormalImpulse,const FHitResult& Hit)
+void AThrowableBase::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 {
-	if (!HasAuthority())
-	{
-		return;
-	}
+	if (!InPickUpCharacter) return;
 
-	if (bExploded)
-	{
-		return;
-	}
+	OwnerCharacter = InPickUpCharacter;
+	SetOwner ( InPickUpCharacter );
 
-	bExploded = true;
+	SetActorHiddenInGame ( true );
+	SetActorEnableCollision ( false );
 
-	Multicast_ExplodeEffects();
-	Destruct();       
+	InPickUpCharacter->AddThrowable ( this );
+}
+
+void AThrowableBase::OnHit (UPrimitiveComponent* HitComp ,AActor* OtherActor ,UPrimitiveComponent* OtherComp ,FVector NormalImpulse ,const FHitResult& Hit)
+{
+
 }
 
 
-void AThrowableBase::ServerThrow_Implementation ( const FVector& Direction , float Power )
+void AThrowableBase::ServerThrow_Implementation (const FVector& Direction ,float Power)
 {
 	Throw ( Direction , Power );
 }
 
-void AThrowableBase::Throw ( const FVector& Direction , float Power )
+void AThrowableBase::Throw (const FVector& Direction ,float Power)
 {
 	if (!MeshComp) return;
+
+	SetActorHiddenInGame ( false );
+	SetActorEnableCollision ( true );
 
 	MeshComp->AddImpulse ( Direction * Power , NAME_None , true );
 }
 
+
 void AThrowableBase::Explode_Implementation ()
 {
-	if (bExploded) return;
 
-	bExploded = true;
-
-	if (HasAuthority ())
-	{
-		UGameplayStatics::ApplyRadialDamage (
-			this ,
-			Damage ,
-			GetActorLocation () ,
-			DamageRadius ,
-			nullptr ,
-			TArray<AActor*> () ,
-			this ,
-			GetInstigatorController () ,
-			true
-		);
-
-		Multicast_ExplodeEffects ();
-	}
-
-	Destruct ();
 }
-
-void AThrowableBase::Multicast_ExplodeEffects_Implementation ()
-{
-	if (ExplosionParticle)
-	{
-		UGameplayStatics::SpawnEmitterAtLocation (
-			GetWorld () ,
-			ExplosionParticle ,
-			GetActorTransform ()
-		);
-	}
-
-	if (ExplosionSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation (
-			this ,
-			ExplosionSound ,
-			GetActorLocation ()
-		);
-	}
-}
-
 
 void AThrowableBase::Destruct_Implementation ()
 {
+	if (bDestroyed) return;
+
+	bDestroyed = true;
+
 	if (HasAuthority ())
 	{
 		Destroy ();
