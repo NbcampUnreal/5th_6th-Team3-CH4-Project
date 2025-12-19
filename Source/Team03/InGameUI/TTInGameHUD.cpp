@@ -2,11 +2,12 @@
 
 
 #include "TTInGameHUD.h"
-#include "../InGameUI/TTChatUI.h"
-#include "../InGameUI/TTChatMessage.h"
-#include "../Controller/TTPlayerController.h"
+#include "InGameUI/TTChatUI.h"
+#include "InGameUI/TTChatMessage.h"
+#include "Controller/TTPlayerController.h"
 #include "Components/ScrollBox.h"
-#include "../InGameUI/TTSeletMeshs.h"
+#include "InGameUI/TTSeletMeshs.h"
+#include "InGameUI/TTNotificationWidget.h"
 
 void ATTInGameHUD::PostInitializeComponents ()
 {
@@ -26,6 +27,10 @@ void ATTInGameHUD::PostInitializeComponents ()
 		if(SelectedSkeletalMeshClass)
 		{
 			SelectedSkeletalMesh = CreateWidget<UUserWidget> ( PC , SelectedSkeletalMeshClass );
+		}
+		if(NotificationClass)
+		{
+			Notification = CreateWidget<UTTNotificationWidget> ( PC , NotificationClass );
 		}
 	}
 }
@@ -81,6 +86,25 @@ void ATTInGameHUD::AddSelectedSkeletalMenu () const
 	{
 		SelectedSkeletalMesh->AddToViewport ();
 	}
+}
+#pragma endregion
+
+#pragma region NotificationWidget
+void ATTInGameHUD::AddNotification () const
+{
+	if (IsValid ( Notification ))
+	{
+		Notification->AddToViewport ();
+	}
+}
+
+void ATTInGameHUD::StartAnim () const
+{
+	if (IsValid ( Notification ))
+	{
+		Notification->PlayStartAnim ();
+	}
+
 }
 
 #pragma endregion
