@@ -161,7 +161,9 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	if (bIsStunned && HasAuthority ())
 	{
 		ServerRagdollLocation = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
+		ServerRagdollRotation = GetMesh ()->GetSocketRotation ( TEXT ( "pelvis" ) );
 		ServerRagdollVelocity = GetMesh ()->GetPhysicsLinearVelocity ( TEXT ( "pelvis" ) );
+		ServerRagdollAngularVelocity = GetMesh ()->GetPhysicsAngularVelocityInDegrees ( TEXT ( "pelvis" ) );
 	}
 }
 
@@ -221,8 +223,11 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsStunned );
+
 	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollLocation );
 	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollVelocity );
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollRotation );
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollAngularVelocity );
 
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
@@ -720,12 +725,23 @@ void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 
 	float Dist = FVector::Dist ( CurrentLoc , ServerRagdollLocation );
 
-	if (Dist > 5.0f)
+	if (Dist > 100.0f)
 	{
-		FVector Diff = ServerRagdollLocation - CurrentLoc;
-		GetMesh ()->AddWorldOffset ( Diff );
+		GetMesh ()->SetWorldLocation ( ServerRagdollLocation , false , nullptr , ETeleportType::TeleportPhysics );
 
+		GetMesh ()->SetWorldRotation ( ServerRagdollRotation , false , nullptr , ETeleportType::TeleportPhysics );
 		GetMesh ()->SetPhysicsLinearVelocity ( ServerRagdollVelocity );
+		GetMesh ()->SetPhysicsAngularVelocityInDegrees ( ServerRagdollAngularVelocity );
+	}
+	else if (Dist > 10.0f)
+	{
+		FVector FixDirection = (ServerRagdollLocation - CurrentLoc);
+
+		float CorrectionPower = 10.0f;
+
+		FVector NewVelocity = ServerRagdollVelocity + (FixDirection * CorrectionPower);
+
+		GetMesh ()->SetPhysicsLinearVelocity ( NewVelocity );
 	}
 }
 #pragma endregion

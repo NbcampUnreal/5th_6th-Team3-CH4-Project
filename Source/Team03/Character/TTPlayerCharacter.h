@@ -210,6 +210,12 @@ protected:
 	UPROPERTY(Replicated)
 	FVector ServerRagdollVelocity;
 
+	UPROPERTY(Replicated)
+	FRotator ServerRagdollRotation;
+
+	UPROPERTY(Replicated)
+	FVector ServerRagdollAngularVelocity;
+
 	UFUNCTION ()
 	void OnRep_IsStunned();
 
