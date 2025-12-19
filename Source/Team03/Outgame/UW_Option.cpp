@@ -6,6 +6,8 @@
 #include "Components/Slider.h"
 #include "GameFramework/GameUserSettings.h"
 #include "Kismet/GameplayStatics.h"
+#include "Animation/WidgetAnimation.h"
+#include "TTGameInstance.h"
 
 void UUW_Option::NativeConstruct()
 {
@@ -19,6 +21,27 @@ void UUW_Option::NativeConstruct()
 	{
 		Btn_Apply->OnClicked.AddDynamic(this, &ThisClass::OnClickApply);
 	}
+
+	if (Slider_MasterVolume)
+	{
+		Slider_MasterVolume->OnValueChanged.AddDynamic(this, &ThisClass::OnMasterVolumeChanged);
+        
+        // 초기 값 설정 (Store된 값 가져오기)
+        if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+        {
+             Slider_MasterVolume->SetValue(GI->MasterVolume);
+        }
+        else
+        {
+             Slider_MasterVolume->SetValue(1.0f); 
+        }
+	}
+    
+    // 등장 애니메이션
+    if (Anim_SlideIn)
+    {
+        PlayAnimation(Anim_SlideIn);
+    }
 
 	InitSettings();
 }
@@ -94,17 +117,19 @@ void UUW_Option::ApplySettings()
 
 void UUW_Option::OnClickClose()
 {
+    if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
 	RemoveFromParent();
 }
 
 void UUW_Option::OnClickApply()
 {
+    if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
 	ApplySettings();
 }
 
 void UUW_Option::OnResolutionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
-	// 즉시 미리보기를 원하면 로직을 여기로 이동, 보통 적용 버튼이 더 좋음
+	// 필요 시 즉시 적용 로직 추가
 }
 
 void UUW_Option::OnWindowModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType)

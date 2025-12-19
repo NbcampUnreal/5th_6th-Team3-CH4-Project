@@ -3,7 +3,10 @@
 #include "TTGameModeBase_Lobby.h"
 #include "GameMapsSettings.h"
 #include "Team03/Character/TTPlayerState.h"
+#include "Outgame/TTGameInstance.h"
 #include "UW_LobbyLevel.h"
+#include "InGameMode/TTGameStateBase.h"
+
 
 ATTGameModeBase_Lobby::ATTGameModeBase_Lobby()
 {
@@ -48,6 +51,14 @@ void ATTGameModeBase_Lobby::StartGame()
 			// 설정되지 않은 경우 대비 (TestMap으로 설정됨)
 			TransitionMapPath = TEXT("/Game/Maps/TestMap"); 
 		}
+
+		// ----- Ingame 담당자가 추가함 ----- 
+		UTTGameInstance* GI = GetGameInstance<UTTGameInstance> ();
+		if (IsValid( GI ))
+		{
+			GI->count = GameState->PlayerArray.Num ();
+		}
+		// ------------------------------
 
 		FString Url = FString::Printf(TEXT("%s?listen"), *TransitionMapPath);
 		World->ServerTravel(Url);

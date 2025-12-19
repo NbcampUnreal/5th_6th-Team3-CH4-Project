@@ -37,12 +37,21 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UComboBoxString> Combo_WindowMode;
 
+    // 애니메이션 바인딩
+    UPROPERTY(Transient, meta = (BindWidgetAnim))
+    TObjectPtr<class UWidgetAnimation> Anim_SlideIn;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Audio")
+	USoundBase* ClickSound;
+#pragma endregion
+
+private:
+#pragma region Widgets // Moved Slider_MasterVolume to private
 	// 오디오 설정
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<USlider> Slider_MasterVolume;
 #pragma endregion
 
-private:
 #pragma region Callbacks
 	UFUNCTION()
 	void OnClickClose();

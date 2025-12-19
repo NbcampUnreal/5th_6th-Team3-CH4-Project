@@ -41,6 +41,10 @@ void UUW_Customize::NativeConstruct()
 
 void UUW_Customize::OnClickClose()
 {
+    if (OnCustomizeClosed.IsBound())
+    {
+        OnCustomizeClosed.Broadcast();
+    }
 	RemoveFromParent();
     
     // 이상적으로는 로비 위젯으로 포커스를 복구해야 하지만, 단순 제거로 처리

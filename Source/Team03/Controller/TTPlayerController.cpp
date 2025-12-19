@@ -1,12 +1,12 @@
 ﻿#include "TTPlayerController.h"
 #include "EnhancedInputSubsystems.h"
-#include "../InGameMode/InGameModeBase.h"
-#include "../InGameUI/TTInGameHUD.h"
-#include "../InGameUI/TTChatUI.h"
-#include "../Character/TTPlayerCharacter.h"
-#include "../Outgame/TTGameInstance.h"
-#include "../Character/TTPlayerState.h"
-#include "../Save/TTSaveGame.h"
+#include "InGameMode/InGameModeBase.h"
+#include "InGameUI/TTInGameHUD.h"
+#include "InGameUI/TTChatUI.h"
+#include "Character/TTPlayerCharacter.h"
+#include "Outgame/TTGameInstance.h"
+#include "Character/TTPlayerState.h"
+#include "Save/TTSaveGame.h"
 #include "Kismet/GameplayStatics.h"
 #include "SelectSkeletal/TTCharactorHeadSkeletalSelect.h"
 #include "SelectSkeletal/TTCharactorSkeletalMeshSelect.h"
@@ -17,7 +17,8 @@ ATTPlayerController::ATTPlayerController ()
 	JumpAction ( nullptr ) ,
 	SprintAction ( nullptr ) ,
 	AttackAction ( nullptr ) ,
-	BlockingAction ( nullptr ) 
+	BlockingAction ( nullptr ),
+	AttackHandAction ( nullptr )
 {
 	bReplicates = true;
 }
@@ -79,6 +80,7 @@ void ATTPlayerController::BeginPlay ()
 	if (TTInGameHUD)
 	{
 		TTInGameHUD->AddChat ();
+		TTInGameHUD->AddNotification ();
 	}
 
 // ---------- Outgame 담당자가 수정함 ----------
@@ -96,7 +98,10 @@ void ATTPlayerController::BeginPlay ()
 			
 			ServerRPC_InitPlayerInfo(GI->UserNickname, GI->SelectedCharacterRowName, HeadIndex, BodyIndex);
 		}
+		// ---------- Ingame 담당자가 추가 ----------
+		ServerClientReady ();
 	}
+
 }
 
 // ----- Outgame 담당자가 수정함 -----
@@ -293,6 +298,28 @@ void ATTPlayerController::LoadPlayerSaveData ( const FString& SlotName , int32 U
 		{
 			TTPC->Head->SetSkeletalMesh ( LoadHeadMesh );
 			TTPC->GetMesh ()->SetSkeletalMesh ( LoadBodyMesh );
+		}
+	}
+}
+#pragma endregion
+
+#pragma region Notification
+
+void ATTPlayerController::ClientPlayStartAnim_Implementation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->StartAnim ();
+	}
+}
+
+void ATTPlayerController::ServerClientReady_Implementation ()
+{
+	if (HasAuthority ())
+	{
+		if (AInGameModeBase* GM = GetWorld ()->GetAuthGameMode<AInGameModeBase> ())
+		{
+			GM->Ready ();
 		}
 	}
 }

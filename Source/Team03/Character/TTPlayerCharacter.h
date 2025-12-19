@@ -68,6 +68,8 @@ protected:
 	void SprintStart ();
 	void SprintEnd ();
 	void PlayerBlocking ( const FInputActionValue& Value );
+	void JumpStart ();
+	void JumpEnd ();
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
@@ -183,7 +185,7 @@ protected:
 
 	bool bIsAttackKeyPressed = false;
 
-	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Replicated )
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , ReplicatedUsing = OnRep_IsStunned )
 	bool bIsStunned;
 
 	FOnMontageEnded OnMeleeAttackMontageEndedDelegate;
@@ -194,10 +196,34 @@ protected:
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
 	float AttackMeleeRadius = 20.f;
 
+
+	float StunDuration = 10.0f;
+
 	UPROPERTY ( EditAnywhere , Category = "Weapon" )
 	TObjectPtr<UDataTable> WeaponData;
 
 	FName WeaponName;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ServerRagdollLocation)
+	FVector ServerRagdollLocation;
+
+	UPROPERTY(Replicated)
+	FVector ServerRagdollVelocity;
+
+	UPROPERTY(Replicated)
+	FRotator ServerRagdollRotation;
+
+	UPROPERTY(Replicated)
+	FVector ServerRagdollAngularVelocity;
+
+	UFUNCTION ()
+	void OnRep_IsStunned();
+
+	void WakeUp ();
+
+	UFUNCTION()
+	void OnRep_ServerRagdollLocation ();
+
 #pragma endregion
 
 #pragma region HP

@@ -17,7 +17,7 @@
 #include "Engine/DamageEvents.h"
 #include "Team03.h"
 #include "TTWeaponData.h"
-#include "Gimmick/Gas_Damage.h"
+#include "Components/CapsuleComponent.h"
 
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 //
@@ -45,7 +45,7 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	bReplicates = true;
 
 	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
-	Head->SetupAttachment ( GetRootComponent () );
+	Head->SetupAttachment ( GetMesh () );
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
@@ -68,6 +68,7 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	BodyMeshToReplicate = nullptr;
 
 	bIsDead = false;
+
 }
 
 
@@ -158,6 +159,13 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	//		InitializeMesh ( PS );
 	//	}
 	//}
+	if (bIsStunned && HasAuthority ())
+	{
+		ServerRagdollLocation = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
+		ServerRagdollRotation = GetMesh ()->GetSocketRotation ( TEXT ( "pelvis" ) );
+		ServerRagdollVelocity = GetMesh ()->GetPhysicsLinearVelocity ( TEXT ( "pelvis" ) );
+		ServerRagdollAngularVelocity = GetMesh ()->GetPhysicsAngularVelocityInDegrees ( TEXT ( "pelvis" ) );
+	}
 }
 
 #pragma region Get,Set
@@ -217,6 +225,11 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsStunned );
 
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollLocation );
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollVelocity );
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollRotation );
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollAngularVelocity );
+
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
 }
@@ -236,8 +249,8 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::SprintStart );
 		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Completed , this , &ATTPlayerCharacter::SprintEnd );
 
-		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Jump );
-		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::StopJumping );
+		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::JumpStart );
+		EnhancedInputComponent->BindAction ( InputJump , ETriggerEvent::Completed , this , &ATTPlayerCharacter::JumpEnd );
 
 		EnhancedInputComponent->BindAction ( InputEnter , ETriggerEvent::Started , this , &ATTPlayerCharacter::InChat );
 		EnhancedInputComponent->BindAction ( InputESC , ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu );
@@ -259,6 +272,7 @@ void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
 
 void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 {
+	if (bIsStunned) return;
 	FVector2D MovementVector = Value.Get<FVector2D> ();
 	if (IsValid ( Controller ) == true)
 	{
@@ -324,6 +338,7 @@ void ATTPlayerCharacter::SprintEnd ()
 
 void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 {
+	if (bIsStunned) return;
 	if (GetCharacterMovement ()->IsFalling () == true)
 	{
 		return;
@@ -334,6 +349,20 @@ void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 	{
 		AnimInstance->Montage_Play ( BlockingMontage );
 	}
+}
+
+void ATTPlayerCharacter::JumpStart ()
+{
+	if (bIsStunned) return;
+
+	Super::Jump ();
+}
+
+void ATTPlayerCharacter::JumpEnd ()
+{
+	if (bIsStunned) return;
+
+	Super::StopJumping ();
 }
 
 void ATTPlayerCharacter::SetSprintSpeed ( bool bIsSprinting )
@@ -431,6 +460,7 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 
 void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 {
+	if (bIsStunned) return;
 	if (GetCharacterMovement ()->IsFalling () == true)
 	{
 		return;
@@ -595,11 +625,6 @@ void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped 
 
 float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
 {
-	if (!HasAuthority ())
-	{
-		return 0.f;
-	}
-
 	float FinalDamageAmount = Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
 	// 피해자쪽 로직.
 
@@ -628,11 +653,97 @@ void ATTPlayerCharacter::SetWeaponData ( FName NewWeaponName )
 }
 void ATTPlayerCharacter::KnockOut ()
 {
+	if (bIsStunned) return;
 	UE_LOG ( LogTemp , Warning , TEXT ( "%s is KNOCKED OUT!" ) , *GetName () );
 
 	bIsStunned = true;
 	CurrentStun = 0.0f;
 
+	OnRep_IsStunned ();
+
+	FTimerHandle StunTimerHandle;
+	GetWorld ()->GetTimerManager ().SetTimer (
+		StunTimerHandle ,
+		this ,
+		&ATTPlayerCharacter::WakeUp ,
+		StunDuration ,
+		false
+	);
+}
+
+void ATTPlayerCharacter::OnRep_IsStunned ()
+{
+	if (bIsStunned)
+	{
+		GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_None );
+		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::NoCollision );
+
+		GetMesh ()->SetCollisionProfileName ( TEXT ( "TT_Ragdoll" ) );
+		GetMesh ()->SetSimulatePhysics ( true );
+
+		SpringArm->AttachToComponent ( GetMesh () , FAttachmentTransformRules::KeepWorldTransform , TEXT ( "pelvis" ) );
+	}
+	else
+	{
+		FVector RagdollLoc = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
+		float CapsuleHalfHeight = GetCapsuleComponent ()->GetScaledCapsuleHalfHeight ();
+
+		FVector TargetLoc = FVector ( RagdollLoc.X , RagdollLoc.Y , RagdollLoc.Z + CapsuleHalfHeight +20.0f);
+
+		SetActorLocation ( TargetLoc , false , nullptr , ETeleportType::TeleportPhysics );
+
+		GetMesh ()->SetSimulatePhysics ( false );
+		GetMesh ()->SetCollisionProfileName ( TEXT ( "CharacterMesh" ) );
+
+		GetMesh ()->AttachToComponent ( GetCapsuleComponent () , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+		GetMesh ()->SetRelativeLocation ( FVector ( 0.0f , 0.0f , -60.0f ) );
+		GetMesh ()->SetRelativeRotation ( FRotator ( 0.0f , -90.0f , 0.0f ) );
+
+		SpringArm->AttachToComponent ( GetCapsuleComponent () , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+		SpringArm->SetRelativeLocation ( FVector ( 0.0f , 0.0f , 0.0f ) );
+
+		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
+		GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_Walking );
+
+		GetMesh ()->UpdateBounds ();
+		GetMesh ()->RefreshBoneTransforms ();
+	}
+}
+
+void ATTPlayerCharacter::WakeUp ()
+{
+	UE_LOG ( LogTemp , Warning , TEXT ( "%s Woke Up!" ) , *GetName () );
+
+	bIsStunned = false;
+
+	OnRep_IsStunned ();
+}
+void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
+{
+	if (!bIsStunned || HasAuthority ()) return;
+
+	FVector CurrentLoc = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
+
+	float Dist = FVector::Dist ( CurrentLoc , ServerRagdollLocation );
+
+	if (Dist > 100.0f)
+	{
+		GetMesh ()->SetWorldLocation ( ServerRagdollLocation , false , nullptr , ETeleportType::TeleportPhysics );
+
+		GetMesh ()->SetWorldRotation ( ServerRagdollRotation , false , nullptr , ETeleportType::TeleportPhysics );
+		GetMesh ()->SetPhysicsLinearVelocity ( ServerRagdollVelocity );
+		GetMesh ()->SetPhysicsAngularVelocityInDegrees ( ServerRagdollAngularVelocity );
+	}
+	else if (Dist > 10.0f)
+	{
+		FVector FixDirection = (ServerRagdollLocation - CurrentLoc);
+
+		float CorrectionPower = 10.0f;
+
+		FVector NewVelocity = ServerRagdollVelocity + (FixDirection * CorrectionPower);
+
+		GetMesh ()->SetPhysicsLinearVelocity ( NewVelocity );
+	}
 }
 
 void ATTPlayerCharacter::ApplySlow ( float Amount , float Duration )
