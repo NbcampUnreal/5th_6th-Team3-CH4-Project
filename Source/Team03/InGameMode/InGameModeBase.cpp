@@ -10,7 +10,9 @@
 
 
 // ----- Outgame 담당자가 추가함 ----- 
-AInGameModeBase::AInGameModeBase()
+AInGameModeBase::AInGameModeBase() :
+	InPlayerCount(0),
+	PlayerCount(0)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseSeamlessTravel = true;
@@ -59,20 +61,39 @@ void AInGameModeBase::PostLogin ( APlayerController* NewPlayer )
 
 void AInGameModeBase::Logout ( AController* ExitPlayer )
 {
+	--InPlayerCount;
+	--PlayerCount;
 	EndRound ();
 	Super::Logout ( ExitPlayer );
 }
 
 void AInGameModeBase::StartRound ()
 {
-	AGameStateBase* GS = GameState ;
-	if (!GS)
-		return;
-	if (GS->PlayerArray.Num () == PlayerCount)
+	if (InPlayerCount == PlayerCount)
 	{
-		UE_LOG ( LogTemp , Warning , TEXT ( "StartGame" ) );
+		//FTimerHandle StartHandle;
+		//	GetWorldTimerManager ().SetTimer (
+		//		StartHandle ,
+		//		this ,
+		//		&ThisClass::StartAnim ,
+		//		1.f ,
+		//		false
+		//	);
+			
+		for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It)
+		{
+			if (ATTPlayerController* TTPC = Cast<ATTPlayerController> ( It->Get () ))
+			{
+				TTPC->ClientPlayStartAnim ();
+			}
+		}
 		bIsGameStart = true;
 	}
+}
+
+void AInGameModeBase::Ready()
+{
+	++InPlayerCount;
 }
 
 void AInGameModeBase::EndRound ()

@@ -22,6 +22,11 @@ public:
 	void OnExitButtonClicked ();
 	UFUNCTION()
 	void OnOptionButtonClicked ();
+	UFUNCTION()
+	void OnButtonHovered ();
+
+	void SoundClicked ();
+
 private:
 	UPROPERTY ( meta = (BindWidget) )
 	TObjectPtr<class UButton> OptionButton;
@@ -31,6 +36,12 @@ private:
 
 	UPROPERTY ( meta = (BindWidget) )
 	TObjectPtr<class UButton> ExitButton;
+
+	UPROPERTY ( EditAnywhere )
+	TObjectPtr<USoundBase> HoverSound;
+
+	UPROPERTY ( EditAnywhere )
+	TObjectPtr<USoundBase> ClickedSound;
 
 	UPROPERTY ( Transient , meta = (BindWidgetAnim) )
 	TObjectPtr<class UWidgetAnimation> Anim_SlideIn;

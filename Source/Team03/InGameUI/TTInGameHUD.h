@@ -58,4 +58,14 @@ public:
 	TObjectPtr<class UUserWidget> SelectedSkeletalMesh;
 
 #pragma endregion
+#pragma region NotificationWidget
+public:
+	void AddNotification () const;
+	void StartAnim ()const;
+public:
+	UPROPERTY ( EditDefaultsOnly )
+	TSubclassOf<class UTTNotificationWidget> NotificationClass;
+	UPROPERTY ( VisibleAnywhere )
+	TObjectPtr<UTTNotificationWidget> Notification;
+#pragma endregion
 };
