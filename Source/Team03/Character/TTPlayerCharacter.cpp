@@ -54,7 +54,7 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	SpringArm->bEnableCameraLag = true;
 	SpringArm->CameraLagSpeed = 3.0f;
 	SpringArm->CameraLagMaxDistance = 100.0f;
-	
+
 	Camera = CreateDefaultSubobject<UCameraComponent> ( TEXT ( "Camera" ) );
 	Camera->SetupAttachment ( SpringArm );
 
@@ -68,6 +68,7 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	BodyMeshToReplicate = nullptr;
 
 	bIsDead = false;
+
 }
 
 
@@ -157,6 +158,13 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	//		InitializeMesh ( PS );
 	//	}
 	//}
+	if (bIsStunned && HasAuthority ())
+	{
+		ServerRagdollLocation = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
+		ServerRagdollRotation = GetMesh ()->GetSocketRotation ( TEXT ( "pelvis" ) );
+		ServerRagdollVelocity = GetMesh ()->GetPhysicsLinearVelocity ( TEXT ( "pelvis" ) );
+		ServerRagdollAngularVelocity = GetMesh ()->GetPhysicsAngularVelocityInDegrees ( TEXT ( "pelvis" ) );
+	}
 }
 
 #pragma region Get,Set
@@ -215,6 +223,11 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , HeadMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , BodyMeshToReplicate );
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsStunned );
+
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollLocation );
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollVelocity );
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollRotation );
+	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollAngularVelocity );
 
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
@@ -529,33 +542,9 @@ void ATTPlayerCharacter::ServerHandleOnCheckHit_Implementation ()
 			{
 				FDamageEvent DamageEvent;
 				HitResult.GetActor ()->TakeDamage ( CurrentStunPower , DamageEvent , GetController () , this );
-			/*	if (1 == ShowAttackMeleeDebug)
-				{
-					UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "Hit Actor Name: %s" ) , *HitResult.GetActor ()->GetName () ) );
-				}*/
 			}
 		}
 	}
-	//if (1 == ShowAttackMeleeDebug)
-	//{
-	//	FVector TraceVector = AttackMeleeRange * GetActorForwardVector ();
-	//	FVector Center = GetActorLocation () + TraceVector + GetActorUpVector () * 40.f;
-	//	float HalfHeight = AttackMeleeRange * 0.5f + AttackMeleeRadius;
-	//	FQuat CapsuleRot = FRotationMatrix::MakeFromZ ( TraceVector ).ToQuat ();
-	//	FColor DrawColor = true == bResult ? FColor::Green : FColor::Red;
-	//	float DebugLifeTime = 5.f;
-
-	//	DrawDebugCapsule (
-	//		GetWorld () ,
-	//		Center ,
-	//		HalfHeight ,
-	//		AttackMeleeRadius ,
-	//		CapsuleRot ,
-	//		DrawColor ,
-	//		false ,
-	//		DebugLifeTime
-	//	);
-	//}
 }
 
 void ATTPlayerCharacter::HandleOnCheckInputAttack ()
@@ -565,6 +554,7 @@ void ATTPlayerCharacter::HandleOnCheckInputAttack ()
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
 
 	if (bIsAttackKeyPressed == true)
+
 	{
 		CurrentComboCount = FMath::Clamp ( CurrentComboCount + 1 , 1 , MaxComboCount );
 
@@ -617,7 +607,10 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 	CurrentStun = FMath::Clamp ( CurrentStun + FinalDamageAmount , 0.0f , MaxStun );
 
 	UE_LOG ( LogTemp , Warning , TEXT ( "[%s] Current Stun : %f / %f" ) , *GetName () , CurrentStun , MaxStun );
-
+	if (FinalDamageAmount > 0.0f && !bIsStunned)
+	{
+		MulticastPlayHitMontage ();
+	}
 	if (CurrentStun >= MaxStun)
 	{
 		if (bIsStunned == false)
@@ -661,20 +654,38 @@ void ATTPlayerCharacter::OnRep_IsStunned ()
 {
 	if (bIsStunned)
 	{
+		GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_None );
 		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::NoCollision );
 
 		GetMesh ()->SetCollisionProfileName ( TEXT ( "TT_Ragdoll" ) );
 		GetMesh ()->SetSimulatePhysics ( true );
+
+		SpringArm->AttachToComponent ( GetMesh () , FAttachmentTransformRules::KeepWorldTransform , TEXT ( "pelvis" ) );
 	}
 	else
 	{
+		FVector RagdollLoc = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
+		float CapsuleHalfHeight = GetCapsuleComponent ()->GetScaledCapsuleHalfHeight ();
+
+		FVector TargetLoc = FVector ( RagdollLoc.X , RagdollLoc.Y , RagdollLoc.Z + CapsuleHalfHeight +20.0f);
+
+		SetActorLocation ( TargetLoc , false , nullptr , ETeleportType::TeleportPhysics );
+
 		GetMesh ()->SetSimulatePhysics ( false );
 		GetMesh ()->SetCollisionProfileName ( TEXT ( "CharacterMesh" ) );
-		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
 
 		GetMesh ()->AttachToComponent ( GetCapsuleComponent () , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
 		GetMesh ()->SetRelativeLocation ( FVector ( 0.0f , 0.0f , -60.0f ) );
 		GetMesh ()->SetRelativeRotation ( FRotator ( 0.0f , -90.0f , 0.0f ) );
+
+		SpringArm->AttachToComponent ( GetCapsuleComponent () , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+		SpringArm->SetRelativeLocation ( FVector ( 0.0f , 0.0f , 0.0f ) );
+
+		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
+		GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_Walking );
+
+		GetMesh ()->UpdateBounds ();
+		GetMesh ()->RefreshBoneTransforms ();
 	}
 }
 
@@ -685,5 +696,46 @@ void ATTPlayerCharacter::WakeUp ()
 	bIsStunned = false;
 
 	OnRep_IsStunned ();
+}
+void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
+{
+	if (!bIsStunned || HasAuthority ()) return;
+
+	FVector CurrentLoc = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
+
+	float Dist = FVector::Dist ( CurrentLoc , ServerRagdollLocation );
+
+	if (Dist > 100.0f)
+	{
+		GetMesh ()->SetWorldLocation ( ServerRagdollLocation , false , nullptr , ETeleportType::TeleportPhysics );
+
+		GetMesh ()->SetWorldRotation ( ServerRagdollRotation , false , nullptr , ETeleportType::TeleportPhysics );
+		GetMesh ()->SetPhysicsLinearVelocity ( ServerRagdollVelocity );
+		GetMesh ()->SetPhysicsAngularVelocityInDegrees ( ServerRagdollAngularVelocity );
+	}
+	else if (Dist > 10.0f)
+	{
+		FVector FixDirection = (ServerRagdollLocation - CurrentLoc);
+
+		float CorrectionPower = 10.0f;
+
+		FVector NewVelocity = ServerRagdollVelocity + (FixDirection * CorrectionPower);
+
+		GetMesh ()->SetPhysicsLinearVelocity ( NewVelocity );
+	}
+}
+void ATTPlayerCharacter::MulticastPlayHitMontage_Implementation ()
+{
+	if (bIsStunned || bIsDead) return;
+
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+	if (IsValid ( AnimInstance ) && IsValid ( HitMontage ))
+	{
+		AnimInstance->Montage_Play ( HitMontage );
+	}
+	if (HitSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation ( this , HitSound , GetActorLocation () );
+	}
 }
 #pragma endregion

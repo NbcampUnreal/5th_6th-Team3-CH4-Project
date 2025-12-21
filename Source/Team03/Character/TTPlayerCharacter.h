@@ -196,17 +196,43 @@ protected:
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
 	float AttackMeleeRadius = 20.f;
 
+
+	float StunDuration = 10.0f;
+
 	UPROPERTY ( EditAnywhere , Category = "Weapon" )
 	TObjectPtr<UDataTable> WeaponData;
 
 	FName WeaponName;
+
+	UPROPERTY(ReplicatedUsing = OnRep_ServerRagdollLocation)
+	FVector ServerRagdollLocation;
+
+	UPROPERTY(Replicated)
+	FVector ServerRagdollVelocity;
+
+	UPROPERTY(Replicated)
+	FRotator ServerRagdollRotation;
+
+	UPROPERTY(Replicated)
+	FVector ServerRagdollAngularVelocity;
 
 	UFUNCTION ()
 	void OnRep_IsStunned();
 
 	void WakeUp ();
 
-	float StunDuration = 10.0f;
+	UFUNCTION()
+	void OnRep_ServerRagdollLocation ();
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Animation" )
+	TObjectPtr<UAnimMontage> HitMontage;
+
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Sound" )
+	TObjectPtr<USoundBase> HitSound;
+
+	UFUNCTION ( NetMulticast , Unreliable )
+	void MulticastPlayHitMontage ();
+
 #pragma endregion
 
 #pragma region HP
