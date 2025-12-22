@@ -6,6 +6,12 @@
 #include "GameFramework/Character.h"
 #include "TTLobbyCharacter.generated.h"
 
+class USkeletalMeshComponent;
+class UWidgetComponent;
+class UStaticMeshComponent;
+class UMaterialInstanceDynamic;
+class USkeletalMesh;
+
 UCLASS()
 class TEAM03_API ATTLobbyCharacter : public ACharacter
 {
