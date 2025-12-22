@@ -82,6 +82,7 @@ void ATTPlayerCharacter::BeginPlay ()
 	//{
 	//	AnimInstance->OnCheckHit.AddDynamic ( this , &ThisClass::HandleOnCheckHit );
 	//}
+	BaseWalkSpeed = GetCharacterMovement ()->MaxWalkSpeed;
 
 	ATTPlayerController* PlayerController = Cast<ATTPlayerController> ( GetController () );
 
@@ -667,7 +668,6 @@ void ATTPlayerCharacter::KnockOut ()
 
 	OnRep_IsStunned ();
 
-	FTimerHandle StunTimerHandle;
 	GetWorld ()->GetTimerManager ().SetTimer (
 		StunTimerHandle ,
 		this ,
@@ -751,18 +751,59 @@ void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 		GetMesh ()->SetPhysicsLinearVelocity ( NewVelocity );
 	}
 }
+
 void ATTPlayerCharacter::MulticastPlayHitMontage_Implementation ()
 {
-	if (bIsStunned || bIsDead) return;
 
-	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	if (IsValid ( AnimInstance ) && IsValid ( HitMontage ))
+}
+void ATTPlayerCharacter::ApplySlow ( float Amount , float Duration )
+{
+	if (!HasAuthority ()) return;
+
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement ();
+	if (!MoveComp) return;
+
+	// 🔧 변경: 중첩 방지
+	GetWorldTimerManager ().ClearTimer ( SlowTimerHandle );
+
+	MoveComp->MaxWalkSpeed = BaseWalkSpeed * (1.f - Amount);
+
+	GetWorldTimerManager ().SetTimer (
+		SlowTimerHandle ,
+		this ,
+		&ATTPlayerCharacter::ClearSlow ,
+		Duration ,
+		false
+	);
+}
+
+void ATTPlayerCharacter::ApplyStun ( float Amount )
+{
+	if (!HasAuthority ()) return;
+
+	CurrentStun = FMath::Clamp ( CurrentStun + Amount , 0.f , MaxStun );
+
+	UE_LOG ( LogTemp , Warning ,
+		TEXT ( "[%s] Stun: %f / %f" ) ,
+		*GetName () , CurrentStun , MaxStun
+	);
+
+	if (CurrentStun >= MaxStun && !bIsStunned)
 	{
-		AnimInstance->Montage_Play ( HitMontage );
-	}
-	if (HitSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation ( this , HitSound , GetActorLocation () );
+		KnockOut ();
 	}
 }
+
+void ATTPlayerCharacter::AddThrowable ( AThrowableBase* Throwable )
+{
+	if (!Throwable) return;
+
+	CurrentThrowable = Throwable;
+}
+
+void ATTPlayerCharacter::ClearSlow ()
+{
+	GetCharacterMovement ()->MaxWalkSpeed = BaseWalkSpeed;
+}
+
 #pragma endregion

@@ -1,4 +1,4 @@
-﻿//Slow_Glass.h
+﻿// Slow_Glass.h
 
 #pragma once
 
@@ -7,7 +7,7 @@
 #include "Slow_Glass.generated.h"
 
 UCLASS ()
-class TEAM03_API ASlow_Glass : public AGlass_Bottle
+class TEAM03_API ASlow_Glass : public AGlassBase
 {
 	GENERATED_BODY ()
 
@@ -15,7 +15,6 @@ public:
 	ASlow_Glass ();
 
 protected:
-
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Slow" )
 	float SlowAmount;
 

@@ -1,4 +1,4 @@
-﻿//Glass_Bottle.h
+﻿// Glass_Base.h
 
 #pragma once
 
@@ -6,15 +6,22 @@
 #include "Gimmick/ThrowableBase.h"
 #include "Glass_Bottle.generated.h"
 
-UCLASS()
-class TEAM03_API AGlass_Bottle : public AThrowableBase
+UCLASS ( Abstract )
+class TEAM03_API AGlassBase : public AThrowableBase
 {
-	GENERATED_BODY()
+	GENERATED_BODY ()
 
 protected:
-
-	UPROPERTY ( EditDefaultsOnly , Category = "Explosion|Sound" )
+	UPROPERTY ( EditDefaultsOnly , Category = "Glass" )
 	USoundBase* BreakSound;
 
-	virtual void Explode_Implementation() override;
+	virtual void OnHit (
+		UPrimitiveComponent* HitComp ,
+		AActor* OtherActor ,
+		UPrimitiveComponent* OtherComp ,
+		FVector NormalImpulse ,
+		const FHitResult& Hit
+	) override;
+
+	virtual void Explode_Implementation () override;
 };
