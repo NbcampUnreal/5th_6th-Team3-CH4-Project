@@ -1,6 +1,8 @@
 ﻿//Slow_Glass.cpp
 
 #include "Slow_Glass.h"
+#include "Character/TTPlayerCharacter.h"
+#include "Kismet/GameplayStatics.h"
 
 ASlow_Glass::ASlow_Glass ()
 {
@@ -10,9 +12,20 @@ ASlow_Glass::ASlow_Glass ()
 
 void ASlow_Glass::Explode_Implementation ()
 {
-	if (!HasAuthority ())
-	{
-		return;
-	}
 	Super::Explode_Implementation ();
+
+	TArray<AActor*> Overlaps;
+	UGameplayStatics::GetAllActorsOfClass (
+		GetWorld () ,
+		ATTPlayerCharacter::StaticClass () ,
+		Overlaps
+	);
+
+	for (AActor* Actor : Overlaps)
+	{
+		if (ATTPlayerCharacter* Player = Cast<ATTPlayerCharacter> ( Actor ))
+		{
+
+		}
+	}
 }

@@ -25,6 +25,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Explosion")
 	float ExplosionDamage;
 
+	UPROPERTY ( EditDefaultsOnly , BlueprintReadOnly , Category = "Explosion" )
+	USoundBase* ExplosionSound;
+
 	UFUNCTION (NetMulticast, Reliable)
 	void Multicast_ExplosionFX();
 

@@ -13,8 +13,7 @@ class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
 class UAnimMontage;
-
-
+class AThrowableBase;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -243,5 +242,21 @@ protected:
 	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly )
 	uint8 bIsDead : 1;
 
-#pragma endregion
+#pragma endregion Throw
+public:
+
+	void ApplySlow ( float Amount , float Duration );
+	void ApplyStun ( float Amount );
+	void AddThrowable ( AThrowableBase* Throwable );
+
+protected:
+
+	float BaseWalkSpeed;
+
+	FTimerHandle SlowTimerHandle;
+	FTimerHandle StunTimerHandle;
+
+	void ClearSlow ();
+	void EndStun ();
+
 };
