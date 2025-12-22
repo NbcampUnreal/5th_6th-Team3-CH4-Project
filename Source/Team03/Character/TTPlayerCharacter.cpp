@@ -661,7 +661,6 @@ void ATTPlayerCharacter::KnockOut ()
 
 	OnRep_IsStunned ();
 
-	FTimerHandle StunTimerHandle;
 	GetWorld ()->GetTimerManager ().SetTimer (
 		StunTimerHandle ,
 		this ,

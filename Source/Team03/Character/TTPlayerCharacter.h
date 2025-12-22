@@ -13,8 +13,7 @@ class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
 class UAnimMontage;
-
-
+class AThrowableBase;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -239,6 +238,7 @@ public:
 
 	void ApplySlow ( float Amount , float Duration );
 	void ApplyStun ( float Amount );
+	void AddThrowable ( AThrowableBase* Throwable );
 
 protected:
 

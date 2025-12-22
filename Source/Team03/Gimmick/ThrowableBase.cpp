@@ -51,6 +51,13 @@ void AThrowableBase::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 {
 	if (!InPickUpCharacter) return;
 
+	if (HasAuthority()) return;
+
+	if (OwnerCharacter)
+	{
+		return;
+	}
+
 	OwnerCharacter = InPickUpCharacter;
 	SetOwner ( InPickUpCharacter );
 
