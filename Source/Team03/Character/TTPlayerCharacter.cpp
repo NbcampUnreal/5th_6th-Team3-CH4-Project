@@ -573,39 +573,14 @@ void ATTPlayerCharacter::BeginAttack ()
 {
 	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
-
-	// --- 무기 데이터 확인 및 MaxComboCount 설정 ---
-	if (WeaponData != nullptr && WeaponName != "Hand")
-	{
-		FTTWeaponData* CurrentWeapon = WeaponData->FindRow<FTTWeaponData> ( WeaponName , TEXT ( "ComboCheck" ) );
-		if (CurrentWeapon)
-		{
-			MaxComboCount = CurrentWeapon->MaxCombo;
-			UE_LOG ( LogTemp , Warning , TEXT ( "Weapon Found! Name: %s, MaxCombo: %d" ) , *WeaponName.ToString () , MaxComboCount );
-		}
-		else
-		{
-			// Row Name을 못 찾은 경우
-			MaxComboCount = 3;
-			UE_LOG ( LogTemp , Error , TEXT ( "Weapon Name '%s' not found in DataTable! Defaulting to 3." ) , *WeaponName.ToString () );
-		}
-	}
-	else
-	{
-		MaxComboCount = 3;
-		UE_LOG ( LogTemp , Log , TEXT ( "Attacking with Hands. MaxCombo: 3" ) );
-	}
-	// ------------------------------------------
-
 	bIsNowAttacking = true;
-	if (IsValid ( AnimInstance ) && IsValid ( AttackMeleeMontage ) && !AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ))
+	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
 	{
 		AnimInstance->Montage_Play ( AttackMeleeMontage );
 	}
 
 	CurrentComboCount = 1;
-
-	if (!OnMeleeAttackMontageEndedDelegate.IsBound ())
+	if (OnMeleeAttackMontageEndedDelegate.IsBound () == false)
 	{
 		OnMeleeAttackMontageEndedDelegate.BindUObject ( this , &ThisClass::EndAttack );
 		AnimInstance->Montage_SetEndDelegate ( OnMeleeAttackMontageEndedDelegate , AttackMeleeMontage );
@@ -754,7 +729,22 @@ void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 
 void ATTPlayerCharacter::MulticastPlayHitMontage_Implementation ()
 {
+	if (bIsStunned || bIsDead) return;
 
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+
+	if (IsValid ( AnimInstance ))
+	{
+		if (HitMontage)
+		{
+			AnimInstance->Montage_Play ( HitMontage );
+		}
+
+		if (HitSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation ( this , HitSound , GetActorLocation () );
+		}
+	}
 }
 void ATTPlayerCharacter::ApplySlow ( float Amount , float Duration )
 {
