@@ -34,6 +34,15 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
 	TObjectPtr<USkeletalMeshComponent> Body;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "UI")
+    TObjectPtr<class UWidgetComponent> NicknameWidget;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Visual")
+    TObjectPtr<UStaticMeshComponent> TeamIndicatorMesh;
+
+    UPROPERTY()
+    TObjectPtr<UMaterialInstanceDynamic> IndicatorMID;
 #pragma endregion
 
 #pragma region Replication - Mesh Assets
