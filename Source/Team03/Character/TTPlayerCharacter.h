@@ -177,7 +177,7 @@ public:
 protected:
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
 
-	int32 MaxComboCount = 3;
+	int32 MaxComboCount = 5;
 
 	int32 CurrentComboCount = 0;
 

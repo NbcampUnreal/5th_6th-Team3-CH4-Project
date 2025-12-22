@@ -13,7 +13,8 @@ public:
 	FTTWeaponData () :
 		StunAmount ( 0 ) ,
 		KnockbackAmount ( 0 ) ,
-		AttackDelay ( 0 )
+		AttackDelay ( 0 ) ,
+		MaxCombo ( 3 )
 	{
 	}
 	
@@ -23,5 +24,7 @@ public:
 	float KnockbackAmount;
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "WeaponData" )
 	float AttackDelay;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "WeaponData" )
+	int32 MaxCombo;
 
 };

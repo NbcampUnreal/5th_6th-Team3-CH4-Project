@@ -554,30 +554,57 @@ void ATTPlayerCharacter::HandleOnCheckInputAttack ()
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
 
 	if (bIsAttackKeyPressed == true)
-
 	{
-		CurrentComboCount = FMath::Clamp ( CurrentComboCount + 1 , 1 , MaxComboCount );
+		// 현재 콤보가 MaxComboCount보다 작을 때만 다음으로 진행
+		if (CurrentComboCount < MaxComboCount)
+		{
+			CurrentComboCount++;
 
-		FName NextSectionName = *FString::Printf ( TEXT ( "%s%02d" ) , *AttackAnimMontageSectionPrefix , CurrentComboCount );
-		AnimInstance->Montage_JumpToSection ( NextSectionName , AttackMeleeMontage );
+			FName NextSectionName = *FString::Printf ( TEXT ( "%s%02d" ) , *AttackAnimMontageSectionPrefix , CurrentComboCount );
+			AnimInstance->Montage_JumpToSection ( NextSectionName , AttackMeleeMontage );
+		}
+
 		bIsAttackKeyPressed = false;
 	}
+
 }
 void ATTPlayerCharacter::BeginAttack ()
 {
 	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
 
-	/*GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_None );*/
+	// --- 무기 데이터 확인 및 MaxComboCount 설정 ---
+	if (WeaponData != nullptr && WeaponName != "Hand")
+	{
+		FTTWeaponData* CurrentWeapon = WeaponData->FindRow<FTTWeaponData> ( WeaponName , TEXT ( "ComboCheck" ) );
+		if (CurrentWeapon)
+		{
+			MaxComboCount = CurrentWeapon->MaxCombo;
+			UE_LOG ( LogTemp , Warning , TEXT ( "Weapon Found! Name: %s, MaxCombo: %d" ) , *WeaponName.ToString () , MaxComboCount );
+		}
+		else
+		{
+			// Row Name을 못 찾은 경우
+			MaxComboCount = 3;
+			UE_LOG ( LogTemp , Error , TEXT ( "Weapon Name '%s' not found in DataTable! Defaulting to 3." ) , *WeaponName.ToString () );
+		}
+	}
+	else
+	{
+		MaxComboCount = 3;
+		UE_LOG ( LogTemp , Log , TEXT ( "Attacking with Hands. MaxCombo: 3" ) );
+	}
+	// ------------------------------------------
+
 	bIsNowAttacking = true;
-	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
+	if (IsValid ( AnimInstance ) && IsValid ( AttackMeleeMontage ) && !AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ))
 	{
 		AnimInstance->Montage_Play ( AttackMeleeMontage );
 	}
 
 	CurrentComboCount = 1;
 
-	if (OnMeleeAttackMontageEndedDelegate.IsBound () == false)
+	if (!OnMeleeAttackMontageEndedDelegate.IsBound ())
 	{
 		OnMeleeAttackMontageEndedDelegate.BindUObject ( this , &ThisClass::EndAttack );
 		AnimInstance->Montage_SetEndDelegate ( OnMeleeAttackMontageEndedDelegate , AttackMeleeMontage );
