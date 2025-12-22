@@ -725,6 +725,10 @@ void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 	}
 }
 
+void ATTPlayerCharacter::MulticastPlayHitMontage_Implementation ()
+{
+
+}
 void ATTPlayerCharacter::ApplySlow ( float Amount , float Duration )
 {
 	if (!HasAuthority ()) return;
@@ -761,6 +765,13 @@ void ATTPlayerCharacter::ApplyStun ( float Amount )
 	{
 		KnockOut ();
 	}
+}
+
+void ATTPlayerCharacter::AddThrowable ( AThrowableBase* Throwable )
+{
+	if (!Throwable) return;
+
+	CurrentThrowable = Throwable;
 }
 
 void ATTPlayerCharacter::ClearSlow ()

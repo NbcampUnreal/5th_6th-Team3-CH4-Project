@@ -259,4 +259,6 @@ protected:
 	void ClearSlow ();
 	void EndStun ();
 
+	UPROPERTY ()
+	AThrowableBase* CurrentThrowable = nullptr;
 };
