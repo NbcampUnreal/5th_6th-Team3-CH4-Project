@@ -103,7 +103,7 @@ void AInGameModeBase::PlayingGame ()
 	GetWorldTimerManager ().SetTimer (
 		TimeCountHandle ,
 		this ,
-		&ThisClass::PlayingGame ,
+		&ThisClass::CountDownTimer ,
 		1.f ,
 		true
 	);

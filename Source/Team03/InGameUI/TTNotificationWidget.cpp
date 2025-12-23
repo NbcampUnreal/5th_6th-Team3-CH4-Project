@@ -14,7 +14,7 @@ void UTTNotificationWidget::PlayStartAnim ()
 	PlayAnimation ( StartAnim );
 	NotificationText->SetText (
 		FText::Format (
-			FText::FromString ( TEXT ( "{0} : {1:00}" ) ) ,
+			FText::FromString ( TEXT ( "{0} : {2:00}" ) ) ,
 			3 ,
 			0
 		)
@@ -25,7 +25,7 @@ void UTTNotificationWidget::CountDownTimer (int32 minutes, int32 seconds )const
 {
 	NotificationText->SetText (
 		FText::Format (
-			FText::FromString ( TEXT ( "{0} : {1:00}" ) ) ,
+			FText::FromString ( TEXT ( "{0} : {2:00}" ) ) ,
 			minutes ,
 			seconds
 		)
