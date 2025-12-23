@@ -62,7 +62,7 @@ void ATTInGameHUD::AddChatMessage ( const FString& Message )
 			ChatMessageWidget->SetChatMessage ( Message );
 			Chat->ChatScrollBox->AddChild (ChatMessageWidget);
 			Chat->ChatScrollBox->ScrollToEnd ();
-			Chat->ChatScrollBox->bAnimateWheelScrolling = true;
+ 			Chat->ChatScrollBox->bAnimateWheelScrolling = true;
 		}
 	}
 }

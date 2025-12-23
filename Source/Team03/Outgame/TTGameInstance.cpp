@@ -314,8 +314,29 @@ void UTTGameInstance::SetMasterVolume(float Volume)
 	if (SoundMix_Master && SoundClass_Master)
 	{
 		MasterVolume = Volume; // 상태 저장
-		UGameplayStatics::SetSoundMixClassOverride(GetWorld(), SoundMix_Master, SoundClass_Master, Volume, 1.0f, 0.0f);
+        
+        // [Audio Fix Summary]
+        // 엔진 최적화로 인해 Volume이 0.0이 되면 오디오가 Culling(Stop) 되어버림.
+        // 다시 볼륨을 올렸을 때 BGM이 처음부터 재생되는 문제가 발생.
+        // 해결: 믹스 볼륨을 절대 0.0으로 보내지 않고, 0.001f (Safe Floor)를 유지하여
+        // 엔진이 소리를 끄지 않도록 속임. (들리지는 않으나 재생 상태 유지)
+        
+        float SafeVolume = FMath::Max(Volume, 0.001f); // 0.0001보다 조금 더 높임 (-60dB)
+        
+        UGameplayStatics::SetSoundMixClassOverride(GetWorld(), SoundMix_Master, SoundClass_Master, SafeVolume, 1.0f, 0.0f);
 		UGameplayStatics::PushSoundMixModifier(GetWorld(), SoundMix_Master);
+
+        if (BGMComponent)
+        {
+            // 만약 0에서 복구할 때 혹시라도 멈춰있다면 다시 재생 (Restart Fallback)
+            if (Volume > 0.01f)
+            {
+                if (!BGMComponent->IsPlaying())
+                {
+                    BGMComponent->Play();
+                }
+            }
+        }
 	}
 	else
 	{
@@ -343,12 +364,13 @@ void UTTGameInstance::PlayBGM(USoundBase* NewBGM)
 		{
 			BGMComponent->bIsUISound = true; // UI 사운드로 설정 (일시정지 영향 X 등)
 			BGMComponent->bAutoDestroy = false; // 수동 관리
+            // BGMComponent->SetVirtualizationMode(EVirtualizationMode::PlayWhenSilent); // ERROR: API 없음
 		}
 	}
 
 	if (BGMComponent)
 	{
-		BGMComponent->SetSound(NewBGM);
+		BGMComponent->SetSound(NewBGM); 
 		BGMComponent->Play();
 	}
 }
