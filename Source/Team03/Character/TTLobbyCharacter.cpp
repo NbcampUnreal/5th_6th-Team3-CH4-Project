@@ -11,6 +11,9 @@
 #include "Blueprint/UserWidget.h"
 #include "Outgame/TTGameInstance.h"
 
+#include "Components/SkeletalMeshComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
+
 // Sets default values
 ATTLobbyCharacter::ATTLobbyCharacter()
 {
@@ -67,23 +70,6 @@ void ATTLobbyCharacter::Tick(float DeltaTime)
         // 닉네임 업데이트
         if (NicknameWidget)
         {
-             // 매프레임 텍스트 설정은 비효율적이지만, 로비이므로 일단 적용. 추후 최적화 가능.
-             // 위젯 컴포넌트 내부 위젯이 UTextBlock 등을 가지고 있다고 가정하거나, 
-             // UWidgetComponent의 SetText 기능(없음) 대신, UserWidget을 Cast해서 써야 함.
-             // 여기서는 간단히 Material이나 TextRender가 아닌 WidgetComponent이므로,
-             // 1. UserWidget 클래스 지정 필요 -> BP에서 할당 권장.
-             // 2. 혹은 Native WidgetComponent 사용.
-             
-             // 빠른 구현을 위해: WidgetComponent가 UUserWidget을 띄우고 있다고 가정하고 그 안의 TextBlock을 찾아야 함.
-             // 하지만 코드로만 해결하려면 TextRenderComponent가 더 쉬울 수 있음.
-             // 유저 요청: "캐릭터 위에 닉네임". WidgetComponent가 가장 깔끔함.
-             // BP_LobbyCharacter에서 위젯 클래스를 설정해줄 것이라 가정하고, 여기서는 생략하거나, 
-             // 간단하게 디버그용으로 TextRender를 쓸 수도 있음.
-             // 하지만 User Visuals이므로 Widget이 맞음.
-             
-             // 여기서는 PS의 정보를 가져올 수 있다는 점만 확인하고, 실제 텍스트 변경은 
-             // 위젯 클래스 내부에서 Tick이나 바인딩으로 처리하는게 정석.
-             // 하지만 C++에서 강제하려면:
              if (UUserWidget* WidgetObject = NicknameWidget->GetUserWidgetObject())
              {
                  if (UTextBlock* TextBlock = Cast<UTextBlock>(WidgetObject->GetWidgetFromName(TEXT("NicknameText"))))

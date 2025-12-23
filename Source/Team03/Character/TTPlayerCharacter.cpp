@@ -82,6 +82,7 @@ void ATTPlayerCharacter::BeginPlay ()
 	//{
 	//	AnimInstance->OnCheckHit.AddDynamic ( this , &ThisClass::HandleOnCheckHit );
 	//}
+	BaseWalkSpeed = GetCharacterMovement ()->MaxWalkSpeed;
 
 	ATTPlayerController* PlayerController = Cast<ATTPlayerController> ( GetController () );
 
@@ -565,21 +566,24 @@ void ATTPlayerCharacter::HandleOnCheckInputAttack ()
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
 
 	if (bIsAttackKeyPressed == true)
-
 	{
-		CurrentComboCount = FMath::Clamp ( CurrentComboCount + 1 , 1 , MaxComboCount );
+		// 현재 콤보가 MaxComboCount보다 작을 때만 다음으로 진행
+		if (CurrentComboCount < MaxComboCount)
+		{
+			CurrentComboCount++;
 
-		FName NextSectionName = *FString::Printf ( TEXT ( "%s%02d" ) , *AttackAnimMontageSectionPrefix , CurrentComboCount );
-		AnimInstance->Montage_JumpToSection ( NextSectionName , AttackMeleeMontage );
+			FName NextSectionName = *FString::Printf ( TEXT ( "%s%02d" ) , *AttackAnimMontageSectionPrefix , CurrentComboCount );
+			AnimInstance->Montage_JumpToSection ( NextSectionName , AttackMeleeMontage );
+		}
+
 		bIsAttackKeyPressed = false;
 	}
+
 }
 void ATTPlayerCharacter::BeginAttack ()
 {
 	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
-
-	/*GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_None );*/
 	bIsNowAttacking = true;
 	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
 	{
@@ -587,7 +591,6 @@ void ATTPlayerCharacter::BeginAttack ()
 	}
 
 	CurrentComboCount = 1;
-
 	if (OnMeleeAttackMontageEndedDelegate.IsBound () == false)
 	{
 		OnMeleeAttackMontageEndedDelegate.BindUObject ( this , &ThisClass::EndAttack );
@@ -651,7 +654,6 @@ void ATTPlayerCharacter::KnockOut ()
 
 	OnRep_IsStunned ();
 
-	FTimerHandle StunTimerHandle;
 	GetWorld ()->GetTimerManager ().SetTimer (
 		StunTimerHandle ,
 		this ,
@@ -735,18 +737,74 @@ void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 		GetMesh ()->SetPhysicsLinearVelocity ( NewVelocity );
 	}
 }
+
 void ATTPlayerCharacter::MulticastPlayHitMontage_Implementation ()
 {
 	if (bIsStunned || bIsDead) return;
 
 	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	if (IsValid ( AnimInstance ) && IsValid ( HitMontage ))
+
+	if (IsValid ( AnimInstance ))
 	{
-		AnimInstance->Montage_Play ( HitMontage );
-	}
-	if (HitSound)
-	{
-		UGameplayStatics::PlaySoundAtLocation ( this , HitSound , GetActorLocation () );
+		if (HitMontage)
+		{
+			AnimInstance->Montage_Play ( HitMontage );
+		}
+
+		if (HitSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation ( this , HitSound , GetActorLocation () );
+		}
 	}
 }
+void ATTPlayerCharacter::ApplySlow ( float Amount , float Duration )
+{
+	if (!HasAuthority ()) return;
+
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement ();
+	if (!MoveComp) return;
+
+	// 🔧 변경: 중첩 방지
+	GetWorldTimerManager ().ClearTimer ( SlowTimerHandle );
+
+	MoveComp->MaxWalkSpeed = BaseWalkSpeed * (1.f - Amount);
+
+	GetWorldTimerManager ().SetTimer (
+		SlowTimerHandle ,
+		this ,
+		&ATTPlayerCharacter::ClearSlow ,
+		Duration ,
+		false
+	);
+}
+
+void ATTPlayerCharacter::ApplyStun ( float Amount )
+{
+	if (!HasAuthority ()) return;
+
+	CurrentStun = FMath::Clamp ( CurrentStun + Amount , 0.f , MaxStun );
+
+	UE_LOG ( LogTemp , Warning ,
+		TEXT ( "[%s] Stun: %f / %f" ) ,
+		*GetName () , CurrentStun , MaxStun
+	);
+
+	if (CurrentStun >= MaxStun && !bIsStunned)
+	{
+		KnockOut ();
+	}
+}
+
+void ATTPlayerCharacter::AddThrowable ( AThrowableBase* Throwable )
+{
+	if (!Throwable) return;
+
+	CurrentThrowable = Throwable;
+}
+
+void ATTPlayerCharacter::ClearSlow ()
+{
+	GetCharacterMovement ()->MaxWalkSpeed = BaseWalkSpeed;
+}
+
 #pragma endregion

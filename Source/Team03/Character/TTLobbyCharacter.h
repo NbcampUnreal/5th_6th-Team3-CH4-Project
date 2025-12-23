@@ -1,10 +1,16 @@
-// (c) 2024. Team03. All rights reserved.
+﻿// (c) 2024. Team03. All rights reserved.
 
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "TTLobbyCharacter.generated.h"
+
+class USkeletalMeshComponent;
+class UWidgetComponent;
+class UStaticMeshComponent;
+class UMaterialInstanceDynamic;
+class USkeletalMesh;
 
 UCLASS()
 class TEAM03_API ATTLobbyCharacter : public ACharacter
@@ -89,5 +95,4 @@ public:
 	int32 GetCurrentHeadIndex() const { return CurrentHeadIndex; }
 	int32 GetCurrentBodyIndex() const { return CurrentBodyIndex; }
 #pragma endregion
-
 };

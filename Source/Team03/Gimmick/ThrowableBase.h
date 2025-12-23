@@ -6,57 +6,60 @@
 #include "GameFramework/Actor.h"
 #include "ThrowableBase.generated.h"
 
+class UTTPickupComponent;
+class ATTPlayerCharacter;
+
 UCLASS ()
 class TEAM03_API AThrowableBase : public AActor
 {
-	GENERATED_BODY()
+	GENERATED_BODY ()
 
 public:
-	AThrowableBase();
+	AThrowableBase ();
 
 protected:
-	virtual void BeginPlay() override;
 
-	UPROPERTY(VisibleAnywhere, Category = "Component")
-	UStaticMeshComponent* MeshComp;
+	virtual void BeginPlay () override;
 
-	UPROPERTY(EditAnywhere, Category = "Throwing")
-	float FuseTime;
+	UPROPERTY ( VisibleAnywhere , Category = "Component" )
+	TObjectPtr<UStaticMeshComponent> MeshComp;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwable")
-	float Damage;
+	UPROPERTY ( EditDefaultsOnly , BlueprintReadOnly , Category = "Pickup" )
+	TObjectPtr<UTTPickupComponent> PickupComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwable")
-	float DamageRadius;
+	UPROPERTY ( VisibleInstanceOnly )
+	TObjectPtr<ATTPlayerCharacter> OwnerCharacter;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Explosion|Sound")
-	USoundBase* ExplosionSound;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Explosion|Effect")
-	UParticleSystem* ExplosionParticle;
-
-	FTimerHandle FuseTimerHandle;
-
-	UPROPERTY(Replicated)
-	bool bExploded;
+	UPROPERTY ( Replicated )
+	bool bDestroyed = false;
 
 	virtual void GetLifetimeReplicatedProps (TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+
+	UFUNCTION ()
+	virtual void OnHit (
+		UPrimitiveComponent* HitComp ,
+		AActor* OtherActor ,
+		UPrimitiveComponent* OtherComp ,
+		FVector NormalImpulse ,
+		const FHitResult& Hit
+	);
+
+	UFUNCTION ()
+	virtual void HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter );
+
 public:
 
-	UFUNCTION (Server, Reliable)
-	void ServerThrow(const FVector& Direction , float Power);
+	UFUNCTION ( Server , Reliable )
+	void ServerThrow ( const FVector& Direction , float Power );
 
-	virtual void Throw(const FVector& Direction , float Power);
+	virtual void Throw ( const FVector& Direction , float Power );
 
-	UFUNCTION (BlueprintNativeEvent, Category = "Explosion")
-	void Explode();
-	virtual void Explode_Implementation();
+	UFUNCTION ( BlueprintNativeEvent , Category = "Throwable" )
+	void Explode ();
+	virtual void Explode_Implementation ();
 
-	UFUNCTION (NetMulticast, Unreliable)
-	void Multicast_ExplodeEffects();
-
-	UFUNCTION(BlueprintNativeEvent, Category = "Destruction")
-	void Destruct();
-	virtual void Destruct_Implementation();
+	UFUNCTION ( BlueprintNativeEvent , Category = "Throwable" )
+	void Destruct ();
+	virtual void Destruct_Implementation ();
 };
