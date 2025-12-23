@@ -62,6 +62,7 @@ public:
 public:
 	void AddNotification () const;
 	void StartAnim ()const;
+	void CountDownTimer ( int32 minutes , int32 seconds )const;
 public:
 	UPROPERTY ( EditDefaultsOnly )
 	TSubclassOf<class UTTNotificationWidget> NotificationClass;

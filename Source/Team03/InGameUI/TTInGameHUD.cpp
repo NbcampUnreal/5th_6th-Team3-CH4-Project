@@ -112,5 +112,14 @@ void ATTInGameHUD::StartAnim () const
 
 }
 
+void ATTInGameHUD::CountDownTimer ( int32 minutes , int32 seconds )const
+{
+	if (IsValid ( Notification ))
+	{
+		Notification->CountDownTimer ( minutes , seconds );
+	}
+}
+
+
 #pragma endregion
 

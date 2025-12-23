@@ -87,8 +87,13 @@ public:
 public:
 	UFUNCTION ( Client , Reliable )
 	void ClientPlayStartAnim ();
+
 	UFUNCTION ( Server , Reliable )
 	void ServerClientReady ();
+
+	UFUNCTION ( Client , Reliable )
+	void ClientPlayingGame ( int32 minutes , int32 seconds )const;
+
 protected:
 
 	bool bClientReady = false;
