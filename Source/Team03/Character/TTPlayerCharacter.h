@@ -14,6 +14,7 @@ class UInputAction;
 class UInputMappingContext;
 class UAnimMontage;
 class AThrowableBase;
+class USceneCaptureComponent2D;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -30,7 +31,11 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Head")
 	TObjectPtr<USkeletalMeshComponent> Head;
 
+	UPROPERTY( EditDefaultsOnly , BlueprintReadOnly, Category = "SceneCapture")
+	TObjectPtr<USceneCaptureComponent2D> SceneCapture;
 
+	UPROPERTY ( EditDefaultsOnly , Category = "UI Capture" )
+	UTextureRenderTarget2D* CaptureRT;
 #pragma region Input
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")

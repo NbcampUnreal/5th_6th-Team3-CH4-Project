@@ -3,6 +3,7 @@
 
 #include "InGameUI/TTNotificationWidget.h"
 #include "Components/TextBlock.h"
+#include "Components/VerticalBox.h"
 
 void UTTNotificationWidget::NativeConstruct ()
 {

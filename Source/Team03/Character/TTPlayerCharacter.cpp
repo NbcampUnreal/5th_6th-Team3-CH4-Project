@@ -18,6 +18,9 @@
 #include "Team03.h"
 #include "TTWeaponData.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "Engine/EngineTypes.h"
 
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 //
@@ -43,6 +46,22 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
+
+	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D> ( TEXT ( "SceneCapture" ) );
+	SceneCapture->TextureTarget = CaptureRT;
+	SceneCapture->SetupAttachment ( GetRootComponent() );
+
+	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
+	SceneCapture->bCaptureEveryFrame = false;
+	SceneCapture->bCaptureOnMovement = false;
+	SceneCapture->PrimitiveRenderMode =
+		ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+
+	SceneCapture->ShowOnlyComponents.Add ( GetMesh () );
+	SceneCapture->FOVAngle = 35.f;
+
+	SceneCapture->bEnableClipPlane = true;
+	SceneCapture->CaptureScene();
 
 	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
 	Head->SetupAttachment ( GetMesh () );
