@@ -33,6 +33,7 @@ public:
 
 
 #pragma region Input
+public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
 	TObjectPtr<UInputAction> InputMove;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
@@ -51,6 +52,10 @@ public:
 	TObjectPtr<UInputAction> InputSprint;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputBlocking;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input")
+	TObjectPtr<UInputAction> InputThrowAway;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputPickUp;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputMappingContext> IMC_Character;
 
@@ -70,6 +75,8 @@ protected:
 	void PlayerBlocking ( const FInputActionValue& Value );
 	void JumpStart ();
 	void JumpEnd ();
+	void PickUpStart ();
+	void PickUpEnd ();
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
