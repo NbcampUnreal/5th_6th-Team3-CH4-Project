@@ -95,4 +95,8 @@ public:
 	int32 GetCurrentHeadIndex() const { return CurrentHeadIndex; }
 	int32 GetCurrentBodyIndex() const { return CurrentBodyIndex; }
 #pragma endregion
+
+public:
+    UFUNCTION(BlueprintImplementableEvent, Category = "Animation")
+    void PlayReadyMontage(bool bIsReady);
 };

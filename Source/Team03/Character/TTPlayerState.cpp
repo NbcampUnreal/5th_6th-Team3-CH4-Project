@@ -3,6 +3,7 @@
 
 #include "TTPlayerState.h"
 #include "TTPlayerCharacter.h"
+#include "TTLobbyCharacter.h"
 #include "../Save/TTSaveGame.h"
 #include "Net/UnrealNetwork.h"
 
@@ -15,7 +16,11 @@ void ATTPlayerState::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME ( ATTPlayerState , PersistedBodyMesh );
 	DOREPLIFETIME(ATTPlayerState, UserNickname);
 	DOREPLIFETIME(ATTPlayerState, SelectedCharacterRowName);
+	DOREPLIFETIME(ATTPlayerState, UserNickname);
+	DOREPLIFETIME(ATTPlayerState, SelectedCharacterRowName);
 	DOREPLIFETIME(ATTPlayerState, Team );
+    DOREPLIFETIME(ATTPlayerState, bIsReady);
+    DOREPLIFETIME(ATTPlayerState, bIsHost);
 }
 
 void ATTPlayerState::SetTeam ( Teams NewTeam )
@@ -35,5 +40,16 @@ void ATTPlayerState::OnRep_UserNickname()
 void ATTPlayerState::OnRep_Team ()
 {
 
+}
+
+void ATTPlayerState::OnRep_IsReady()
+{
+	if (APawn* MyPawn = GetPawn())
+	{
+		if (ATTLobbyCharacter* LobbyChar = Cast<ATTLobbyCharacter>(MyPawn))
+        {
+            LobbyChar->PlayReadyMontage(bIsReady);
+        }
+	}
 }
 
