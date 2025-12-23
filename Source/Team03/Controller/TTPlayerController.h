@@ -34,8 +34,6 @@ public:
 	UInputAction* AttackAction;
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
 	UInputAction* BlockingAction;
-	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
-	UInputAction* AttackHandAction;
 
 	virtual void BeginPlay () override;
 	

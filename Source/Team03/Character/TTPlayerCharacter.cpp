@@ -555,21 +555,24 @@ void ATTPlayerCharacter::HandleOnCheckInputAttack ()
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
 
 	if (bIsAttackKeyPressed == true)
-
 	{
-		CurrentComboCount = FMath::Clamp ( CurrentComboCount + 1 , 1 , MaxComboCount );
+		// 현재 콤보가 MaxComboCount보다 작을 때만 다음으로 진행
+		if (CurrentComboCount < MaxComboCount)
+		{
+			CurrentComboCount++;
 
-		FName NextSectionName = *FString::Printf ( TEXT ( "%s%02d" ) , *AttackAnimMontageSectionPrefix , CurrentComboCount );
-		AnimInstance->Montage_JumpToSection ( NextSectionName , AttackMeleeMontage );
+			FName NextSectionName = *FString::Printf ( TEXT ( "%s%02d" ) , *AttackAnimMontageSectionPrefix , CurrentComboCount );
+			AnimInstance->Montage_JumpToSection ( NextSectionName , AttackMeleeMontage );
+		}
+
 		bIsAttackKeyPressed = false;
 	}
+
 }
 void ATTPlayerCharacter::BeginAttack ()
 {
 	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
 	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
-
-	/*GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_None );*/
 	bIsNowAttacking = true;
 	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
 	{
@@ -577,7 +580,6 @@ void ATTPlayerCharacter::BeginAttack ()
 	}
 
 	CurrentComboCount = 1;
-
 	if (OnMeleeAttackMontageEndedDelegate.IsBound () == false)
 	{
 		OnMeleeAttackMontageEndedDelegate.BindUObject ( this , &ThisClass::EndAttack );
@@ -727,9 +729,23 @@ void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 
 void ATTPlayerCharacter::MulticastPlayHitMontage_Implementation ()
 {
+	if (bIsStunned || bIsDead) return;
 
+	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+
+	if (IsValid ( AnimInstance ))
+	{
+		if (HitMontage)
+		{
+			AnimInstance->Montage_Play ( HitMontage );
+		}
+
+		if (HitSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation ( this , HitSound , GetActorLocation () );
+		}
+	}
 }
-
 void ATTPlayerCharacter::ApplySlow ( float Amount , float Duration )
 {
 	if (!HasAuthority ()) return;

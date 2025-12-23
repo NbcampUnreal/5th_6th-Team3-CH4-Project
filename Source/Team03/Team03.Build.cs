@@ -17,7 +17,10 @@ public class Team03 : ModuleRules
             "OnlineSubsystem", "OnlineSubsystemUtils",
 
 			// Engine Settings for GameMapsSettings
-			"EngineSettings"
+			"EngineSettings",
+            
+            // DLSS (Disabled for now)
+            // "DLSSBlueprint"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "SelectSkeletal", });
