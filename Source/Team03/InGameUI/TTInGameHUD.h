@@ -68,4 +68,9 @@ public:
 	UPROPERTY ( VisibleAnywhere )
 	TObjectPtr<UTTNotificationWidget> Notification;
 #pragma endregion
+
+#pragma region sound
+	UPROPERTY ( EditDefaultsOnly , Category = "Audio" )
+	USoundBase* DesertBGM;
+#pragma endregion
 };

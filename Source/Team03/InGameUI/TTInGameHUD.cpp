@@ -8,11 +8,16 @@
 #include "Components/ScrollBox.h"
 #include "InGameUI/TTSeletMeshs.h"
 #include "InGameUI/TTNotificationWidget.h"
-
+#include "Outgame/TTGameInstance.h"
 void ATTInGameHUD::PostInitializeComponents ()
 {
 	Super::PostInitializeComponents ();
 
+		
+	if (UTTGameInstance* GI = Cast<UTTGameInstance> ( GetGameInstance () ))
+	{
+		GI->PlayBGM ( DesertBGM );
+	}
 	if(APlayerController* PC = GetOwningPlayerController())
 	{
 		OwningPlayer = Cast<ATTPlayerController> ( PC );
