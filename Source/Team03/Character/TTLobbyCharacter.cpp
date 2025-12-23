@@ -23,6 +23,7 @@ ATTLobbyCharacter::ATTLobbyCharacter()
 	// 헤드 생성 및 부착
 	Head = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Head"));
 	Head->SetupAttachment(GetMesh());
+    Head->SetLeaderPoseComponent(GetMesh()); // 애니메이션 동기화
 	Head->SetIsReplicated(true);
 
     // 닉네임 위젯

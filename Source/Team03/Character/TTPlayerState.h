@@ -40,10 +40,18 @@ public:
 	FName SelectedCharacterRowName;
 
 	UPROPERTY ( ReplicatedUsing = OnRep_Team )
-	Teams Team = Teams::Blue;
+	Teams Team = Teams::None;
+
+	UPROPERTY(ReplicatedUsing = OnRep_IsReady)
+	bool bIsReady = false;
+
+    UPROPERTY(Replicated)
+    bool bIsHost = false;
 
 	UFUNCTION()
 	void OnRep_UserNickname();
 	UFUNCTION()
 	void OnRep_Team ();
+	UFUNCTION()
+	void OnRep_IsReady();
 };
