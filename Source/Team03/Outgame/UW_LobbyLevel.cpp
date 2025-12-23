@@ -11,7 +11,7 @@
 #include "TTGameInstance.h"
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerState.h"
-#include "GameFramework/PlayerState.h"
+#include "Kismet/GameplayStatics.h"
 #include "../Character/TTPlayerState.h"
 #include "Engine/World.h"
 #include "TimerManager.h"
