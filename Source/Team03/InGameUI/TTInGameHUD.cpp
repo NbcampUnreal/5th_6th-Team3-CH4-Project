@@ -8,11 +8,16 @@
 #include "Components/ScrollBox.h"
 #include "InGameUI/TTSeletMeshs.h"
 #include "InGameUI/TTNotificationWidget.h"
-
+#include "Outgame/TTGameInstance.h"
 void ATTInGameHUD::PostInitializeComponents ()
 {
 	Super::PostInitializeComponents ();
 
+		
+	if (UTTGameInstance* GI = Cast<UTTGameInstance> ( GetGameInstance () ))
+	{
+		GI->PlayBGM ( DesertBGM );
+	}
 	if(APlayerController* PC = GetOwningPlayerController())
 	{
 		OwningPlayer = Cast<ATTPlayerController> ( PC );
@@ -57,7 +62,7 @@ void ATTInGameHUD::AddChatMessage ( const FString& Message )
 			ChatMessageWidget->SetChatMessage ( Message );
 			Chat->ChatScrollBox->AddChild (ChatMessageWidget);
 			Chat->ChatScrollBox->ScrollToEnd ();
- 			Chat->ChatScrollBox->bAnimateWheelScrolling = true;
+ 			Chat->ChatScrollBox->SetAnimateWheelScrolling(true);
 		}
 	}
 }
@@ -106,6 +111,15 @@ void ATTInGameHUD::StartAnim () const
 	}
 
 }
+
+void ATTInGameHUD::CountDownTimer ( int32 minutes , int32 seconds )const
+{
+	if (IsValid ( Notification ))
+	{
+		Notification->CountDownTimer ( minutes , seconds );
+	}
+}
+
 
 #pragma endregion
 

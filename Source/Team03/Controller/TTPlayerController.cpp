@@ -322,4 +322,13 @@ void ATTPlayerController::ServerClientReady_Implementation ()
 		}
 	}
 }
+
+void ATTPlayerController::ClientPlayingGame_Implementation ( int32 minutes , int32 seconds )const
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->CountDownTimer ( minutes , seconds );
+	}
+}
+
 #pragma endregion

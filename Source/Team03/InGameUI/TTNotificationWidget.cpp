@@ -2,8 +2,32 @@
 
 
 #include "InGameUI/TTNotificationWidget.h"
+#include "Components/TextBlock.h"
+
+void UTTNotificationWidget::NativeConstruct ()
+{
+	NotificationText->SetText ( FText::FromString ( TEXT ( "Loding..." ) ) );
+}
 
 void UTTNotificationWidget::PlayStartAnim ()
 {
 	PlayAnimation ( StartAnim );
+	NotificationText->SetText (
+		FText::Format (
+			FText::FromString ( TEXT ( "{0} : {1:00}" ) ) ,
+			3 ,
+			0
+		)
+	);
+}
+
+void UTTNotificationWidget::CountDownTimer (int32 minutes, int32 seconds )const
+{
+	NotificationText->SetText (
+		FText::Format (
+			FText::FromString ( TEXT ( "{0} : {1:00}" ) ) ,
+			minutes ,
+			seconds
+		)
+	);
 }

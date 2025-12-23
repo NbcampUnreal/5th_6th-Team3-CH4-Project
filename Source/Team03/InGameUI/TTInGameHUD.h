@@ -62,10 +62,16 @@ public:
 public:
 	void AddNotification () const;
 	void StartAnim ()const;
+	void CountDownTimer ( int32 minutes , int32 seconds )const;
 public:
 	UPROPERTY ( EditDefaultsOnly )
 	TSubclassOf<class UTTNotificationWidget> NotificationClass;
 	UPROPERTY ( VisibleAnywhere )
 	TObjectPtr<UTTNotificationWidget> Notification;
+#pragma endregion
+
+#pragma region sound
+	UPROPERTY ( EditDefaultsOnly , Category = "Audio" )
+	USoundBase* DesertBGM;
 #pragma endregion
 };

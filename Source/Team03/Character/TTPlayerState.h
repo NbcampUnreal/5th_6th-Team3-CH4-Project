@@ -25,7 +25,8 @@ public:
 	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
 
 	void SetTeam ( Teams NewTeam );
-	Teams GetTeam () const { return Team; };
+	Teams GetTeam () const { return Team; }
+	FString GetUserNickname () const { return UserNickname; }
 public:
 	UPROPERTY ( Replicated )
 	USkeletalMesh* PersistedHeadMesh;

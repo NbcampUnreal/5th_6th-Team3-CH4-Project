@@ -28,11 +28,19 @@ public:
 	virtual void Logout ( AController* ExitPlayer ) override;
 
 	void StartRound ();
+	void PlayingGame ();
+	void CountDownTimer ();
 	void Ready ();
 	void EndRound ();
 private:
+	FTimerHandle TimeCountHandle;
+
 	uint8 bIsGameStart : 1 = false;
+	uint8 bIsGameEnd : 1 = false;
 	int32 PlayerCount;
 	int32 InPlayerCount;
+
+	int32 minutes = 3;
+	int32 seconds = 00;
 
 };
