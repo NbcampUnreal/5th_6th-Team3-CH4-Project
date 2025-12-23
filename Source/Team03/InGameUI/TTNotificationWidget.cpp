@@ -12,11 +12,22 @@ void UTTNotificationWidget::NativeConstruct ()
 void UTTNotificationWidget::PlayStartAnim ()
 {
 	PlayAnimation ( StartAnim );
-	NotificationText->SetText ( FText::FromString ( TEXT ( "%d : %02d" , 3 , 00 ) ) );
-
+	NotificationText->SetText (
+		FText::Format (
+			FText::FromString ( TEXT ( "{0} : {1:00}" ) ) ,
+			3 ,
+			0
+		)
+	);
 }
 
 void UTTNotificationWidget::CountDownTimer (int32 minutes, int32 seconds )const
 {
-	NotificationText->SetText ( FText::FromString ( TEXT ( "%d : %d", minutes, seconds) ) );
+	NotificationText->SetText (
+		FText::Format (
+			FText::FromString ( TEXT ( "{0} : {1:00}" ) ) ,
+			minutes ,
+			seconds
+		)
+	);
 }

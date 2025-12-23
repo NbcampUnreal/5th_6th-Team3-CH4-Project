@@ -28,8 +28,5 @@ private:
 	UPROPERTY ( meta = (BindWidget) )
 	TObjectPtr<class UTextBlock> NotificationText;
 
-	int32 minutes;
-	int32 seconds;
-
 #pragma endregion
 };
