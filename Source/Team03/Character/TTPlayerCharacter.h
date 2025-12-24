@@ -55,6 +55,8 @@ public:
 	TObjectPtr<UInputAction> InputESC;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputTempKey;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputPlayerKey;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category ="Input")
 	TObjectPtr<UInputAction> InputSprint;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
@@ -100,6 +102,9 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void ServerThorwAway ();
+
+	void OnAnimation();
+	void EndAnimation();
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;

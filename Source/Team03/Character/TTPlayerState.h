@@ -33,6 +33,9 @@ public:
 	UPROPERTY ( Replicated )
 	USkeletalMesh* PersistedBodyMesh;
 
+	UPROPERTY ( Replicated )
+	UTexture2D* PortraitTexture;
+
 	UPROPERTY(ReplicatedUsing = OnRep_UserNickname)
 	FString UserNickname;
 

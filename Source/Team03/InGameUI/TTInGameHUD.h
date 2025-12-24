@@ -63,11 +63,16 @@ public:
 	void AddNotification () const;
 	void StartAnim ()const;
 	void CountDownTimer ( int32 minutes , int32 seconds )const;
+	void OnAnimation ()const;
+	void EndAnimation ()const;
+	void Addportrait ( const FString& PlayerName , UTexture2D* portrait ) const;
 public:
 	UPROPERTY ( EditDefaultsOnly )
 	TSubclassOf<class UTTNotificationWidget> NotificationClass;
 	UPROPERTY ( VisibleAnywhere )
 	TObjectPtr<UTTNotificationWidget> Notification;
+	UPROPERTY ( EditDefaultsOnly )
+	TSubclassOf<class UTTPlayerPortraitWidget> PortraitWidgetClass;
 #pragma endregion
 
 #pragma region sound
