@@ -275,7 +275,7 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputESC , ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu );
 		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey );
 
-		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUp);
+		EnhancedInputComponent->BindAction ( InputPickUp , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUp);
 	}
 }
 
