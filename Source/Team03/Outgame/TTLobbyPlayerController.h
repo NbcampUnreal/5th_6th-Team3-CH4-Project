@@ -40,6 +40,16 @@ public:
 #pragma region Client RPC
 	UFUNCTION(Client, Reliable)
 	void ClientRPC_ReceiveChatMessage(const FString& Nickname, const FString& Message, uint8 TeamId);
+
+    // --- Start Sequence ---
+    UFUNCTION(Client, Reliable)
+    void ClientRPC_StartGameSequence(); // 게임 시작 연출 (Sound, ZoomOut, InputBlock)
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sound")
+    TObjectPtr<USoundBase> StartGameSound;
+
+    bool bInputRestricted = false; 
+    // ----------------------
 #pragma endregion
 
 #pragma region Server RPC Team

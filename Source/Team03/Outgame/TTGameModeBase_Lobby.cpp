@@ -57,6 +57,25 @@ void ATTGameModeBase_Lobby::StartGame()
 	UWorld* World = GetWorld();
 	if (World)
 	{
+		// 1. 모든 클라이언트에게 시작 시퀀스(연출) 명령 전달
+		for (FConstPlayerControllerIterator It = World->GetPlayerControllerIterator(); It; ++It)
+		{
+			if (ATTLobbyPlayerController* PC = Cast<ATTLobbyPlayerController>(It->Get()))
+			{
+				PC->ClientRPC_StartGameSequence();
+			}
+		}
+
+		// 2. 2초 뒤에 실제 이동 (Server Travel)
+		World->GetTimerManager().SetTimer(TravelTimerHandle, this, &ThisClass::ProcessServerTravel, 2.0f, false);
+	}
+}
+
+void ATTGameModeBase_Lobby::ProcessServerTravel()
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
 		// 프로젝트 설정에서 설정된 Transition Map 가져오기
 		FString TransitionMapPath = UGameMapsSettings::GetGameMapsSettings()->TransitionMap.GetLongPackageName();
 		
@@ -67,10 +86,13 @@ void ATTGameModeBase_Lobby::StartGame()
 		}
 
 		// ----- Ingame 담당자가 추가함 ----- 
-		UTTGameInstance* GI = GetGameInstance<UTTGameInstance> ();
-		if (IsValid( GI ))
+		if (AGameStateBase* GS = World->GetGameState()) // Use Local GS variable/getter
 		{
-			GI->count = GameState->PlayerArray.Num ();
+             UTTGameInstance* GI = GetGameInstance<UTTGameInstance>();
+             if (IsValid(GI))
+             {
+                 GI->count = GS->PlayerArray.Num();
+             }
 		}
 		// ------------------------------
 

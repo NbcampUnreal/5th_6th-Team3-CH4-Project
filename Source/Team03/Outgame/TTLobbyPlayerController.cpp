@@ -5,6 +5,9 @@
 #include "Blueprint/UserWidget.h"
 #include "TTGameInstance.h"
 #include "../Character/TTPlayerState.h"
+#include "Kismet/GameplayStatics.h"
+#include "../Character/TTLobbyCharacter.h"
+#include "UW_LobbyLevel.h"
 
 #pragma region Game Loop
 
@@ -86,6 +89,8 @@ bool ATTLobbyPlayerController::ServerRPC_StartGame_Validate()
 
 void ATTLobbyPlayerController::ServerRPC_ToggleReady_Implementation()
 {
+    if (bInputRestricted) return; // 시작 시퀀스 중 조작 방지
+
     if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState>())
     {
         PS->bIsReady = !PS->bIsReady;
@@ -191,16 +196,52 @@ bool ATTLobbyPlayerController::ServerRPC_SendChatMessage_Validate(const FString&
 	return true;
 }
 
+// Delegate broadcast
 void ATTLobbyPlayerController::ClientRPC_ReceiveChatMessage_Implementation(const FString& Nickname, const FString& Message, uint8 TeamId)
 {
     // Delegate broadcast
     OnChatMessageReceived.Broadcast(Nickname, Message, TeamId);
 }
 
+void ATTLobbyPlayerController::ClientRPC_StartGameSequence_Implementation()
+{
+    // 1. 조작 제한 (Specific Blocking)
+    bInputRestricted = true;
+    
+    // 2. 사운드 재생
+    if (StartGameSound)
+    {
+        UGameplayStatics::PlaySound2D(this, StartGameSound);
+    }
+    
+    // 3. 줌 아웃 (Find Character)
+    if (ATTLobbyCharacter* LobbyChar = Cast<ATTLobbyCharacter>(GetPawn()))
+    {
+        LobbyChar->StartZoomOut();
+    }
+    
+    // 4. UI 업데이트 (버튼 비활성화) -> Widget 접근 필요
+    // Widget이 Controller가 아니라 Level/HUD에서 관리되고 있음.
+    // UW_LobbyLevel에서 Controller를 참조하거나, Controller가 Widget을 찾아서 호출.
+    // 여기서는 간단히 로그 또는 Delegate 방식 고려.
+    // 하지만 현재 구조상 UW_LobbyLevel 인스턴스를 직접 가지고 있지 않을 수 있음.
+    // 보통 HUD나 UserWidget을 Create한 곳에서 관리.
+    // 일단은 UI 비활성화는 "StartGame"을 누른 호스트는 알지만, 클라이언트는?
+    // 여기서 UI 비활성화를 처리해야 한다면...
+    // 방법: GetWorld Loop로 UW_LobbyLevel 찾기 (비효율적이지만 로비라 가능)
+    // 혹은 Controller가 Widget을 가지고 있도록 개선했었나? (확인 필요)
+    // 아니면 Widget이 Controller의 `OnGameStartSequence` 델리게이트를 구독하게 하는 것이 best.
+    
+    // Delegate Broadcast if needed (Assuming Delegate in Header?) -> No delegate yet.
+    // Let's rely on bInputRestricted blocking the RPCs for now as the core constraint.
+}
+
 
 
 void ATTLobbyPlayerController::Server_RequestChangeTeam_Implementation ( Teams NewTeam )
 {
+    if (bInputRestricted) return; // 시작 시퀀스 중 조작 방지
+
 	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState>())
 	{
 		PS->SetTeam ( NewTeam );

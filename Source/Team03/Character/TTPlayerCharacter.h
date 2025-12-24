@@ -15,6 +15,9 @@ class UInputMappingContext;
 class UAnimMontage;
 class AThrowableBase;
 class USceneCaptureComponent2D;
+class UTTPickupComponent;
+class ATTSword;
+class ATTShield;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -69,6 +72,16 @@ public:
 	virtual void SetupPlayerInputComponent ( class UInputComponent* PlayerInputComponent ) override;
 	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
 
+	UTTPickupComponent* GetOverlappingPickupComponent ()
+	{
+		return OverlappingPickupComponent;
+	}
+
+	void SetOverlappingPickupComponent ( UTTPickupComponent* InComp )
+	{
+		OverlappingPickupComponent = InComp;
+	}
+
 protected:
 	void Move ( const FInputActionValue& Value );
 	void Look ( const FInputActionValue& Value );
@@ -81,11 +94,17 @@ protected:
 	void PlayerBlocking ( const FInputActionValue& Value );
 	void JumpStart ();
 	void JumpEnd ();
-	void PickUpStart ();
-	void PickUpEnd ();
-	//인게임 UI추가
-	void OnAnimation ();
-	void EndAnimation ();
+	void PickUp(const FInputActionValue& Value);
+	void ThrowAway ( const FInputActionValue& Value );
+
+	UFUNCTION(Server, Reliable)
+	void ServerPickUp ();
+
+	UFUNCTION(Server, Reliable)
+	void ServerThorwAway ();
+
+	void OnAnimation();
+	void EndAnimation();
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
@@ -103,6 +122,15 @@ protected:
 	TObjectPtr<UAnimMontage> AttackMeleeMontage;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
 	TObjectPtr<UAnimMontage> BlockingMontage;
+
+	UPROPERTY ( VisibleInstanceOnly , Category = "Interaction" )
+	UTTPickupComponent* OverlappingPickupComponent;
+
+	UPROPERTY(VisibleInstanceOnly, Replicated, Category = "Interaction")
+	ATTSword* CurrentSword;
+
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	ATTShield* CurrentShield;
 	
 #pragma endregion
 

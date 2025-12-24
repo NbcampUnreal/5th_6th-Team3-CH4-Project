@@ -14,6 +14,7 @@ void UTTPickupComponent::BeginPlay ()
 	Super::BeginPlay ();
 
 	OnComponentBeginOverlap.AddDynamic ( this , &ThisClass::HandleOnComponentBeginOverlap );
+	OnComponentEndOverlap.AddDynamic ( this , &ThisClass::HandleOnComponentEndOverlap );
 }
 
 void UTTPickupComponent::HandleOnComponentBeginOverlap ( UPrimitiveComponent* OverlappedComponent , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult )
@@ -21,8 +22,24 @@ void UTTPickupComponent::HandleOnComponentBeginOverlap ( UPrimitiveComponent* Ov
 	ATTPlayerCharacter* OverlappedCharacter = Cast<ATTPlayerCharacter> ( OtherActor );
 	if (IsValid ( OverlappedCharacter ) == true)
 	{
-		OnPickUp.Broadcast ( OverlappedCharacter );
-
-		OnComponentBeginOverlap.RemoveAll ( this );
+		OverlappedCharacter->SetOverlappingPickupComponent ( this );
 	}
+}
+
+void UTTPickupComponent::HandleOnComponentEndOverlap ( UPrimitiveComponent* OverlappedComponent , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex )
+{
+	ATTPlayerCharacter* OverlappedCharacter = Cast<ATTPlayerCharacter> ( OtherActor );
+	if (IsValid ( OverlappedCharacter ))
+	{
+
+		if (OverlappedCharacter->GetOverlappingPickupComponent () == this)
+		{
+			OverlappedCharacter->SetOverlappingPickupComponent ( nullptr );
+		}
+	}
+}
+
+void UTTPickupComponent::ForcePickUp ( ATTPlayerCharacter* InCharacter )
+{
+	OnPickUp.Broadcast ( InCharacter );
 }
