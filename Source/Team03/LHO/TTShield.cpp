@@ -7,10 +7,15 @@
 
 ATTShield::ATTShield ()
 {
+	bReplicates = true;
+	SetReplicateMovement ( true );
+
 	PrimaryActorTick.bCanEverTick = false;
 
 	PickupComponent = CreateDefaultSubobject<UTTPickupComponent> ( TEXT ( "PickupComponent" ) );
 	SetRootComponent ( PickupComponent );
+
+	PickupComponent->SetIsReplicated ( true );
 }
 
 void ATTShield::BeginPlay ()
@@ -22,13 +27,19 @@ void ATTShield::BeginPlay ()
 
 void ATTShield::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 {
-	if (IsValid ( InPickUpCharacter ) == false)
+	if (!IsValid ( InPickUpCharacter ))
 	{
 		return;
 	}
 
+	if (PickupComponent)
+	{
+		PickupComponent->SetSimulatePhysics ( false );
+
+		PickupComponent->SetCollisionEnabled ( ECollisionEnabled::NoCollision );
+	}
+
 	FAttachmentTransformRules AttachmentRules ( EAttachmentRule::SnapToTarget , true );
-	AttachToComponent ( InPickUpCharacter->GetMesh () , AttachmentRules , FName ( TEXT ( "hand_lSocket" ) ) );
-	SetActorEnableCollision ( false );
-	PickupComponent->SetSimulatePhysics ( false );
+
+	bool bResult = AttachToComponent ( InPickUpCharacter->GetMesh () , AttachmentRules , FName ( TEXT ( "hand_lSocket" ) ) );
 }

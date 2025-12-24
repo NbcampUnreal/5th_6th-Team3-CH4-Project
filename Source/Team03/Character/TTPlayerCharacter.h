@@ -15,6 +15,7 @@ class UInputMappingContext;
 class UAnimMontage;
 class AThrowableBase;
 class USceneCaptureComponent2D;
+class UTTPickupComponent;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -67,6 +68,16 @@ public:
 	virtual void SetupPlayerInputComponent ( class UInputComponent* PlayerInputComponent ) override;
 	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
 
+	UTTPickupComponent* GetOverlappingPickupComponent ()
+	{
+		return OverlappingPickupComponent;
+	}
+
+	void SetOverlappingPickupComponent ( UTTPickupComponent* InComp )
+	{
+		OverlappingPickupComponent = InComp;
+	}
+
 protected:
 	void Move ( const FInputActionValue& Value );
 	void Look ( const FInputActionValue& Value );
@@ -79,8 +90,10 @@ protected:
 	void PlayerBlocking ( const FInputActionValue& Value );
 	void JumpStart ();
 	void JumpEnd ();
-	void PickUp();
+	void PickUp(const FInputActionValue& Value);
 
+	UFUNCTION(Server, Reliable)
+	void ServerPickUp ();
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
@@ -98,6 +111,9 @@ protected:
 	TObjectPtr<UAnimMontage> AttackMeleeMontage;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly )
 	TObjectPtr<UAnimMontage> BlockingMontage;
+
+	UPROPERTY ( VisibleInstanceOnly , Category = "Interaction" )
+	UTTPickupComponent* OverlappingPickupComponent;
 	
 #pragma endregion
 

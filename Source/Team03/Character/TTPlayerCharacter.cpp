@@ -21,6 +21,7 @@
 #include "Components/SceneCaptureComponent2D.h"
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/EngineTypes.h"
+#include "LHO/TTPickupComponent.h"
 
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 //
@@ -385,8 +386,17 @@ void ATTPlayerCharacter::JumpEnd ()
 	Super::StopJumping ();
 }
 
-void ATTPlayerCharacter::PickUp()
+void ATTPlayerCharacter::PickUp(const FInputActionValue& Value)
 {
+	ServerPickUp ();
+}
+
+void ATTPlayerCharacter::ServerPickUp_Implementation ()
+{
+	if (IsValid ( OverlappingPickupComponent ))
+	{
+		OverlappingPickupComponent->ForcePickUp ( this );
+	}
 }
 
 void ATTPlayerCharacter::SetSprintSpeed ( bool bIsSprinting )
