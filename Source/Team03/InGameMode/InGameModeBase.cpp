@@ -92,6 +92,11 @@ void AInGameModeBase::StartRound ()
 			if (ATTPlayerController* TTPC = Cast<ATTPlayerController> ( It->Get () ))
 			{
 				TTPC->ClientPlayStartAnim ();
+				if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->GetPawn ()->GetPlayerState () ))
+				{
+					Sendportrait ( TTPS->GetUserNickname(), TTPS->PortraitTexture);
+				}
+				
 			}
 		}
 		bIsGameStart = true;
@@ -171,3 +176,16 @@ void AInGameModeBase::EndRound ()
 	}
 }
 #pragma endregion
+
+void AInGameModeBase::Sendportrait ( const FString& PlayerName , UTexture2D* portrait ) const
+{
+	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It)
+	{
+		ATTPlayerController* PC = Cast<ATTPlayerController> ( *It );
+		if (PC)
+		{
+			UE_LOG ( LogTemp , Warning , TEXT ( "ServerAddportrait1" ) );
+			PC->ClientAddportrait ( PlayerName, portrait );
+		}
+	}
+}

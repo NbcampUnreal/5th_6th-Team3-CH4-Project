@@ -52,6 +52,8 @@ public:
 	TObjectPtr<UInputAction> InputESC;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputTempKey;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputPlayerKey;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category ="Input")
 	TObjectPtr<UInputAction> InputSprint;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
@@ -81,6 +83,9 @@ protected:
 	void JumpEnd ();
 	void PickUpStart ();
 	void PickUpEnd ();
+	//인게임 UI추가
+	void OnAnimation ();
+	void EndAnimation ();
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;

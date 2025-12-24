@@ -3,7 +3,7 @@
 
 #include "InGameUI/TTNotificationWidget.h"
 #include "Components/TextBlock.h"
-#include "Components/VerticalBox.h"
+//#include "Components/VerticalBox.h"
 
 void UTTNotificationWidget::NativeConstruct ()
 {
@@ -31,4 +31,14 @@ void UTTNotificationWidget::CountDownTimer (int32 minutes, int32 seconds )const
 			seconds
 		)
 	);
+}
+
+void UTTNotificationWidget::OnAnimation ()
+{
+	PlayAnimation ( OnAnim );
+}
+
+void UTTNotificationWidget::EndAnimation ()
+{
+	PlayAnimation ( EndAnim );
 }

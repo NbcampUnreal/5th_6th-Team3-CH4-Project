@@ -32,6 +32,7 @@ public:
 	void CountDownTimer ();
 	void Ready ();
 	void EndRound ();
+	void Sendportrait ( const FString& PlayerName , UTexture2D* portrait ) const;
 private:
 	FTimerHandle TimeCountHandle;
 
@@ -42,5 +43,4 @@ private:
 
 	int32 minutes = 3;
 	int32 seconds = 00;
-
 };

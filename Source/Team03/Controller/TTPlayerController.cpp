@@ -10,6 +10,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "SelectSkeletal/TTCharactorHeadSkeletalSelect.h"
 #include "SelectSkeletal/TTCharactorSkeletalMeshSelect.h"
+#include "InGameUI/TTPlayerPortraitWidget.h"
 
 ATTPlayerController::ATTPlayerController ()
 	: InputMappingContext ( nullptr ) ,
@@ -98,9 +99,9 @@ void ATTPlayerController::BeginPlay ()
 			ServerRPC_InitPlayerInfo(GI->UserNickname, GI->SelectedCharacterRowName, HeadIndex, BodyIndex);
 		}
 		// ---------- Ingame 담당자가 추가 ----------
+		UE_LOG ( LogTemp , Warning , TEXT ( "ServerAddportrait0" ));
 		ServerClientReady ();
 	}
-
 }
 
 // ----- Outgame 담당자가 수정함 -----
@@ -304,6 +305,21 @@ void ATTPlayerController::LoadPlayerSaveData ( const FString& SlotName , int32 U
 
 #pragma region Notification
 
+void ATTPlayerController::OnAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->OnAnimation ();
+	}
+}
+
+void ATTPlayerController::EndAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->EndAnimation ();
+	}
+}
 void ATTPlayerController::ClientPlayStartAnim_Implementation ()
 {
 	if (IsValid ( TTInGameHUD ))
@@ -321,6 +337,7 @@ void ATTPlayerController::ServerClientReady_Implementation ()
 			GM->Ready ();
 		}
 	}
+
 }
 
 void ATTPlayerController::ClientPlayingGame_Implementation ( int32 minutes , int32 seconds )const
@@ -328,6 +345,15 @@ void ATTPlayerController::ClientPlayingGame_Implementation ( int32 minutes , int
 	if (IsValid ( TTInGameHUD ))
 	{
 		TTInGameHUD->CountDownTimer ( minutes , seconds );
+	}
+}
+
+void ATTPlayerController::ClientAddportrait_Implementation ( const FString& PlayerName , UTexture2D* portrait ) const
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		UE_LOG ( LogTemp , Warning , TEXT ( "ClientAddportrait1" ) );
+		TTInGameHUD->Addportrait ( PlayerName, portrait );
 	}
 }
 

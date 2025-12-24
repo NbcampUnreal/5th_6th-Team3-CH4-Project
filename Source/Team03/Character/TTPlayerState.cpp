@@ -16,6 +16,7 @@ void ATTPlayerState::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME ( ATTPlayerState , PersistedBodyMesh );
 	DOREPLIFETIME(ATTPlayerState, UserNickname);
 	DOREPLIFETIME(ATTPlayerState, SelectedCharacterRowName);
+	DOREPLIFETIME(ATTPlayerState, PortraitTexture );
 	DOREPLIFETIME(ATTPlayerState, UserNickname);
 	DOREPLIFETIME(ATTPlayerState, SelectedCharacterRowName);
 	DOREPLIFETIME(ATTPlayerState, Team );

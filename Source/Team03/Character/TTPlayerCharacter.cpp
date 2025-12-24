@@ -46,6 +46,9 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
+	
+	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
+	Head->SetupAttachment ( GetMesh () );
 
 	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D> ( TEXT ( "SceneCapture" ) );
 	SceneCapture->TextureTarget = CaptureRT;
@@ -58,13 +61,9 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 		ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
 
 	SceneCapture->ShowOnlyComponents.Add ( GetMesh () );
+	SceneCapture->ShowOnlyComponents.Add ( Head );
 	SceneCapture->FOVAngle = 35.f;
 
-	SceneCapture->bEnableClipPlane = true;
-	SceneCapture->CaptureScene();
-
-	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
-	Head->SetupAttachment ( GetMesh () );
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
@@ -148,6 +147,7 @@ void ATTPlayerCharacter::BeginPlay ()
 		}
 	}
 	// ----------------------------------
+	SceneCapture->CaptureScene ();
 
 }
 
@@ -275,6 +275,9 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputESC , ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu );
 		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey );
 
+		EnhancedInputComponent->BindAction ( InputPlayerKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::OnAnimation );
+		EnhancedInputComponent->BindAction ( InputPlayerKey , ETriggerEvent::Completed , this , &ATTPlayerCharacter::EndAnimation );
+
 		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUpStart );
 		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Completed , this , &ATTPlayerCharacter::PickUpEnd );
 
@@ -393,6 +396,22 @@ void ATTPlayerCharacter::PickUpStart ()
 
 void ATTPlayerCharacter::PickUpEnd ()
 {
+}
+
+void ATTPlayerCharacter::OnAnimation ()
+{
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetController () ))
+	{
+		PC->OnAnimation ();
+	}
+}
+
+void ATTPlayerCharacter::EndAnimation ()
+{
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetController () ))
+	{
+		PC->EndAnimation ();
+	}
 }
 
 void ATTPlayerCharacter::SetSprintSpeed ( bool bIsSprinting )
