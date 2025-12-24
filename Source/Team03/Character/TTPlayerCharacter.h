@@ -16,6 +16,8 @@ class UAnimMontage;
 class AThrowableBase;
 class USceneCaptureComponent2D;
 class UTTPickupComponent;
+class ATTSword;
+class ATTShield;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -91,9 +93,13 @@ protected:
 	void JumpStart ();
 	void JumpEnd ();
 	void PickUp(const FInputActionValue& Value);
+	void ThrowAway ( const FInputActionValue& Value );
 
 	UFUNCTION(Server, Reliable)
 	void ServerPickUp ();
+
+	UFUNCTION(Server, Reliable)
+	void ServerThorwAway ();
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;
@@ -114,6 +120,12 @@ protected:
 
 	UPROPERTY ( VisibleInstanceOnly , Category = "Interaction" )
 	UTTPickupComponent* OverlappingPickupComponent;
+
+	UPROPERTY(VisibleInstanceOnly, Replicated, Category = "Interaction")
+	ATTSword* CurrentSword;
+
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	ATTShield* CurrentShield;
 	
 #pragma endregion
 

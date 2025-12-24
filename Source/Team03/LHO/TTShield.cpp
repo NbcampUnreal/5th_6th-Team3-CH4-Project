@@ -16,6 +16,8 @@ ATTShield::ATTShield ()
 	SetRootComponent ( PickupComponent );
 
 	PickupComponent->SetIsReplicated ( true );
+
+	WeaponRowName = "Shield";
 }
 
 void ATTShield::BeginPlay ()
@@ -23,6 +25,20 @@ void ATTShield::BeginPlay ()
 	Super::BeginPlay ();
 
 	PickupComponent->OnPickUp.AddDynamic ( this , &ThisClass::HandleOnPickUp );
+}
+
+void ATTShield::HandleOnThrowAway ()
+{
+	DetachFromActor ( FDetachmentTransformRules::KeepWorldTransform );
+
+	if (PickupComponent)
+	{
+		PickupComponent->SetSimulatePhysics ( true );
+		PickupComponent->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
+
+		FVector ThrowDir = GetActorForwardVector () + FVector ( 0 , 0 , 0.5f );
+		PickupComponent->AddImpulse ( ThrowDir * 300.0f , NAME_None , true );
+	}
 }
 
 void ATTShield::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )

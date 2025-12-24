@@ -15,6 +15,22 @@ ATTSword::ATTSword ()
 	SetRootComponent ( PickupComponent );
 	
 	PickupComponent->SetIsReplicated ( true );
+
+	WeaponRowName = "Sword";
+}
+
+void ATTSword::HandleOnThrowAway ()
+{
+	DetachFromActor ( FDetachmentTransformRules::KeepWorldTransform );
+
+	if (PickupComponent)
+	{
+		PickupComponent->SetSimulatePhysics ( true );
+		PickupComponent->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
+
+		FVector ThrowDir = GetActorForwardVector () + FVector ( 0 , 0 , 0.5f );
+		PickupComponent->AddImpulse ( ThrowDir * 300.0f , NAME_None , true );
+	}
 }
 
 void ATTSword::BeginPlay ()

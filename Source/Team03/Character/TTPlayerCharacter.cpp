@@ -22,6 +22,8 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Engine/EngineTypes.h"
 #include "LHO/TTPickupComponent.h"
+#include "LHO/TTShield.h"
+#include "LHO/TTSword.h"
 
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 //
@@ -250,6 +252,9 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollRotation );
 	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollAngularVelocity );
 
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentSword );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentShield );
+
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
 }
@@ -277,6 +282,7 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey );
 
 		EnhancedInputComponent->BindAction ( InputPickUp , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUp);
+		EnhancedInputComponent->BindAction ( InputThrowAway , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::ThrowAway );
 	}
 }
 
@@ -391,11 +397,59 @@ void ATTPlayerCharacter::PickUp(const FInputActionValue& Value)
 	ServerPickUp ();
 }
 
+void ATTPlayerCharacter::ThrowAway ( const FInputActionValue& Value )
+{
+	if (IsValid ( CurrentSword )||IsValid(CurrentShield))
+	{
+		ServerThorwAway ();
+	}
+}
+
+void ATTPlayerCharacter::ServerThorwAway_Implementation ()
+{
+	if (IsValid ( CurrentSword ))
+	{
+		CurrentSword->HandleOnThrowAway ();
+		SetWeaponData ( FName ( "Hand" ) );
+
+		CurrentSword = nullptr;
+	}
+	else if (IsValid ( CurrentShield ))
+	{
+		CurrentShield->HandleOnThrowAway ();
+		CurrentShield = nullptr;
+	}
+}
+
 void ATTPlayerCharacter::ServerPickUp_Implementation ()
 {
 	if (IsValid ( OverlappingPickupComponent ))
 	{
+		AActor* PickedActor = OverlappingPickupComponent->GetOwner ();
+
 		OverlappingPickupComponent->ForcePickUp ( this );
+
+		if (ATTSword* NewSword = Cast<ATTSword> ( PickedActor ))
+		{
+			if (IsValid ( CurrentSword ))
+			{
+				ServerThorwAway ();
+				CurrentSword = nullptr;
+			}
+
+			CurrentSword = NewSword;
+			SetWeaponData ( CurrentSword->WeaponRowName );
+		}
+		else if (ATTShield* NewShield = Cast<ATTShield> ( PickedActor ))
+		{
+			if (IsValid ( CurrentShield ))
+			{
+				CurrentShield->HandleOnThrowAway ();
+				CurrentShield=nullptr;
+			}
+
+			CurrentShield = NewShield;
+		}
 	}
 }
 
