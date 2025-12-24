@@ -13,6 +13,7 @@ void UTTNotificationWidget::NativeConstruct ()
 void UTTNotificationWidget::PlayStartAnim ()
 {
 	PlayAnimation ( StartAnim );
+	EndAnimation ();
 	NotificationText->SetText (
 		FText::Format (
 			FText::FromString ( TEXT ( "{0} : {2:00}" ) ) ,
