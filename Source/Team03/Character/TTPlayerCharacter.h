@@ -79,8 +79,8 @@ protected:
 	void PlayerBlocking ( const FInputActionValue& Value );
 	void JumpStart ();
 	void JumpEnd ();
-	void PickUpStart ();
-	void PickUpEnd ();
+	void PickUp();
+
 
 	UPROPERTY(Replicated)
 	FRotator TargetRotation;

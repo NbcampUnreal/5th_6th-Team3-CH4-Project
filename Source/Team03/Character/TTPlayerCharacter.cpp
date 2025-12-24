@@ -275,9 +275,7 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputESC , ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu );
 		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey );
 
-		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUpStart );
-		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Completed , this , &ATTPlayerCharacter::PickUpEnd );
-
+		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUp);
 	}
 }
 
@@ -387,11 +385,7 @@ void ATTPlayerCharacter::JumpEnd ()
 	Super::StopJumping ();
 }
 
-void ATTPlayerCharacter::PickUpStart ()
-{
-}
-
-void ATTPlayerCharacter::PickUpEnd ()
+void ATTPlayerCharacter::PickUp()
 {
 }
 
