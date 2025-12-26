@@ -742,7 +742,10 @@ void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped 
 
 float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
 {
-	if (bIsBlocking && IsValid(DamageCauser))
+	const UDamageType* DamageType = DamageEvent.DamageTypeClass ? DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType> () : nullptr;
+	bool bIsGasDamage = (DamageType && DamageType->IsA ( UGas_Damage::StaticClass () ));
+
+	if (!bIsGasDamage && bIsBlocking && IsValid(DamageCauser))
 	{
 		FVector MyForward = GetActorForwardVector();
 		FVector ToAttacker = (DamageCauser->GetActorLocation() - GetActorLocation()).GetSafeNormal();
@@ -754,6 +757,7 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 			return 0.0f;
 		}
 	}
+
 	Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
 
 	// 피해자쪽 로직.
