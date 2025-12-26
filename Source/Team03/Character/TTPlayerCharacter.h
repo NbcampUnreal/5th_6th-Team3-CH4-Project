@@ -98,6 +98,9 @@ protected:
 	void ThrowAway ( const FInputActionValue& Value );
 
 	UFUNCTION(Server, Reliable)
+	void ServerSetBlocking ( bool bNewBlocking );
+
+	UFUNCTION(Server, Reliable)
 	void ServerPickUp ();
 
 	UFUNCTION(Server, Reliable)
@@ -131,6 +134,9 @@ protected:
 
 	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
 	ATTShield* CurrentShield;
+
+	UPROPERTY ( VisibleAnywhere , Replicated , Category = "State" )
+	bool bIsBlocking;
 	
 #pragma endregion
 

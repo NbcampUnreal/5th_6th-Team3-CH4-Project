@@ -255,6 +255,8 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , CurrentSword );
 	DOREPLIFETIME ( ATTPlayerCharacter , CurrentShield );
 
+	DOREPLIFETIME ( ATTPlayerCharacter , bIsBlocking );
+
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
 }
@@ -270,7 +272,8 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputMove , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Move );
 		EnhancedInputComponent->BindAction ( InputLook , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Look );
 		EnhancedInputComponent->BindAction ( InputAttack , ETriggerEvent::Started , this , &ATTPlayerCharacter::Attack );
-		EnhancedInputComponent->BindAction ( InputBlocking , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PlayerBlocking );
+		EnhancedInputComponent->BindAction ( InputBlocking , ETriggerEvent::Started , this , &ATTPlayerCharacter::PlayerBlocking );
+		EnhancedInputComponent->BindAction ( InputBlocking , ETriggerEvent::Completed , this , &ATTPlayerCharacter::PlayerBlocking );
 		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::SprintStart );
 		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Completed , this , &ATTPlayerCharacter::SprintEnd );
 
@@ -368,6 +371,8 @@ void ATTPlayerCharacter::SprintEnd ()
 
 void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 {
+	bool bInputState = Value.Get<bool> ();
+
 	if (bIsStunned) return;
 	if (GetCharacterMovement ()->IsFalling () == true)
 	{
@@ -379,6 +384,8 @@ void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 	{
 		AnimInstance->Montage_Play ( BlockingMontage );
 	}
+
+	ServerSetBlocking ( bInputState );
 }
 
 void ATTPlayerCharacter::JumpStart ()
@@ -406,6 +413,11 @@ void ATTPlayerCharacter::ThrowAway ( const FInputActionValue& Value )
 	{
 		ServerThorwAway ();
 	}
+}
+
+void ATTPlayerCharacter::ServerSetBlocking_Implementation ( bool bNewBlocking )
+{
+	bIsBlocking = bNewBlocking;
 }
 
 void ATTPlayerCharacter::ServerThorwAway_Implementation ()
@@ -711,6 +723,18 @@ void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped 
 
 float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
 {
+	if (bIsBlocking && IsValid ( DamageCauser ))
+	{
+		FVector MyForward = GetActorForwardVector ();
+		FVector ToAttacker = (DamageCauser->GetActorLocation () - GetActorLocation ()).GetSafeNormal();
+
+		float DotResult = FVector::DotProduct ( MyForward , ToAttacker );
+
+		if (DotResult > 0.5f)
+		{
+			return 0.0f;
+		}
+	}
 	float FinalDamageAmount = Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
 	// 피해자쪽 로직.
 
@@ -735,6 +759,7 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 
 	return FinalDamageAmount;
 }
+
 void ATTPlayerCharacter::SetWeaponData ( FName NewWeaponName )
 {
 	WeaponName = NewWeaponName;
