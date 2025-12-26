@@ -18,8 +18,15 @@ class TEAM03_API ATTSword : public AActor
 public:
 	ATTSword ();
 
+	UPROPERTY(EditAnywhere, Category = "Weapon")
+	FName WeaponRowName;
+
 	UTTPickupComponent* GetPickupComponent () const { return PickupComponent; }
 	UAnimMontage* GetAttackMontage () const { return AttackMontage; }
+
+	UFUNCTION()
+	void HandleOnThrowAway ();
+
 protected:
 	virtual void BeginPlay () override;
 

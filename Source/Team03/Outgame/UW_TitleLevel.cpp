@@ -7,7 +7,6 @@
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "TTGameInstance.h"
 #include "UW_LobbyEntry.h"
 #include "Animation/WidgetAnimation.h"

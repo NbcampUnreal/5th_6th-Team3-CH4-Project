@@ -18,8 +18,13 @@
 #include "Team03.h"
 #include "TTWeaponData.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/SceneCaptureComponent2D.h"
+#include "Engine/TextureRenderTarget2D.h"
+#include "Engine/EngineTypes.h"
+#include "LHO/TTPickupComponent.h"
+#include "LHO/TTShield.h"
+#include "LHO/TTSword.h"
 #include "Gimmick/Gas_Damage.h"
-
 
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 //
@@ -45,9 +50,24 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
-
+	
 	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
 	Head->SetupAttachment ( GetMesh () );
+
+	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D> ( TEXT ( "SceneCapture" ) );
+	SceneCapture->TextureTarget = CaptureRT;
+	SceneCapture->SetupAttachment ( GetRootComponent() );
+
+	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
+	SceneCapture->bCaptureEveryFrame = false;
+	SceneCapture->bCaptureOnMovement = false;
+	SceneCapture->PrimitiveRenderMode =
+		ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
+
+	SceneCapture->ShowOnlyComponents.Add ( GetMesh () );
+	SceneCapture->ShowOnlyComponents.Add ( Head );
+	SceneCapture->FOVAngle = 35.f;
+
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
@@ -131,6 +151,7 @@ void ATTPlayerCharacter::BeginPlay ()
 		}
 	}
 	// ----------------------------------
+	SceneCapture->CaptureScene ();
 
 }
 
@@ -232,6 +253,9 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollRotation );
 	DOREPLIFETIME ( ATTPlayerCharacter , ServerRagdollAngularVelocity );
 
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentSword );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentShield );
+
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
 }
@@ -258,6 +282,11 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputESC , ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu );
 		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey );
 
+		EnhancedInputComponent->BindAction ( InputPickUp , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUp);
+		EnhancedInputComponent->BindAction ( InputThrowAway , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::ThrowAway );
+
+		EnhancedInputComponent->BindAction(InputPlayerKey, ETriggerEvent::Started, this, &ATTPlayerCharacter::OnAnimation);
+		EnhancedInputComponent->BindAction(InputPlayerKey, ETriggerEvent::Completed, this, &ATTPlayerCharacter::EndAnimation);
 	}
 }
 
@@ -365,6 +394,83 @@ void ATTPlayerCharacter::JumpEnd ()
 	if (bIsStunned) return;
 
 	Super::StopJumping ();
+}
+
+void ATTPlayerCharacter::PickUp(const FInputActionValue& Value)
+{
+	ServerPickUp ();
+}
+
+void ATTPlayerCharacter::ThrowAway ( const FInputActionValue& Value )
+{
+	if (IsValid ( CurrentSword )||IsValid(CurrentShield))
+	{
+		ServerThorwAway ();
+	}
+}
+
+void ATTPlayerCharacter::ServerThorwAway_Implementation ()
+{
+	if (IsValid ( CurrentSword ))
+	{
+		CurrentSword->HandleOnThrowAway ();
+		SetWeaponData ( FName ( "Hand" ) );
+
+		CurrentSword = nullptr;
+	}
+	else if (IsValid ( CurrentShield ))
+	{
+		CurrentShield->HandleOnThrowAway ();
+		CurrentShield = nullptr;
+	}
+}
+
+void ATTPlayerCharacter::ServerPickUp_Implementation ()
+{
+	if (IsValid ( OverlappingPickupComponent ))
+	{
+		AActor* PickedActor = OverlappingPickupComponent->GetOwner ();
+
+		OverlappingPickupComponent->ForcePickUp ( this );
+
+		if (ATTSword* NewSword = Cast<ATTSword> ( PickedActor ))
+		{
+			if (IsValid ( CurrentSword ))
+			{
+				ServerThorwAway ();
+				CurrentSword = nullptr;
+			}
+
+			CurrentSword = NewSword;
+			SetWeaponData ( CurrentSword->WeaponRowName );
+		}
+		else if (ATTShield* NewShield = Cast<ATTShield> ( PickedActor ))
+		{
+			if (IsValid ( CurrentShield ))
+			{
+				CurrentShield->HandleOnThrowAway ();
+				CurrentShield=nullptr;
+			}
+
+			CurrentShield = NewShield;
+		}
+	}
+}
+
+void ATTPlayerCharacter::OnAnimation ()
+{
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetController () ))
+	{
+		PC->OnAnimation ();
+	}
+}
+
+void ATTPlayerCharacter::EndAnimation ()
+{
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetController () ))
+	{
+		PC->EndAnimation ();
+	}
 }
 
 void ATTPlayerCharacter::SetSprintSpeed ( bool bIsSprinting )

@@ -52,7 +52,7 @@ void AInGameModeBase::SendChatMessage ( const FString& Message )
 		}
 	}
 }
-
+#pragma region Ready
 void AInGameModeBase::PostLogin ( APlayerController* NewPlayer )
 {
 	Super::PostLogin ( NewPlayer );
@@ -67,35 +67,77 @@ void AInGameModeBase::Logout ( AController* ExitPlayer )
 	Super::Logout ( ExitPlayer );
 }
 
+void AInGameModeBase::Ready()
+{
+	++InPlayerCount;
+}
+#pragma endregion
+
+#pragma region Start
 void AInGameModeBase::StartRound ()
 {
 	if (InPlayerCount == PlayerCount)
 	{
-		//FTimerHandle StartHandle;
-		//	GetWorldTimerManager ().SetTimer (
-		//		StartHandle ,
-		//		this ,
-		//		&ThisClass::StartAnim ,
-		//		1.f ,
-		//		false
-		//	);
+		FTimerHandle StartHandle;
+			GetWorldTimerManager ().SetTimer (
+				StartHandle ,
+				this ,
+				&ThisClass::PlayingGame ,
+				4.f ,
+				false
+			);
 			
 		for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It)
 		{
 			if (ATTPlayerController* TTPC = Cast<ATTPlayerController> ( It->Get () ))
 			{
 				TTPC->ClientPlayStartAnim ();
+				if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->GetPawn ()->GetPlayerState () ))
+				{
+					Sendportrait ( TTPS->GetUserNickname(), TTPS->PortraitTexture);
+				}
+				
 			}
 		}
 		bIsGameStart = true;
 	}
 }
 
-void AInGameModeBase::Ready()
+void AInGameModeBase::PlayingGame ()
 {
-	++InPlayerCount;
+	GetWorldTimerManager ().SetTimer (
+		TimeCountHandle ,
+		this ,
+		&ThisClass::CountDownTimer ,
+		1.f ,
+		true
+	);
+
 }
 
+void AInGameModeBase::CountDownTimer ()
+{
+	if (--seconds < 0)
+	{
+		if (--minutes < 0)
+		{
+			GetWorld ()->GetTimerManager ().ClearTimer ( TimeCountHandle );
+			bIsGameEnd = true;
+			return;
+		}
+		seconds = 59;
+	}
+	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It)
+	{
+		if (ATTPlayerController* TTPC = Cast<ATTPlayerController> ( It->Get () ))
+		{
+			TTPC->ClientPlayingGame ( minutes , seconds );
+		}
+	}
+}
+#pragma endregion
+
+#pragma region end
 void AInGameModeBase::EndRound ()
 {
 	Teams T = Teams::None;
@@ -131,5 +173,19 @@ void AInGameModeBase::EndRound ()
 	{
 		// 레드팀 승리
 		UE_LOG ( LogTemp , Warning , TEXT ( "Win RedTeam" ) );
+	}
+}
+#pragma endregion
+
+void AInGameModeBase::Sendportrait ( const FString& PlayerName , UTexture2D* portrait ) const
+{
+	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It)
+	{
+		ATTPlayerController* PC = Cast<ATTPlayerController> ( *It );
+		if (PC)
+		{
+			UE_LOG ( LogTemp , Warning , TEXT ( "ServerAddportrait1" ) );
+			PC->ClientAddportrait ( PlayerName, portrait );
+		}
 	}
 }

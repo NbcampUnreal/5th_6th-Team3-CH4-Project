@@ -19,9 +19,12 @@ public:
 
 #pragma region Game Loop
 	virtual void PostLogin(APlayerController* NewPlayer) override;
-	virtual void Logout(AController* Exiting) override;
-
+	virtual void Logout(AController* Exiting) override; // 게임 시작 (Start 버튼 클릭 시 호출)
 	void StartGame();
+
+private:
+	void ProcessServerTravel();
+	FTimerHandle TravelTimerHandle;
 #pragma endregion
 
 };

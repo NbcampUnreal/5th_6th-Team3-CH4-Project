@@ -7,10 +7,30 @@
 
 ATTSword::ATTSword ()
 {
+	bReplicates = true;
+	SetReplicateMovement ( true );
 	PrimaryActorTick.bCanEverTick = false;
 
 	PickupComponent = CreateDefaultSubobject<UTTPickupComponent> ( TEXT ( "PickupComponent" ) );
 	SetRootComponent ( PickupComponent );
+	
+	PickupComponent->SetIsReplicated ( true );
+
+	WeaponRowName = "Sword";
+}
+
+void ATTSword::HandleOnThrowAway ()
+{
+	DetachFromActor ( FDetachmentTransformRules::KeepWorldTransform );
+
+	if (PickupComponent)
+	{
+		PickupComponent->SetSimulatePhysics ( true );
+		PickupComponent->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
+
+		FVector ThrowDir = GetActorForwardVector () + FVector ( 0 , 0 , 0.5f );
+		PickupComponent->AddImpulse ( ThrowDir * 300.0f , NAME_None , true );
+	}
 }
 
 void ATTSword::BeginPlay ()
@@ -22,16 +42,20 @@ void ATTSword::BeginPlay ()
 
 void ATTSword::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 {
-	if (IsValid ( InPickUpCharacter ) == false)
+	if (!IsValid ( InPickUpCharacter ))
 	{
 		return;
 	}
 
-	FAttachmentTransformRules AttachmentRules ( EAttachmentRule::SnapToTarget , true );
-	AttachToComponent ( InPickUpCharacter->GetMesh () , AttachmentRules , FName ( TEXT ( "hand_rSocket" ) ) );
-	SetActorEnableCollision ( false );
-	PickupComponent->SetSimulatePhysics ( false );
+	if (PickupComponent)
+	{
+		PickupComponent->SetSimulatePhysics ( false );
 
-	//InPickUpCharacter->CurrentWeapon = this;
+		PickupComponent->SetCollisionEnabled ( ECollisionEnabled::NoCollision );
+	}
+
+	FAttachmentTransformRules AttachmentRules ( EAttachmentRule::SnapToTarget , true );
+
+	bool bResult = AttachToComponent ( InPickUpCharacter->GetMesh () , AttachmentRules , FName ( TEXT ( "hand_rSocket" ) ) );
 }
 

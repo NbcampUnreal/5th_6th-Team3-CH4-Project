@@ -85,10 +85,21 @@ public:
 
 #pragma region Notification
 public:
+	UFUNCTION ()
+	void OnAnimation ();
+	UFUNCTION ()
+	void EndAnimation ();
 	UFUNCTION ( Client , Reliable )
 	void ClientPlayStartAnim ();
+
 	UFUNCTION ( Server , Reliable )
 	void ServerClientReady ();
+
+	UFUNCTION ( Client , Reliable )
+	void ClientPlayingGame ( int32 minutes , int32 seconds )const;
+
+	UFUNCTION ( Client , Reliable )
+	void ClientAddportrait ( const FString& PlayerName , UTexture2D* portrait ) const;
 protected:
 
 	bool bClientReady = false;

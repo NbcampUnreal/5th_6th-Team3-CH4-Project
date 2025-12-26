@@ -17,7 +17,13 @@ class TEAM03_API ATTShield : public AActor
 public:
 	ATTShield ();
 
+	UPROPERTY ( EditAnywhere, Category="Weapon")
+	FName WeaponRowName;
+
 	UTTPickupComponent* GetPickupComponent () const { return PickupComponent; }
+
+	UFUNCTION ()
+	void HandleOnThrowAway ();
 
 protected:
 	virtual void BeginPlay () override;

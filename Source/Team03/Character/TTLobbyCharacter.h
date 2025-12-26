@@ -11,6 +11,8 @@ class UWidgetComponent;
 class UStaticMeshComponent;
 class UMaterialInstanceDynamic;
 class USkeletalMesh;
+class USpringArmComponent;
+class UCameraComponent;
 
 UCLASS()
 class TEAM03_API ATTLobbyCharacter : public ACharacter
@@ -49,6 +51,12 @@ public:
 
     UPROPERTY()
     TObjectPtr<UMaterialInstanceDynamic> IndicatorMID;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	TObjectPtr<USpringArmComponent> CameraBoom;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera")
+	TObjectPtr<UCameraComponent> FollowCamera;
 #pragma endregion
 
 #pragma region Replication - Mesh Assets
@@ -95,4 +103,15 @@ public:
 	int32 GetCurrentHeadIndex() const { return CurrentHeadIndex; }
 	int32 GetCurrentBodyIndex() const { return CurrentBodyIndex; }
 #pragma endregion
+
+public:
+public:
+    UFUNCTION(BlueprintImplementableEvent, Category = "Animation")
+    void PlayReadyMontage(bool bIsReady);
+
+	void StartZoomOut();
+
+private:
+	bool bIsZoomingOut = false;
+	float TargetZoomLength = 1000.0f; // Zoom out target
 };

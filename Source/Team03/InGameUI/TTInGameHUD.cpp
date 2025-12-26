@@ -8,11 +8,17 @@
 #include "Components/ScrollBox.h"
 #include "InGameUI/TTSeletMeshs.h"
 #include "InGameUI/TTNotificationWidget.h"
-
+#include "Outgame/TTGameInstance.h"
+#include "InGameUI/TTPlayerPortraitWidget.h"
 void ATTInGameHUD::PostInitializeComponents ()
 {
 	Super::PostInitializeComponents ();
 
+		
+	if (UTTGameInstance* GI = Cast<UTTGameInstance> ( GetGameInstance () ))
+	{
+		GI->PlayBGM ( DesertBGM );
+	}
 	if(APlayerController* PC = GetOwningPlayerController())
 	{
 		OwningPlayer = Cast<ATTPlayerController> ( PC );
@@ -57,7 +63,7 @@ void ATTInGameHUD::AddChatMessage ( const FString& Message )
 			ChatMessageWidget->SetChatMessage ( Message );
 			Chat->ChatScrollBox->AddChild (ChatMessageWidget);
 			Chat->ChatScrollBox->ScrollToEnd ();
- 			Chat->ChatScrollBox->bAnimateWheelScrolling = true;
+ 			Chat->ChatScrollBox->SetAnimateWheelScrolling(true);
 		}
 	}
 }
@@ -106,6 +112,47 @@ void ATTInGameHUD::StartAnim () const
 	}
 
 }
+
+void ATTInGameHUD::CountDownTimer ( int32 minutes , int32 seconds )const
+{
+	if (IsValid ( Notification ))
+	{
+		Notification->CountDownTimer ( minutes , seconds );
+	}
+}
+void ATTInGameHUD::OnAnimation ()const
+{
+	if (IsValid ( Notification ))
+	{
+		Notification->OnAnimation ();
+	}
+}
+void ATTInGameHUD::EndAnimation ()const
+{
+	if (IsValid ( Notification ))
+	{
+		Notification->EndAnimation ( );
+	}
+}
+
+void ATTInGameHUD::Addportrait (const FString& PlayerName,  UTexture2D* portrait ) const
+{
+	if (IsValid ( Notification ))
+	{
+		if (!PortraitWidgetClass)
+		{
+			return;
+		}
+		if (APlayerController* PC = GetOwningPlayerController ())
+		{
+			UTTPlayerPortraitWidget* Widget = CreateWidget<UTTPlayerPortraitWidget> ( PC , PortraitWidgetClass );
+			Widget->SetNameText ( PlayerName );
+			Widget->SetPortraitTexture ( portrait );
+			Notification->PlayerportraitBox->AddChild ( Widget );
+		}
+	}
+}
+
 
 #pragma endregion
 

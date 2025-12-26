@@ -13,6 +13,8 @@
 
 #include "Components/SkeletalMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Camera/CameraComponent.h"
 
 // Sets default values
 ATTLobbyCharacter::ATTLobbyCharacter()
@@ -23,6 +25,7 @@ ATTLobbyCharacter::ATTLobbyCharacter()
 	// 헤드 생성 및 부착
 	Head = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Head"));
 	Head->SetupAttachment(GetMesh());
+    Head->SetLeaderPoseComponent(GetMesh()); // 애니메이션 동기화
 	Head->SetIsReplicated(true);
 
     // 닉네임 위젯
@@ -38,6 +41,25 @@ ATTLobbyCharacter::ATTLobbyCharacter()
     TeamIndicatorMesh->SetRelativeLocation(FVector(0.f, 0.f, -85.f)); // 바닥에 붙게 조정 (Capsule HalfHeight 고려)
     TeamIndicatorMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 충돌 없음
     TeamIndicatorMesh->SetCastShadow(false); // 그림자 없음
+
+    TeamIndicatorMesh->SetCastShadow(false); // 그림자 없음
+
+	// 4. CameraBoom (SpringArm)
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
+	CameraBoom->SetupAttachment(RootComponent);
+	// User Provided: Location -250, 0, 50. Rotation 0, -10, 0
+	// SpringArm은 보통 TargetArmLength로 거리를 조절하므로, 뒤로 -250은 Length 250으로 설정.
+	// 높이 50은 SocketOffset으로 설정.
+	CameraBoom->TargetArmLength = 250.0f; 
+	CameraBoom->SocketOffset = FVector(0.0f, 0.0f, 50.0f);
+	CameraBoom->SetRelativeRotation(FRotator(-10.0f, 0.0f, 0.0f)); // Pitch -10
+	CameraBoom->bUsePawnControlRotation = false; // 캐릭터 회전에 독립적 (or true provided user wants it) - Defaulting to fixed for Lobby
+	CameraBoom->bDoCollisionTest = false; // 로비에서는 충돌 무시
+
+	// 5. Camera
+	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	FollowCamera->bUsePawnControlRotation = false; 
 
 	// 바디는 기본 Mesh를 사용한다고 가정
 
@@ -108,8 +130,17 @@ void ATTLobbyCharacter::Tick(float DeltaTime)
                 // "Color" 파라미터로 색상 전달 (머티리얼에 이 파라미터가 있어야 함)
                 IndicatorMID->SetVectorParameterValue(TEXT("Color"), TargetColor);
             }
+
         }
     }
+
+	// Zoom Out Logic
+	if (bIsZoomingOut && CameraBoom)
+	{
+		float CurrentLen = CameraBoom->TargetArmLength;
+		float NewLen = FMath::FInterpTo(CurrentLen, TargetZoomLength, DeltaTime, 0.5f); // Speed 0.5
+		CameraBoom->TargetArmLength = NewLen;
+	}
 }
 
 // Called to bind functionality to input
@@ -272,3 +303,8 @@ void ATTLobbyCharacter::ChangeBody(int32 Index)
 
 #pragma endregion
 
+void ATTLobbyCharacter::StartZoomOut()
+{
+	bIsZoomingOut = true;
+	// TargetZoomLength is initialized to 1000.0f in header or here
+}
