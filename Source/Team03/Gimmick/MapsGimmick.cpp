@@ -17,6 +17,8 @@ AMapsGimmick::AMapsGimmick ()
 	GasDetectionVolume = CreateDefaultSubobject<USphereComponent> ( TEXT ( "GasDetectionVolume" ) );
 	RootComponent = GasDetectionVolume;
 
+	GasDetectionVolume->InitSphereRadius ( 400.f );
+
 	GasDetectionVolume->SetCollisionEnabled ( ECollisionEnabled::QueryOnly );
 	GasDetectionVolume->SetCollisionResponseToAllChannels ( ECR_Ignore );
 	GasDetectionVolume->SetCollisionResponseToChannel ( ECC_Pawn , ECR_Overlap );
