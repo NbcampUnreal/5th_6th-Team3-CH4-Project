@@ -5,7 +5,7 @@
 #include "GameFramework/Actor.h"
 #include "MapsGimmick.generated.h"
 
-class USphereComponent;
+class UBoxComponent;
 
 UCLASS ()
 class TEAM03_API AMapsGimmick : public AActor
@@ -20,15 +20,15 @@ protected:
 
 	//가스 데미지
 	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly, Category = "Gas Gimmick" )
-	class USphereComponent* GasDetectionVolume;
+	class UBoxComponent* GasDetectionVolume;
 
 	FTimerHandle GasDamageTimerHandle; 
 
-	UPROPERTY ( EditAnywhere , Category = "Gas Stats" )
+	UPROPERTY ( EditAnywhere , Category = "Gas Danage Time" )
 	float DamageInterval = 1.0f;
 
-	UPROPERTY ( EditAnywhere , Category = "Gas Stats" )
-	float DamagePerTick = 50.0f;
+	UPROPERTY ( EditAnywhere , Category = "Gas Damage" )
+	float DamagePerTick = 10.0f;
 
 	void GasDamage ();
 
@@ -59,6 +59,14 @@ protected:
 		int32 OtherBodyIndex );
 
 	TArray<ACharacter*> ActorsInGas;
+
+	//독가스 크기
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Gas Gimmick" )
+	FVector GasBoxExtent = FVector ( 1000.f , 1000.f , 30.f );
+
+	//가스 시작 딜레이
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Gas Stats" )
+	float GasStartDelay = 10.f;
 
 public:
 	virtual void Tick ( float DeltaTime ) override;

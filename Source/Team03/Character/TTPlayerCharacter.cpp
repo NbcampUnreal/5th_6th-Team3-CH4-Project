@@ -712,6 +712,11 @@ void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped 
 
 float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
 {
+	if (bIsDead || CurrentHP <= 0.f)
+	{
+		return 0.f;
+	}
+
 	Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
 
 	// 피해자쪽 로직.
