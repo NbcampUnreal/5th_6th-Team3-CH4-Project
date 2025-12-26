@@ -17,7 +17,7 @@ AMapsGimmick::AMapsGimmick ()
 	GasDetectionVolume = CreateDefaultSubobject<USphereComponent> ( TEXT ( "GasDetectionVolume" ) );
 	RootComponent = GasDetectionVolume;
 
-	GasDetectionVolume->InitSphereRadius ( 400.f );
+	GasDetectionVolume->InitSphereRadius ( 1000 );
 
 	GasDetectionVolume->SetCollisionEnabled ( ECollisionEnabled::QueryOnly );
 	GasDetectionVolume->SetCollisionResponseToAllChannels ( ECR_Ignore );
@@ -51,16 +51,16 @@ void AMapsGimmick::BeginPlay ()
 
 void AMapsGimmick::StartGasDamage ()
 {
+	UE_LOG ( LogTemp , Warning , TEXT ( "Gas damage started" ) );
+
 	if (!HasAuthority ()) return;
 
 	bGasActive = true;
 
-	UE_LOG ( LogTemp , Warning , TEXT ( "Gas damage started" ) );
-
 	TArray<AActor*> OverlappingActors;
 	GasDetectionVolume->GetOverlappingActors (
 		OverlappingActors ,
-		ACharacter::StaticClass () 
+		ACharacter::StaticClass ()
 	);
 
 	for (AActor* Actor : OverlappingActors)
@@ -169,10 +169,10 @@ void AMapsGimmick::GasDamage ()
 		);
 	}
 
-	if (ActorsInGas.Num () == 0)
-	{
-		GetWorldTimerManager ().ClearTimer ( GasDamageTimerHandle );
-	}
+	//if (ActorsInGas.Num () == 0)
+	//{
+	//	GetWorldTimerManager ().ClearTimer ( GasDamageTimerHandle );
+	//}
 }
 
 
