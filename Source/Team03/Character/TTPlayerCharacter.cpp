@@ -42,7 +42,8 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	CurrentHP ( MaxHP ) ,
 	MaxStun ( 100.f ) ,
 	CurrentStun ( 0.f ) ,
-	bIsStunned(false)
+	bIsStunned(false),
+	bIsInvincibility(false)
 {
 	WeaponName = "Hand";
 	WeaponData = nullptr;
@@ -232,6 +233,21 @@ float ATTPlayerCharacter::GetCurrentStun ()
 	return CurrentStun;
 }
 
+void ATTPlayerCharacter::SetInvincibility ( bool bNewState )
+{
+	if (!HasAuthority ())
+	{
+		ServerSetInvincibility ( bNewState );
+	}
+	else
+	{
+		ServerSetInvincibility_Implementation (bNewState);
+	}
+}
+void ATTPlayerCharacter::ServerSetInvincibility_Implementation ( bool bNewState )
+{
+	bIsInvincibility = bNewState;
+}
 #pragma endregion
 
 void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
@@ -256,6 +272,10 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , CurrentSword );
 	DOREPLIFETIME ( ATTPlayerCharacter , CurrentShield );
 
+	DOREPLIFETIME ( ATTPlayerCharacter , bIsBlocking );
+
+	DOREPLIFETIME ( ATTPlayerCharacter , bIsInvincibility );
+
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
 }
@@ -271,7 +291,8 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputMove , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Move );
 		EnhancedInputComponent->BindAction ( InputLook , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Look );
 		EnhancedInputComponent->BindAction ( InputAttack , ETriggerEvent::Started , this , &ATTPlayerCharacter::Attack );
-		EnhancedInputComponent->BindAction ( InputBlocking , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PlayerBlocking );
+		EnhancedInputComponent->BindAction ( InputBlocking , ETriggerEvent::Started , this , &ATTPlayerCharacter::PlayerBlocking );
+		EnhancedInputComponent->BindAction ( InputBlocking , ETriggerEvent::Completed , this , &ATTPlayerCharacter::PlayerBlocking );
 		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::SprintStart );
 		EnhancedInputComponent->BindAction ( InputSprint , ETriggerEvent::Completed , this , &ATTPlayerCharacter::SprintEnd );
 
@@ -369,6 +390,8 @@ void ATTPlayerCharacter::SprintEnd ()
 
 void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 {
+	bool bInputState = Value.Get<bool> ();
+
 	if (bIsStunned) return;
 	if (GetCharacterMovement ()->IsFalling () == true)
 	{
@@ -380,6 +403,8 @@ void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 	{
 		AnimInstance->Montage_Play ( BlockingMontage );
 	}
+
+	ServerSetBlocking ( bInputState );
 }
 
 void ATTPlayerCharacter::JumpStart ()
@@ -407,6 +432,11 @@ void ATTPlayerCharacter::ThrowAway ( const FInputActionValue& Value )
 	{
 		ServerThorwAway ();
 	}
+}
+
+void ATTPlayerCharacter::ServerSetBlocking_Implementation ( bool bNewBlocking )
+{
+	bIsBlocking = bNewBlocking;
 }
 
 void ATTPlayerCharacter::ServerThorwAway_Implementation ()
@@ -712,9 +742,20 @@ void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped 
 
 float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
 {
-	if (bIsDead || CurrentHP <= 0.f)
+	const UDamageType* DamageType = DamageEvent.DamageTypeClass ? DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType> () : nullptr;
+	bool bIsGasDamage = (DamageType && DamageType->IsA ( UGas_Damage::StaticClass () ));
+
+	if (!bIsGasDamage && bIsBlocking && IsValid(DamageCauser))
 	{
-		return 0.f;
+		FVector MyForward = GetActorForwardVector();
+		FVector ToAttacker = (DamageCauser->GetActorLocation() - GetActorLocation()).GetSafeNormal();
+
+		float DotResult = FVector::DotProduct(MyForward, ToAttacker);
+
+		if (DotResult > 0.5f)
+		{
+			return 0.0f;
+		}
 	}
 
 	Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
@@ -732,7 +773,14 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 
 	else
 	{
-		CurrentStun = FMath::Clamp ( CurrentStun + FinalDamageAmount, 0.f , MaxStun );
+		if (!bIsInvincibility)
+		{
+			CurrentStun = FMath::Clamp ( CurrentStun + FinalDamageAmount , 0.f , MaxStun );
+		}
+		else
+		{
+			return 0.0f;
+		}
 	}
 
 	UE_LOG ( LogTemp , Warning ,TEXT ( "[%s] HP: %f / %f | Stun: %f / %f" ) ,*GetName () , CurrentHP , MaxHP , CurrentStun , MaxStun);
@@ -766,6 +814,7 @@ void ATTPlayerCharacter::KnockOut ()
 	if (bIsStunned) return;
 	UE_LOG ( LogTemp , Warning , TEXT ( "%s is KNOCKED OUT!" ) , *GetName () );
 
+	SetInvincibility ( true );
 	bIsStunned = true;
 	CurrentStun = 0.0f;
 
@@ -823,10 +872,12 @@ void ATTPlayerCharacter::WakeUp ()
 {
 	UE_LOG ( LogTemp , Warning , TEXT ( "%s Woke Up!" ) , *GetName () );
 
+	SetInvincibility ( false );
 	bIsStunned = false;
 
 	OnRep_IsStunned ();
 }
+
 void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 {
 	if (!bIsStunned || HasAuthority ()) return;

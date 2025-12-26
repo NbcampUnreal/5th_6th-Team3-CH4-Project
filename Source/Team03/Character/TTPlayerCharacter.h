@@ -98,6 +98,9 @@ protected:
 	void ThrowAway ( const FInputActionValue& Value );
 
 	UFUNCTION(Server, Reliable)
+	void ServerSetBlocking ( bool bNewBlocking );
+
+	UFUNCTION(Server, Reliable)
 	void ServerPickUp ();
 
 	UFUNCTION(Server, Reliable)
@@ -131,6 +134,9 @@ protected:
 
 	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
 	ATTShield* CurrentShield;
+
+	UPROPERTY ( VisibleAnywhere , Replicated , Category = "State" )
+	bool bIsBlocking;
 	
 #pragma endregion
 
@@ -149,6 +155,9 @@ private:
 	UPROPERTY ( EditAnywhere )
 	float CurrentStun;
 
+	UPROPERTY(VisibleInstanceOnly, Replicated, Category ="State")
+	bool bIsInvincibility;
+
 
 public:
 
@@ -165,6 +174,9 @@ public:
 	float GetMaxStun ();
 	void SetCurrentStun (  float amount );
 	float GetCurrentStun ();
+	void SetInvincibility (bool bNewState);
+	UFUNCTION(Server, Reliable)
+	void ServerSetInvincibility (bool bNewState);
 
 #pragma endregion
 
