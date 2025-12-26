@@ -299,7 +299,7 @@ protected:
 	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly )
 	uint8 bIsDead : 1;
 
-#pragma endregion Throw
+#pragma endregion Throw_Glass
 public:
 
 	void ApplySlow ( float Amount , float Duration );
@@ -318,4 +318,17 @@ protected:
 
 	UPROPERTY ()
 	AThrowableBase* CurrentThrowable = nullptr;
+
+#pragma endregion
+
+#pragma endregion Throw_BOMBs
+public:
+
+
+
+protected:
+
+
+#pragma endregion
+
 };

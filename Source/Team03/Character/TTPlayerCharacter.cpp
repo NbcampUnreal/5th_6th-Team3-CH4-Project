@@ -24,6 +24,7 @@
 #include "LHO/TTPickupComponent.h"
 #include "LHO/TTShield.h"
 #include "LHO/TTSword.h"
+#include "Gimmick/Gas_Damage.h"
 
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 //
@@ -741,39 +742,59 @@ void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped 
 
 float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
 {
-	if (bIsBlocking && IsValid ( DamageCauser ))
+	if (bIsBlocking && IsValid(DamageCauser))
 	{
-		FVector MyForward = GetActorForwardVector ();
-		FVector ToAttacker = (DamageCauser->GetActorLocation () - GetActorLocation ()).GetSafeNormal();
+		FVector MyForward = GetActorForwardVector();
+		FVector ToAttacker = (DamageCauser->GetActorLocation() - GetActorLocation()).GetSafeNormal();
 
-		float DotResult = FVector::DotProduct ( MyForward , ToAttacker );
+		float DotResult = FVector::DotProduct(MyForward, ToAttacker);
 
 		if (DotResult > 0.5f)
 		{
 			return 0.0f;
 		}
 	}
-	float FinalDamageAmount = Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
+	Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
+
 	// 피해자쪽 로직.
 
-	CurrentStun = FMath::Clamp ( CurrentStun + FinalDamageAmount , 0.0f , MaxStun );
+	const UDamageType* DamageType = DamageEvent.DamageTypeClass? DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType> (): nullptr;
 
-	UE_LOG ( LogTemp , Warning , TEXT ( "[%s] Current Stun : %f / %f" ) , *GetName () , CurrentStun , MaxStun );
-	if (FinalDamageAmount > 0.0f && !bIsStunned)
+	const float FinalDamageAmount = DamageAmount;
+
+	if (DamageType && DamageType->IsA ( UGas_Damage::StaticClass () ))
+	{
+		CurrentHP = FMath::Clamp ( CurrentHP - FinalDamageAmount, 0.f , MaxHP );
+	}
+
+	else
+	{
+		if (!bIsInvincibility)
+		{
+			CurrentStun = FMath::Clamp ( CurrentStun + FinalDamageAmount , 0.f , MaxStun );
+		}
+		else
+		{
+			return 0.0f;
+		}
+	}
+
+	UE_LOG ( LogTemp , Warning ,TEXT ( "[%s] HP: %f / %f | Stun: %f / %f" ) ,*GetName () , CurrentHP , MaxHP , CurrentStun , MaxStun);
+
+	if (FinalDamageAmount> 0.f && !bIsStunned && !bIsDead)
 	{
 		MulticastPlayHitMontage ();
 	}
-	if (CurrentStun >= MaxStun)
+
+	if (CurrentHP <= 0.f && !bIsDead)
 	{
-		if (bIsStunned == false)
-		{
-			KnockOut ();
-		}
+		bIsDead = true;
 	}
-	//if (1 == ShowAttackMeleeDebug)
-	//{
-	//	UKismetSystemLibrary::PrintString ( this , FString::Printf ( TEXT ( "%s was taken damage: %.3f" ) , *GetName () , FinalDamageAmount ) );
-	//}
+
+	if (CurrentStun >= MaxStun && !bIsStunned)
+	{
+		KnockOut ();
+	}
 
 	return FinalDamageAmount;
 }
@@ -783,6 +804,7 @@ void ATTPlayerCharacter::SetWeaponData ( FName NewWeaponName )
 	WeaponName = NewWeaponName;
 	UE_LOG ( LogTemp , Warning , TEXT ( "Weapon Changed to : %s" ) , *WeaponName.ToString () );
 }
+
 void ATTPlayerCharacter::KnockOut ()
 {
 	if (bIsStunned) return;
@@ -906,7 +928,6 @@ void ATTPlayerCharacter::ApplySlow ( float Amount , float Duration )
 	UCharacterMovementComponent* MoveComp = GetCharacterMovement ();
 	if (!MoveComp) return;
 
-	// 🔧 변경: 중첩 방지
 	GetWorldTimerManager ().ClearTimer ( SlowTimerHandle );
 
 	MoveComp->MaxWalkSpeed = BaseWalkSpeed * (1.f - Amount);

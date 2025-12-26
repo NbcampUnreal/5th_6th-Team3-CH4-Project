@@ -17,11 +17,13 @@ AMapsGimmick::AMapsGimmick ()
 	GasDetectionVolume = CreateDefaultSubobject<USphereComponent> ( TEXT ( "GasDetectionVolume" ) );
 	RootComponent = GasDetectionVolume;
 
+	GasDetectionVolume->InitSphereRadius ( 1000 );
+
 	GasDetectionVolume->SetCollisionEnabled ( ECollisionEnabled::QueryOnly );
 	GasDetectionVolume->SetCollisionResponseToAllChannels ( ECR_Ignore );
 	GasDetectionVolume->SetCollisionResponseToChannel ( ECC_Pawn , ECR_Overlap );
 
-	GasDetectionVolume->SetCollisionProfileName ( TEXT ( "Trigger" ) );
+	//GasDetectionVolume->SetCollisionProfileName ( TEXT ( "Trigger" ) );
 	GasDetectionVolume->OnComponentBeginOverlap.AddDynamic ( this , &AMapsGimmick::OnOverlapBegin );
 	GasDetectionVolume->OnComponentEndOverlap.AddDynamic ( this , &AMapsGimmick::OnOverlapEnd );
 
@@ -32,7 +34,8 @@ void AMapsGimmick::BeginPlay ()
 	Super::BeginPlay ();
 
 	UE_LOG ( LogTemp , Warning , TEXT ( "MapsGimmick BeginPlay" ) );
-	
+	UE_LOG ( LogTemp , Warning , TEXT ( "StartGasDamage called | Authority: %d" ) , HasAuthority () );
+
 	if (HasAuthority ())
 	{
 		float StartDelay = 10.0f;
@@ -48,16 +51,16 @@ void AMapsGimmick::BeginPlay ()
 
 void AMapsGimmick::StartGasDamage ()
 {
+	UE_LOG ( LogTemp , Warning , TEXT ( "Gas damage started" ) );
+
 	if (!HasAuthority ()) return;
 
 	bGasActive = true;
 
-	UE_LOG ( LogTemp , Warning , TEXT ( "Gas damage started" ) );
-
 	TArray<AActor*> OverlappingActors;
 	GasDetectionVolume->GetOverlappingActors (
 		OverlappingActors ,
-		ACharacter::StaticClass () 
+		ACharacter::StaticClass ()
 	);
 
 	for (AActor* Actor : OverlappingActors)
@@ -89,6 +92,8 @@ void AMapsGimmick::OnOverlapBegin (
 	bool bFromSweep ,
 	const FHitResult& SweepResult )
 {
+	UE_LOG (LogTemp ,Warning ,	TEXT ( "Overlap Begin | Other: %s | Authority: %d" ) ,*OtherActor->GetName () ,HasAuthority ());
+
 	if (!HasAuthority ()) return;
 	if (!bGasActive) return;
 
@@ -138,6 +143,8 @@ void AMapsGimmick::OnOverlapEnd (
 
 void AMapsGimmick::GasDamage ()
 {
+	UE_LOG (LogTemp ,Warning ,TEXT ( "GasDamage Tick | ActorsInGas: %d | bGasActive: %d | Authority: %d" ) ,ActorsInGas.Num () ,bGasActive ,HasAuthority ());
+
 	if (!HasAuthority ()) return;
 	if (!bGasActive) return;
 
@@ -162,10 +169,10 @@ void AMapsGimmick::GasDamage ()
 		);
 	}
 
-	if (ActorsInGas.Num () == 0)
-	{
-		GetWorldTimerManager ().ClearTimer ( GasDamageTimerHandle );
-	}
+	//if (ActorsInGas.Num () == 0)
+	//{
+	//	GetWorldTimerManager ().ClearTimer ( GasDamageTimerHandle );
+	//}
 }
 
 
