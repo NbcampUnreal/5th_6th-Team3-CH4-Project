@@ -1,7 +1,7 @@
 ﻿//MapsGimmick.cpp
 
 #include "MapsGimmick.h"
-#include "Components/SphereComponent.h"
+#include "Components/BoxComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
@@ -9,22 +9,22 @@
 #include "Engine/World.h"
 #include "Gas_Damage.h"
 
-AMapsGimmick::AMapsGimmick ()
+AMapsGimmick::AMapsGimmick()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
-	GasDetectionVolume = CreateDefaultSubobject<USphereComponent> ( TEXT ( "GasDetectionVolume" ) );
+	GasDetectionVolume = CreateDefaultSubobject<UBoxComponent>(TEXT("GasDetectionVolume"));
 	RootComponent = GasDetectionVolume;
 
-	GasDetectionVolume->SetCollisionEnabled ( ECollisionEnabled::QueryOnly );
-	GasDetectionVolume->SetCollisionResponseToAllChannels ( ECR_Ignore );
-	GasDetectionVolume->SetCollisionResponseToChannel ( ECC_Pawn , ECR_Overlap );
+	GasDetectionVolume->SetBoxExtent ( GasBoxExtent );
 
-	GasDetectionVolume->SetCollisionProfileName ( TEXT ( "Trigger" ) );
-	GasDetectionVolume->OnComponentBeginOverlap.AddDynamic ( this , &AMapsGimmick::OnOverlapBegin );
-	GasDetectionVolume->OnComponentEndOverlap.AddDynamic ( this , &AMapsGimmick::OnOverlapEnd );
+	GasDetectionVolume->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	GasDetectionVolume->SetCollisionResponseToAllChannels(ECR_Ignore);
+	GasDetectionVolume->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 
+	GasDetectionVolume->OnComponentBeginOverlap.AddDynamic(this, &AMapsGimmick::OnOverlapBegin);
+	GasDetectionVolume->OnComponentEndOverlap.AddDynamic(this, &AMapsGimmick::OnOverlapEnd);
 }
 
 void AMapsGimmick::BeginPlay ()
@@ -32,15 +32,15 @@ void AMapsGimmick::BeginPlay ()
 	Super::BeginPlay ();
 
 	UE_LOG ( LogTemp , Warning , TEXT ( "MapsGimmick BeginPlay" ) );
-	
+	UE_LOG ( LogTemp , Warning , TEXT ( "StartGasDamage called | Authority: %d" ) , HasAuthority () );
+
 	if (HasAuthority ())
 	{
-		float StartDelay = 10.0f;
 		GetWorldTimerManager ().SetTimer (
 			GasStartTimer ,
 			this ,
 			&AMapsGimmick::StartGasDamage ,
-			StartDelay ,
+			GasStartDelay ,
 			false
 		);
 	}
@@ -48,19 +48,16 @@ void AMapsGimmick::BeginPlay ()
 
 void AMapsGimmick::StartGasDamage ()
 {
+	UE_LOG ( LogTemp , Warning , TEXT ( "Gas damage started" ) );
+
 	if (!HasAuthority ()) return;
 
 	bGasActive = true;
 
-	UE_LOG ( LogTemp , Warning , TEXT ( "Gas damage started" ) );
-
 	TArray<AActor*> OverlappingActors;
-	GasDetectionVolume->GetOverlappingActors (
-		OverlappingActors ,
-		ACharacter::StaticClass () 
-	);
+	GasDetectionVolume->GetOverlappingActors (OverlappingActors);
 
-	for (AActor* Actor : OverlappingActors)
+for (AActor* Actor : OverlappingActors)
 	{
 		if (ACharacter* Char = Cast<ACharacter> ( Actor ))
 		{
@@ -89,6 +86,8 @@ void AMapsGimmick::OnOverlapBegin (
 	bool bFromSweep ,
 	const FHitResult& SweepResult )
 {
+	UE_LOG (LogTemp ,Warning ,	TEXT ( "Overlap Begin | Other: %s | Authority: %d" ) ,*OtherActor->GetName () ,HasAuthority ());
+
 	if (!HasAuthority ()) return;
 	if (!bGasActive) return;
 
@@ -138,6 +137,8 @@ void AMapsGimmick::OnOverlapEnd (
 
 void AMapsGimmick::GasDamage ()
 {
+	UE_LOG (LogTemp ,Warning ,TEXT ( "GasDamage Tick | ActorsInGas: %d | bGasActive: %d | Authority: %d" ) ,ActorsInGas.Num () ,bGasActive ,HasAuthority ());
+
 	if (!HasAuthority ()) return;
 	if (!bGasActive) return;
 
@@ -145,13 +146,13 @@ void AMapsGimmick::GasDamage ()
 	{
 		ACharacter* Char = ActorsInGas[i];
 
-		UE_LOG (LogTemp ,Warning ,TEXT ( "Applying gas damage to %s" ) ,*Char->GetName () );
-
 		if (!IsValid ( Char ))
 		{
 			ActorsInGas.RemoveAt ( i );
 			continue;
 		}
+
+		UE_LOG ( LogTemp , Warning , TEXT ( "Applying gas damage to %s" ) , *Char->GetName () );
 
 		UGameplayStatics::ApplyDamage (
 			Char ,
@@ -162,10 +163,6 @@ void AMapsGimmick::GasDamage ()
 		);
 	}
 
-	if (ActorsInGas.Num () == 0)
-	{
-		GetWorldTimerManager ().ClearTimer ( GasDamageTimerHandle );
-	}
 }
 
 
