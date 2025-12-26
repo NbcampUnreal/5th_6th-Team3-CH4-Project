@@ -41,7 +41,8 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	CurrentHP ( MaxHP ) ,
 	MaxStun ( 100.f ) ,
 	CurrentStun ( 0.f ) ,
-	bIsStunned(false)
+	bIsStunned(false),
+	bIsInvincibility(false)
 {
 	WeaponName = "Hand";
 	WeaponData = nullptr;
@@ -231,6 +232,21 @@ float ATTPlayerCharacter::GetCurrentStun ()
 	return CurrentStun;
 }
 
+void ATTPlayerCharacter::SetInvincibility ( bool bNewState )
+{
+	if (!HasAuthority ())
+	{
+		ServerSetInvincibility ( bNewState );
+	}
+	else
+	{
+		ServerSetInvincibility_Implementation (bNewState);
+	}
+}
+void ATTPlayerCharacter::ServerSetInvincibility_Implementation ( bool bNewState )
+{
+	bIsInvincibility = bNewState;
+}
 #pragma endregion
 
 void ATTPlayerCharacter::InitializeMesh ( ATTPlayerState* TTPS )
@@ -256,6 +272,8 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , CurrentShield );
 
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsBlocking );
+
+	DOREPLIFETIME ( ATTPlayerCharacter , bIsInvincibility );
 
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
@@ -770,6 +788,7 @@ void ATTPlayerCharacter::KnockOut ()
 	if (bIsStunned) return;
 	UE_LOG ( LogTemp , Warning , TEXT ( "%s is KNOCKED OUT!" ) , *GetName () );
 
+	SetInvincibility ( true );
 	bIsStunned = true;
 	CurrentStun = 0.0f;
 
@@ -827,10 +846,12 @@ void ATTPlayerCharacter::WakeUp ()
 {
 	UE_LOG ( LogTemp , Warning , TEXT ( "%s Woke Up!" ) , *GetName () );
 
+	SetInvincibility ( false );
 	bIsStunned = false;
 
 	OnRep_IsStunned ();
 }
+
 void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 {
 	if (!bIsStunned || HasAuthority ()) return;

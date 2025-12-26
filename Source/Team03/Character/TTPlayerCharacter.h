@@ -155,6 +155,9 @@ private:
 	UPROPERTY ( EditAnywhere )
 	float CurrentStun;
 
+	UPROPERTY(VisibleInstanceOnly, Replicated, Category ="State")
+	bool bIsInvincibility;
+
 
 public:
 
@@ -171,6 +174,9 @@ public:
 	float GetMaxStun ();
 	void SetCurrentStun (  float amount );
 	float GetCurrentStun ();
+	void SetInvincibility (bool bNewState);
+	UFUNCTION(Server, Reliable)
+	void ServerSetInvincibility (bool bNewState);
 
 #pragma endregion
 
