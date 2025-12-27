@@ -94,7 +94,7 @@ void AInGameModeBase::StartRound ()
 				TTPC->ClientPlayStartAnim ();
 				if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->GetPawn ()->GetPlayerState () ))
 				{
-					Sendportrait ( TTPS->GetUserNickname(), TTPS->PortraitTexture);
+					Sendportrait ( TTPS->GetUserNickname(), TTPS->PortraitMID );
 				}
 				
 			}
@@ -177,7 +177,7 @@ void AInGameModeBase::EndRound ()
 }
 #pragma endregion
 
-void AInGameModeBase::Sendportrait ( const FString& PlayerName , UTexture2D* portrait ) const
+void AInGameModeBase::Sendportrait ( const FString& PlayerName , UMaterialInstanceDynamic* portrait ) const
 {
 	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It)
 	{

@@ -33,9 +33,22 @@ public:
 	UPROPERTY ( Replicated )
 	USkeletalMesh* PersistedBodyMesh;
 
-	UPROPERTY ( Replicated )
-	UTexture2D* PortraitTexture;
+#pragma region Portrait
+	UPROPERTY ( EditDefaultsOnly , Category = "Portrait" )
+	TObjectPtr<UMaterialInterface> PortraitBaseMaterial; // M_Portrait_UI
 
+	UPROPERTY ( Transient )
+	TObjectPtr<UMaterialInstanceDynamic> PortraitMID;
+
+	UPROPERTY ( Transient )
+	TObjectPtr<UTextureRenderTarget2D> PortraitRT;
+
+	UFUNCTION ( BlueprintCallable )
+	void SetPortraitRenderTarget ( UTextureRenderTarget2D* InRT );
+
+	//UFUNCTION ( BlueprintCallable )
+	//UMaterialInstanceDynamic* GetPortraitMID () const { return PortraitMID; }
+#pragma endregion
 	UPROPERTY(ReplicatedUsing = OnRep_UserNickname)
 	FString UserNickname;
 
