@@ -762,8 +762,6 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 
 	// 피해자쪽 로직.
 
-	//const UDamageType* DamageType = DamageEvent.DamageTypeClass? DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType> (): nullptr;
-
 	const float FinalDamageAmount = DamageAmount;
 
 	if (DamageType && DamageType->IsA ( UGas_Damage::StaticClass () ))
