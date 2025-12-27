@@ -18,7 +18,6 @@ public:
 	AThrowableBase ();
 
 protected:
-
 	virtual void BeginPlay () override;
 
 	UPROPERTY ( VisibleAnywhere , Category = "Component" )
@@ -33,8 +32,10 @@ protected:
 	UPROPERTY ( Replicated )
 	bool bDestroyed = false;
 
-	virtual void GetLifetimeReplicatedProps (TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	UPROPERTY ( EditInstanceOnly , Category = "Throwable" )
+	bool bAllowPickUp = false;
 
+	virtual void GetLifetimeReplicatedProps (TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION ()
 	virtual void OnHit (
@@ -49,7 +50,6 @@ protected:
 	virtual void HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter );
 
 public:
-
 	UFUNCTION ( Server , Reliable )
 	void ServerThrow ( const FVector& Direction , float Power );
 
