@@ -18,6 +18,8 @@ class USceneCaptureComponent2D;
 class UTTPickupComponent;
 class ATTSword;
 class ATTShield;
+class ATTSword02;
+class ATTShield02;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -93,6 +95,9 @@ protected:
 	void ThrowAway ( const FInputActionValue& Value );
 
 	UFUNCTION(Server, Reliable)
+	void ServerSetBlocking ( bool bNewBlocking );
+
+	UFUNCTION(Server, Reliable)
 	void ServerPickUp ();
 
 	UFUNCTION(Server, Reliable)
@@ -126,6 +131,9 @@ protected:
 
 	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
 	ATTShield* CurrentShield;
+
+	UPROPERTY ( VisibleAnywhere , Replicated , Category = "State" )
+	bool bIsBlocking;
 	
 #pragma endregion
 
@@ -144,6 +152,9 @@ private:
 	UPROPERTY ( EditAnywhere )
 	float CurrentStun;
 
+	UPROPERTY(VisibleInstanceOnly, Replicated, Category ="State")
+	bool bIsInvincibility;
+
 
 public:
 
@@ -160,6 +171,9 @@ public:
 	float GetMaxStun ();
 	void SetCurrentStun (  float amount );
 	float GetCurrentStun ();
+	void SetInvincibility (bool bNewState);
+	UFUNCTION(Server, Reliable)
+	void ServerSetInvincibility (bool bNewState);
 
 #pragma endregion
 
@@ -200,8 +214,6 @@ public:
 	UFUNCTION ()
 	void HandleOnCheckInputAttack ();
 
-	virtual void BeginAttack ();
-
 	UFUNCTION ()
 	virtual void EndAttack ( UAnimMontage* InMontage , bool bInterruped );
 
@@ -217,11 +229,11 @@ protected:
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
 
 	int32 MaxComboCount = 5;
-
+	UPROPERTY ( Replicated )
 	int32 CurrentComboCount = 0;
 
 	bool bIsNowAttacking = false;
-
+	UPROPERTY ( Replicated )
 	bool bIsAttackKeyPressed = false;
 
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , ReplicatedUsing = OnRep_IsStunned )
@@ -272,6 +284,17 @@ protected:
 	UFUNCTION ( NetMulticast , Unreliable )
 	void MulticastPlayHitMontage ();
 
+	UFUNCTION ( Server , Reliable )
+	void ServerStartAttack ();
+
+	UFUNCTION ( NetMulticast , Reliable )
+	void MulticastPlayAttackMontage ( int32 ComboIndex );
+
+	UFUNCTION ( Server , Reliable )
+	void ServerRequestNextCombo ();
+
+	UPROPERTY ()
+	bool bHasHitThisCombo = false;
 #pragma endregion
 
 #pragma region HP
@@ -282,7 +305,7 @@ protected:
 	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly )
 	uint8 bIsDead : 1;
 
-#pragma endregion Throw
+#pragma endregion Throw_Glass
 public:
 
 	void ApplySlow ( float Amount , float Duration );
@@ -301,4 +324,17 @@ protected:
 
 	UPROPERTY ()
 	AThrowableBase* CurrentThrowable = nullptr;
+
+#pragma endregion
+
+#pragma endregion Throw_BOMBs
+public:
+
+
+
+protected:
+
+
+#pragma endregion
+
 };
