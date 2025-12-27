@@ -18,6 +18,8 @@ class USceneCaptureComponent2D;
 class UTTPickupComponent;
 class ATTSword;
 class ATTShield;
+class ATTSword02;
+class ATTShield02;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -217,8 +219,6 @@ public:
 	UFUNCTION ()
 	void HandleOnCheckInputAttack ();
 
-	virtual void BeginAttack ();
-
 	UFUNCTION ()
 	virtual void EndAttack ( UAnimMontage* InMontage , bool bInterruped );
 
@@ -234,11 +234,11 @@ protected:
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
 
 	int32 MaxComboCount = 5;
-
+	UPROPERTY ( Replicated )
 	int32 CurrentComboCount = 0;
 
 	bool bIsNowAttacking = false;
-
+	UPROPERTY ( Replicated )
 	bool bIsAttackKeyPressed = false;
 
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , ReplicatedUsing = OnRep_IsStunned )
@@ -289,6 +289,17 @@ protected:
 	UFUNCTION ( NetMulticast , Unreliable )
 	void MulticastPlayHitMontage ();
 
+	UFUNCTION ( Server , Reliable )
+	void ServerStartAttack ();
+
+	UFUNCTION ( NetMulticast , Reliable )
+	void MulticastPlayAttackMontage ( int32 ComboIndex );
+
+	UFUNCTION ( Server , Reliable )
+	void ServerRequestNextCombo ();
+
+	UPROPERTY ()
+	bool bHasHitThisCombo = false;
 #pragma endregion
 
 #pragma region HP
