@@ -135,7 +135,7 @@ void ATTInGameHUD::EndAnimation ()const
 	}
 }
 
-void ATTInGameHUD::Addportrait (const FString& PlayerName,  UTexture2D* portrait ) const
+void ATTInGameHUD::Addportrait (const FString& PlayerName, UMaterialInstanceDynamic* portrait ) const
 {
 	if (IsValid ( Notification ))
 	{
@@ -147,7 +147,6 @@ void ATTInGameHUD::Addportrait (const FString& PlayerName,  UTexture2D* portrait
 		{
 			UTTPlayerPortraitWidget* Widget = CreateWidget<UTTPlayerPortraitWidget> ( PC , PortraitWidgetClass );
 			Widget->SetNameText ( PlayerName );
-			Widget->SetPortraitTexture ( portrait );
 			Notification->PlayerportraitBox->AddChild ( Widget );
 		}
 	}

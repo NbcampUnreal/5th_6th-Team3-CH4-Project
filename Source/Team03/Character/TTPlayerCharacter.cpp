@@ -18,9 +18,6 @@
 #include "Team03.h"
 #include "TTWeaponData.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/SceneCaptureComponent2D.h"
-#include "Engine/TextureRenderTarget2D.h"
-#include "Engine/EngineTypes.h"
 #include "LHO/TTPickupComponent.h"
 #include "LHO/TTShield.h"
 #include "LHO/TTSword.h"
@@ -50,32 +47,17 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	WeaponName = "Hand";
 	WeaponData = nullptr;
 
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	GetCharacterMovement ()->MaxWalkSpeed = WalkSpeed;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
-	
+
 	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
 	Head->SetupAttachment ( GetMesh () );
-
-	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D> ( TEXT ( "SceneCapture" ) );
-	SceneCapture->TextureTarget = CaptureRT;
-	SceneCapture->SetupAttachment ( GetRootComponent() );
-
-	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
-	SceneCapture->bCaptureEveryFrame = false;
-	SceneCapture->bCaptureOnMovement = false;
-	SceneCapture->PrimitiveRenderMode =
-		ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
-
-	SceneCapture->ShowOnlyComponents.Add ( GetMesh () );
-	SceneCapture->ShowOnlyComponents.Add ( Head );
-	SceneCapture->FOVAngle = 35.f;
-
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
 	SpringArm->TargetArmLength = 700.f;
-	SpringArm->bUsePawnControlRotation = true;	
+	SpringArm->bUsePawnControlRotation = true;
 	SpringArm->bEnableCameraLag = true;
 	SpringArm->CameraLagSpeed = 3.0f;
 	SpringArm->CameraLagMaxDistance = 100.0f;
@@ -113,22 +95,22 @@ void ATTPlayerCharacter::BeginPlay ()
 
 	if (IsValid ( PlayerController ) == true)
 	{
-		PlayerController->SetControlRotation (FRotator(0.f , -70.f , 0.f ));
-		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f ;
-		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f ;
+		PlayerController->SetControlRotation ( FRotator ( 0.f , -70.f , 0.f ) );
+		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f;
+		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f;
 
 
 		// ----- Outgame 담당자가 수정함 -----
-		/* 
+		/*
 		 * LoadPlayerSaveData 호출 비활성화:
 		 * - SaveGame 로드가 PlayerState 데이터를 덮어쓰는 문제 발생
 		 * - Seamless Travel을 사용하므로 PlayerState가 자동으로 유지됨
 		 * PlayerController->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 		 */
-		// ----------------------------------
+		 // ----------------------------------
 
 
-		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
+		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer () );
 
 		if (IsValid ( Subsystem ) == true)
 		{
@@ -138,14 +120,14 @@ void ATTPlayerCharacter::BeginPlay ()
 	// ----- Outgame 담당자가 수정함 -----
 	if (HasAuthority ())
 	{
-		if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
+		if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
 		{
 			if (USkeletalMesh* HeadMesh = PS->PersistedHeadMesh)
 			{
 				HeadMeshToReplicate = HeadMesh;
 				OnRep_HeadMesh ();
 			}
-			
+
 			if (USkeletalMesh* BodyMesh = PS->PersistedBodyMesh)
 			{
 				BodyMeshToReplicate = BodyMesh;
@@ -154,7 +136,7 @@ void ATTPlayerCharacter::BeginPlay ()
 		}
 	}
 	// ----------------------------------
-	SceneCapture->CaptureScene ();
+
 
 }
 
@@ -192,6 +174,7 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 		ServerRagdollVelocity = GetMesh ()->GetPhysicsLinearVelocity ( TEXT ( "pelvis" ) );
 		ServerRagdollAngularVelocity = GetMesh ()->GetPhysicsAngularVelocityInDegrees ( TEXT ( "pelvis" ) );
 	}
+
 }
 
 #pragma region Get,Set
@@ -307,11 +290,11 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputESC , ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu );
 		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey );
 
-		EnhancedInputComponent->BindAction ( InputPickUp , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUp);
+		EnhancedInputComponent->BindAction ( InputPickUp , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUp );
 		EnhancedInputComponent->BindAction ( InputThrowAway , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::ThrowAway );
 
-		EnhancedInputComponent->BindAction(InputPlayerKey, ETriggerEvent::Started, this, &ATTPlayerCharacter::OnAnimation);
-		EnhancedInputComponent->BindAction(InputPlayerKey, ETriggerEvent::Completed, this, &ATTPlayerCharacter::EndAnimation);
+		EnhancedInputComponent->BindAction ( InputPlayerKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::OnAnimation );
+		EnhancedInputComponent->BindAction ( InputPlayerKey , ETriggerEvent::Completed , this , &ATTPlayerCharacter::EndAnimation );
 	}
 }
 
@@ -345,7 +328,7 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 
 		if (!DesiredDirection.IsNearlyZero ())
 		{
-			if (!TargetRotation.Equals(DesiredDirection.Rotation(), 0.1f ))
+			if (!TargetRotation.Equals ( DesiredDirection.Rotation () , 0.1f ))
 			{
 				TargetRotation = DesiredDirection.Rotation ();
 
@@ -359,17 +342,17 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 
 void ATTPlayerCharacter::InChat ()
 {
-	if(ATTPlayerController* PC = Cast<ATTPlayerController>( GetController () ) )
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetController () ))
 	{
 		PC->ActivateChatBox ();
 	}
 }
 
-void ATTPlayerCharacter::ESCMenu()
+void ATTPlayerCharacter::ESCMenu ()
 {
-	if (ATTPlayerController* PC = Cast<ATTPlayerController>(GetController()))
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetController () ))
 	{
-		PC->ActivateESCMenu();
+		PC->ActivateESCMenu ();
 	}
 }
 
@@ -425,14 +408,14 @@ void ATTPlayerCharacter::JumpEnd ()
 	Super::StopJumping ();
 }
 
-void ATTPlayerCharacter::PickUp(const FInputActionValue& Value)
+void ATTPlayerCharacter::PickUp ( const FInputActionValue& Value )
 {
 	ServerPickUp ();
 }
 
 void ATTPlayerCharacter::ThrowAway ( const FInputActionValue& Value )
 {
-	if (IsValid ( CurrentSword )||IsValid(CurrentShield))
+	if (IsValid ( CurrentSword ) || IsValid ( CurrentShield ))
 	{
 		ServerThorwAway ();
 	}
@@ -483,7 +466,7 @@ void ATTPlayerCharacter::ServerPickUp_Implementation ()
 			if (IsValid ( CurrentShield ))
 			{
 				CurrentShield->HandleOnThrowAway ();
-				CurrentShield=nullptr;
+				CurrentShield = nullptr;
 			}
 
 			CurrentShield = NewShield;
@@ -532,7 +515,7 @@ void ATTPlayerCharacter::ServerSprintStart_Implementation ()
 
 void ATTPlayerCharacter::ServerSprintEnd_Implementation ()
 {
-	SetSprintSpeed (false);
+	SetSprintSpeed ( false );
 }
 
 #pragma endregion
@@ -861,7 +844,7 @@ void ATTPlayerCharacter::OnRep_IsStunned ()
 		FVector RagdollLoc = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
 		float CapsuleHalfHeight = GetCapsuleComponent ()->GetScaledCapsuleHalfHeight ();
 
-		FVector TargetLoc = FVector ( RagdollLoc.X , RagdollLoc.Y , RagdollLoc.Z + CapsuleHalfHeight +20.0f);
+		FVector TargetLoc = FVector ( RagdollLoc.X , RagdollLoc.Y , RagdollLoc.Z + CapsuleHalfHeight + 20.0f );
 
 		SetActorLocation ( TargetLoc , false , nullptr , ETeleportType::TeleportPhysics );
 

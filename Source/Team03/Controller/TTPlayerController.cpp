@@ -348,7 +348,7 @@ void ATTPlayerController::ClientPlayingGame_Implementation ( int32 minutes , int
 	}
 }
 
-void ATTPlayerController::ClientAddportrait_Implementation ( const FString& PlayerName , UTexture2D* portrait ) const
+void ATTPlayerController::ClientAddportrait_Implementation ( const FString& PlayerName , UMaterialInstanceDynamic* portrait ) const
 {
 	if (IsValid ( TTInGameHUD ))
 	{
