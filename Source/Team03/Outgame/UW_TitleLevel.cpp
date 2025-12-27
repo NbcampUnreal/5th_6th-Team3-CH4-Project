@@ -306,6 +306,19 @@ void UUW_TitleLevel::SetLoadingState(bool bIsLoading)
 	if (LoadingOverlay)
 	{
 		LoadingOverlay->SetVisibility(bIsLoading ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+
+        if (Anim_LoadingShake)
+        {
+            if (bIsLoading)
+            {
+                // 무한 반복 (Loop)
+                PlayAnimation(Anim_LoadingShake, 0.0f, 0); 
+            }
+            else
+            {
+                StopAnimation(Anim_LoadingShake);
+            }
+        }
 	}
 
 	if (Btn_Create) Btn_Create->SetIsEnabled(!bIsLoading);

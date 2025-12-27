@@ -72,6 +72,9 @@ protected:
     UPROPERTY(Transient, meta = (BindWidgetAnim))
     UWidgetAnimation* Anim_FadeIn;        // 이름 일치 필요
 
+    UPROPERTY(Transient, meta = (BindWidgetAnim))
+    UWidgetAnimation* Anim_LoadingShake; // 로딩 흔들림 효과
+
 	UPROPERTY(EditDefaultsOnly, Category = "Audio")
 	USoundBase* TitleBGM;
 
