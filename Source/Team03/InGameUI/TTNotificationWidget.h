@@ -21,16 +21,31 @@ public:
 private:
 	UPROPERTY ( Transient , meta = (BindWidgetAnim) )
 	TObjectPtr<class UWidgetAnimation> StartAnim;
+
 	UPROPERTY ( Transient , meta = (BindWidgetAnim) )
 	TObjectPtr<class UWidgetAnimation> OnAnim;
+
 	UPROPERTY ( Transient , meta = (BindWidgetAnim) )
 	TObjectPtr<class UWidgetAnimation> EndAnim;
+
+	UPROPERTY ( Transient , meta = (BindWidgetAnim) )
+	TObjectPtr<class UWidgetAnimation> LoseAnim;
+	UPROPERTY ( Transient , meta = (BindWidgetAnim) )
+	TObjectPtr<class UWidgetAnimation> WinAnim;
+	UPROPERTY ( Transient , meta = (BindWidgetAnim) )
+	TObjectPtr<class UWidgetAnimation> DeadAnim;
 #pragma endregion
 #pragma region PlayGame
 public:
 	void CountDownTimer ( int32 minutes , int32 seconds )const;
 	void OnAnimation ();
 	void EndAnimation ();
+
+	void WinAnimation ();
+
+	void LoseAnimation ();
+
+	void DeadAnimation ();
 private:
 	UPROPERTY ( meta = (BindWidget) )
 	TObjectPtr<class UTextBlock> NotificationText;

@@ -10,7 +10,3 @@ void UTTPlayerPortraitWidget::SetNameText ( const FString& Name )
 	PlayerName->SetText ( FText::FromString (Name));
 }
 
-void UTTPlayerPortraitWidget::SetPortraitTexture (UTexture2D* portrait )
-{
-	playerportrait->SetBrushFromTexture ( portrait );
-}
