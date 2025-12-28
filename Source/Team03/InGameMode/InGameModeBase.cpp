@@ -10,9 +10,9 @@
 
 
 // ----- Outgame 담당자가 추가함 ----- 
-AInGameModeBase::AInGameModeBase() :
-	InPlayerCount(0),
-	PlayerCount(0)
+AInGameModeBase::AInGameModeBase () :
+	InPlayerCount ( 0 ) ,
+	PlayerCount ( 0 )
 {
 	PrimaryActorTick.bCanEverTick = true;
 	bUseSeamlessTravel = true;
@@ -67,7 +67,7 @@ void AInGameModeBase::Logout ( AController* ExitPlayer )
 	Super::Logout ( ExitPlayer );
 }
 
-void AInGameModeBase::Ready()
+void AInGameModeBase::Ready ()
 {
 	++InPlayerCount;
 }
@@ -79,14 +79,14 @@ void AInGameModeBase::StartRound ()
 	if (InPlayerCount == PlayerCount)
 	{
 		FTimerHandle StartHandle;
-			GetWorldTimerManager ().SetTimer (
-				StartHandle ,
-				this ,
-				&ThisClass::PlayingGame ,
-				4.f ,
-				false
-			);
-			
+		GetWorldTimerManager ().SetTimer (
+			StartHandle ,
+			this ,
+			&ThisClass::PlayingGame ,
+			4.f ,
+			false
+		);
+
 		for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It)
 		{
 			if (ATTPlayerController* TTPC = Cast<ATTPlayerController> ( It->Get () ))
@@ -94,9 +94,9 @@ void AInGameModeBase::StartRound ()
 				TTPC->ClientPlayStartAnim ();
 				if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->GetPawn ()->GetPlayerState () ))
 				{
-					Sendportrait ( TTPS->GetUserNickname(), TTPS->PortraitMID );
+					Sendportrait ( TTPS->GetUserNickname () , TTPS->PortraitMID );
 				}
-				
+
 			}
 		}
 		bIsGameStart = true;
@@ -141,38 +141,53 @@ void AInGameModeBase::CountDownTimer ()
 void AInGameModeBase::EndRound ()
 {
 	Teams T = Teams::None;
-	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It)
+	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It) // 현제 접속중인 컨트롤러를 순회
 	{
 		APlayerController* PC = It->Get ();
 
-		if(ATTPlayerState* TTPS = Cast<ATTPlayerState> ( PC->PlayerState ))
+		if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( PC->PlayerState ))
 		{
-			if (!IsValid ( TTPS ))
+			if (!IsValid ( TTPS )) // 유효성 검사
 				continue;
 			if (ATTPlayerCharacter* TTP = Cast<ATTPlayerCharacter> ( TTPS->GetPawn () ))
 			{
-				if (TTP->IsDead ())
+				if (TTP->IsDead ()) // 컨트롤러의 캐릭터가 죽은 상태라면 체크하지 않음
 					continue;
 			}
 			if (T == Teams::None)
-				T = TTPS->GetTeam ();
+			{
+				T = TTPS->GetTeam ();// 최초 팀 등록
+			}
 			else
 			{
-				if (T != TTPS->GetTeam ())
-					return;
+				if (T != TTPS->GetTeam ()) // 최초 등록 이후 순회과정에서 다른 팀이 존재하면 
+				{
+					return; // 게임이 종료 되지 않음
+				}
 			}
 		}
 	}
-		
-	if (T == Teams::Blue)
+	if (T == Teams::None)
 	{
-		// 블루팀 승리
-		UE_LOG ( LogTemp , Warning , TEXT ( "Win BlueTeam" ) );
+		return;
 	}
-	if (T == Teams::Red)
+	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It) // 현제 접속중인 컨트롤러를 순회
 	{
-		// 레드팀 승리
-		UE_LOG ( LogTemp , Warning , TEXT ( "Win RedTeam" ) );
+		ATTPlayerController* TTPC = Cast<ATTPlayerController> ( It->Get () );
+
+		if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->PlayerState ))
+		{
+			if (TTPS->GetTeam () == T)
+			{
+				// 승리 노티파이케이션 출력
+				TTPC->WinAnimation ();
+			}
+			else
+			{
+				// 패배 노티파이케이션 출력
+				TTPC->LoseAnimation ();
+			}
+		}
 	}
 }
 #pragma endregion
@@ -185,7 +200,7 @@ void AInGameModeBase::Sendportrait ( const FString& PlayerName , UMaterialInstan
 		if (PC)
 		{
 			UE_LOG ( LogTemp , Warning , TEXT ( "ServerAddportrait1" ) );
-			PC->ClientAddportrait ( PlayerName, portrait );
+			PC->ClientAddportrait ( PlayerName , portrait );
 		}
 	}
 }

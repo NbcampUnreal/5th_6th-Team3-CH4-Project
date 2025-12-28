@@ -135,6 +135,21 @@ void ATTInGameHUD::EndAnimation ()const
 	}
 }
 
+void ATTInGameHUD::WinAnimation () const
+{
+	Notification->WinAnimation ();
+}
+
+void ATTInGameHUD::LoseAnimation () const
+{
+	Notification->LoseAnimation ();
+}
+
+void ATTInGameHUD::DeadAnimation () const
+{
+	Notification->DeadAnimation ();
+}
+
 void ATTInGameHUD::Addportrait (const FString& PlayerName, UMaterialInstanceDynamic* portrait ) const
 {
 	if (IsValid ( Notification ))

@@ -65,6 +65,9 @@ public:
 	void CountDownTimer ( int32 minutes , int32 seconds )const;
 	void OnAnimation ()const;
 	void EndAnimation ()const;
+	void WinAnimation ()const;
+	void LoseAnimation ()const;
+	void DeadAnimation ()const;
 	void Addportrait ( const FString& PlayerName , UMaterialInstanceDynamic* portrait ) const;
 public:
 	UPROPERTY ( EditDefaultsOnly )

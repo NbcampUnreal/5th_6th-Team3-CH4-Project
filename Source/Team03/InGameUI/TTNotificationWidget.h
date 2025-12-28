@@ -40,6 +40,12 @@ public:
 	void CountDownTimer ( int32 minutes , int32 seconds )const;
 	void OnAnimation ();
 	void EndAnimation ();
+
+	void WinAnimation ();
+
+	void LoseAnimation ();
+
+	void DeadAnimation ();
 private:
 	UPROPERTY ( meta = (BindWidget) )
 	TObjectPtr<class UTextBlock> NotificationText;

@@ -43,3 +43,18 @@ void UTTNotificationWidget::EndAnimation ()
 {
 	PlayAnimation ( EndAnim );
 }
+
+void UTTNotificationWidget::WinAnimation ()
+{
+	PlayAnimation ( WinAnim );
+}
+
+void UTTNotificationWidget::LoseAnimation ()
+{
+	PlayAnimation ( LoseAnim );
+}
+
+void UTTNotificationWidget::DeadAnimation ()
+{
+	PlayAnimation ( DeadAnim );
+}

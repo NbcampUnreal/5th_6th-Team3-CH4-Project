@@ -89,6 +89,14 @@ public:
 	void OnAnimation ();
 	UFUNCTION ()
 	void EndAnimation ();
+
+	UFUNCTION ()
+	void WinAnimation ();
+	UFUNCTION ()
+	void LoseAnimation ();
+	UFUNCTION ()
+	void DeadAnimation ();
+
 	UFUNCTION ( Client , Reliable )
 	void ClientPlayStartAnim ();
 
