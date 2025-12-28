@@ -25,7 +25,8 @@
 #include "LHO/TTShield.h"
 #include "LHO/TTSword.h"
 #include "Gimmick/Gas_Damage.h"
-
+#include "LHO/TTAxe.h"
+#include "LHO/TTHammer.h"
 #include "LHO/TTShield02.h"
 #include "LHO/TTSword02.h"
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
@@ -273,6 +274,10 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME ( ATTPlayerCharacter , CurrentSword );
 	DOREPLIFETIME ( ATTPlayerCharacter , CurrentShield );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentSword02 );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentAxe );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentHammer );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentShield02 );
 	DOREPLIFETIME ( ATTPlayerCharacter , CurrentComboCount );
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsAttackKeyPressed );
 
@@ -432,7 +437,7 @@ void ATTPlayerCharacter::PickUp(const FInputActionValue& Value)
 
 void ATTPlayerCharacter::ThrowAway ( const FInputActionValue& Value )
 {
-	if (IsValid ( CurrentSword )||IsValid(CurrentShield))
+	if (IsHoldingAnything ())
 	{
 		ServerThorwAway ();
 	}
@@ -445,50 +450,76 @@ void ATTPlayerCharacter::ServerSetBlocking_Implementation ( bool bNewBlocking )
 
 void ATTPlayerCharacter::ServerThorwAway_Implementation ()
 {
-	if (IsValid ( CurrentSword ))
-	{
-		CurrentSword->HandleOnThrowAway ();
-		SetWeaponData ( FName ( "Hand" ) );
+	bool bHasWeapon = false;
 
-		CurrentSword = nullptr;
-	}
-	else if (IsValid ( CurrentShield ))
+	if (IsValid ( CurrentSword )) { CurrentSword->HandleOnThrowAway ();   CurrentSword = nullptr;   bHasWeapon = true; }
+	if (IsValid ( CurrentSword02 )) { CurrentSword02->HandleOnThrowAway (); CurrentSword02 = nullptr; bHasWeapon = true; }
+	if (IsValid ( CurrentAxe )) { CurrentAxe->HandleOnThrowAway ();     CurrentAxe = nullptr;     bHasWeapon = true; }
+	if (IsValid ( CurrentHammer )) { CurrentHammer->HandleOnThrowAway ();  CurrentHammer = nullptr;  bHasWeapon = true; }
+
+	if (bHasWeapon)
 	{
-		CurrentShield->HandleOnThrowAway ();
-		CurrentShield = nullptr;
+		SetWeaponData ( FName ( "Hand" ) );
 	}
+
+	if (IsValid ( CurrentShield )) { CurrentShield->HandleOnThrowAway ();   CurrentShield = nullptr; }
+	if (IsValid ( CurrentShield02 )) { CurrentShield02->HandleOnThrowAway (); CurrentShield02 = nullptr; }
+}
+
+bool ATTPlayerCharacter::HasAnyWeapon () const
+{
+	return IsValid ( CurrentSword ) || IsValid ( CurrentAxe ) || IsValid ( CurrentHammer );
 }
 
 void ATTPlayerCharacter::ServerPickUp_Implementation ()
 {
-	if (IsValid ( OverlappingPickupComponent ))
+	if (!IsValid ( OverlappingPickupComponent )) return;
+
+	AActor* PickedActor = OverlappingPickupComponent->GetOwner ();
+	if (!PickedActor) return;
+
+	bool bIsNewWeapon = PickedActor->IsA ( ATTSword::StaticClass () ) || PickedActor->IsA ( ATTSword02::StaticClass () ) ||
+		PickedActor->IsA ( ATTAxe::StaticClass () ) || PickedActor->IsA ( ATTHammer::StaticClass () );
+
+	bool bIsNewShield = PickedActor->IsA ( ATTShield::StaticClass () ) || PickedActor->IsA ( ATTShield02::StaticClass () );
+
+	if (bIsNewWeapon)
 	{
-		AActor* PickedActor = OverlappingPickupComponent->GetOwner ();
+		if (IsValid ( CurrentSword )) { CurrentSword->HandleOnThrowAway ();   CurrentSword = nullptr; }
+		if (IsValid ( CurrentSword02 )) { CurrentSword02->HandleOnThrowAway (); CurrentSword02 = nullptr; }
+		if (IsValid ( CurrentAxe )) { CurrentAxe->HandleOnThrowAway ();     CurrentAxe = nullptr; }
+		if (IsValid ( CurrentHammer )) { CurrentHammer->HandleOnThrowAway ();  CurrentHammer = nullptr; }
 
-		OverlappingPickupComponent->ForcePickUp ( this );
-
-		if (ATTSword* NewSword = Cast<ATTSword> ( PickedActor ))
-		{
-			if (IsValid ( CurrentSword ))
-			{
-				ServerThorwAway ();
-				CurrentSword = nullptr;
-			}
-
-			CurrentSword = NewSword;
-			SetWeaponData ( CurrentSword->WeaponRowName );
-		}
-		else if (ATTShield* NewShield = Cast<ATTShield> ( PickedActor ))
-		{
-			if (IsValid ( CurrentShield ))
-			{
-				CurrentShield->HandleOnThrowAway ();
-				CurrentShield=nullptr;
-			}
-
-			CurrentShield = NewShield;
-		}
+		if (ATTSword* NewSword = Cast<ATTSword> ( PickedActor )) { CurrentSword = NewSword; SetWeaponData ( NewSword->WeaponRowName ); }
+		else if (ATTSword02* NewSw02 = Cast<ATTSword02> ( PickedActor )) { CurrentSword02 = NewSw02; SetWeaponData ( NewSw02->WeaponRowName ); }
+		else if (ATTAxe* NewAxe = Cast<ATTAxe> ( PickedActor )) { CurrentAxe = NewAxe; SetWeaponData ( NewAxe->WeaponRowName ); }
+		else if (ATTHammer* NewHam = Cast<ATTHammer> ( PickedActor )) { CurrentHammer = NewHam; SetWeaponData ( NewHam->WeaponRowName ); }
 	}
+	else if (bIsNewShield)
+	{
+		if (IsValid ( CurrentShield )) { CurrentShield->HandleOnThrowAway ();   CurrentShield = nullptr; }
+		if (IsValid ( CurrentShield02 )) { CurrentShield02->HandleOnThrowAway (); CurrentShield02 = nullptr; }
+
+		if (ATTShield* NewSh = Cast<ATTShield> ( PickedActor )) { CurrentShield = NewSh; }
+		else if (ATTShield02* NewSh02 = Cast<ATTShield02> ( PickedActor )) { CurrentShield02 = NewSh02; }
+	}
+
+	OverlappingPickupComponent->ForcePickUp ( this );
+}
+bool ATTPlayerCharacter::IsHoldingWeapon () const
+{
+	// 공격 무기
+	return (IsValid ( CurrentSword ) || IsValid ( CurrentSword02 ) || IsValid ( CurrentAxe ) || IsValid ( CurrentHammer ));
+}
+
+bool ATTPlayerCharacter::IsHoldingShield () const
+{
+	// 방패
+	return (IsValid ( CurrentShield ) || IsValid ( CurrentShield02 ));
+}
+bool ATTPlayerCharacter::IsHoldingAnything () const
+{
+	return (IsValid ( CurrentSword ) || IsValid ( CurrentSword02 ) || IsValid ( CurrentAxe ) || IsValid ( CurrentHammer ) || IsValid ( CurrentShield ) || IsValid ( CurrentShield02 ));
 }
 
 void ATTPlayerCharacter::OnAnimation ()

@@ -17,7 +17,7 @@ ATTShield02::ATTShield02 ()
 
 	PickupComponent->SetIsReplicated ( true );
 
-	WeaponRowName = "Shield";
+	WeaponRowName = "Shield02";
 }
 
 void ATTShield02::BeginPlay ()

@@ -20,6 +20,8 @@ class ATTSword;
 class ATTShield;
 class ATTSword02;
 class ATTShield02;
+class ATTAxe;
+class ATTHammer;
 
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
@@ -131,11 +133,28 @@ protected:
 	UPROPERTY ( VisibleInstanceOnly , Category = "Interaction" )
 	UTTPickupComponent* OverlappingPickupComponent;
 
-	UPROPERTY(VisibleInstanceOnly, Replicated, Category = "Interaction")
-	ATTSword* CurrentSword;
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	TObjectPtr<ATTSword> CurrentSword;
 
 	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
-	ATTShield* CurrentShield;
+	TObjectPtr<ATTShield> CurrentShield;
+
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	TObjectPtr<ATTSword02> CurrentSword02;
+
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	TObjectPtr<ATTAxe> CurrentAxe;
+
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	TObjectPtr<ATTHammer> CurrentHammer;
+
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	TObjectPtr<ATTShield02> CurrentShield02;
+
+	bool IsHoldingAnything () const;
+	bool IsHoldingWeapon () const;
+	bool IsHoldingShield () const;
+	bool HasAnyWeapon () const;
 
 	UPROPERTY ( VisibleAnywhere , Replicated , Category = "State" )
 	bool bIsBlocking;

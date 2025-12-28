@@ -16,7 +16,7 @@ ATTSword02::ATTSword02 ()
 
 	PickupComponent->SetIsReplicated ( true );
 
-	WeaponRowName = "Sword";
+	WeaponRowName = "Sword02";
 }
 
 void ATTSword02::HandleOnThrowAway ()
