@@ -361,6 +361,29 @@ void ATTPlayerController::EndAnimation ()
 		TTInGameHUD->EndAnimation ();
 	}
 }
+void ATTPlayerController::WinAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->WinAnimation ();
+	}
+}
+
+void ATTPlayerController::LoseAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->LoseAnimation ();
+	}
+}
+void ATTPlayerController::DeadAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->DeadAnimation ();
+	}
+}
+
 void ATTPlayerController::ClientPlayStartAnim_Implementation ()
 {
 	if (IsValid ( TTInGameHUD ))
@@ -389,7 +412,7 @@ void ATTPlayerController::ClientPlayingGame_Implementation ( int32 minutes , int
 	}
 }
 
-void ATTPlayerController::ClientAddportrait_Implementation ( const FString& PlayerName , UTexture2D* portrait ) const
+void ATTPlayerController::ClientAddportrait_Implementation ( const FString& PlayerName , UMaterialInstanceDynamic* portrait ) const
 {
 	if (IsValid ( TTInGameHUD ))
 	{

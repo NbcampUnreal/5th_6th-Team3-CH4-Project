@@ -18,14 +18,14 @@
 #include "Team03.h"
 #include "TTWeaponData.h"
 #include "Components/CapsuleComponent.h"
-#include "Components/SceneCaptureComponent2D.h"
-#include "Engine/TextureRenderTarget2D.h"
-#include "Engine/EngineTypes.h"
 #include "LHO/TTPickupComponent.h"
 #include "LHO/TTShield.h"
 #include "LHO/TTSword.h"
 #include "Gimmick/Gas_Damage.h"
-
+#include "LHO/TTAxe.h"
+#include "LHO/TTHammer.h"
+#include "LHO/TTShield02.h"
+#include "LHO/TTSword02.h"
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 //
 //FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
@@ -48,32 +48,17 @@ ATTPlayerCharacter::ATTPlayerCharacter () :
 	WeaponName = "Hand";
 	WeaponData = nullptr;
 
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	GetCharacterMovement ()->MaxWalkSpeed = WalkSpeed;
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
-	
+
 	Head = CreateDefaultSubobject<USkeletalMeshComponent> ( TEXT ( "Head" ) );
 	Head->SetupAttachment ( GetMesh () );
-
-	SceneCapture = CreateDefaultSubobject<USceneCaptureComponent2D> ( TEXT ( "SceneCapture" ) );
-	SceneCapture->TextureTarget = CaptureRT;
-	SceneCapture->SetupAttachment ( GetRootComponent() );
-
-	SceneCapture->CaptureSource = ESceneCaptureSource::SCS_FinalColorHDR;
-	SceneCapture->bCaptureEveryFrame = false;
-	SceneCapture->bCaptureOnMovement = false;
-	SceneCapture->PrimitiveRenderMode =
-		ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
-
-	SceneCapture->ShowOnlyComponents.Add ( GetMesh () );
-	SceneCapture->ShowOnlyComponents.Add ( Head );
-	SceneCapture->FOVAngle = 35.f;
-
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent> ( TEXT ( "SpringArm" ) );
 	SpringArm->SetupAttachment ( GetRootComponent () );
 	SpringArm->TargetArmLength = 700.f;
-	SpringArm->bUsePawnControlRotation = true;	
+	SpringArm->bUsePawnControlRotation = true;
 	SpringArm->bEnableCameraLag = true;
 	SpringArm->CameraLagSpeed = 3.0f;
 	SpringArm->CameraLagMaxDistance = 100.0f;
@@ -111,22 +96,22 @@ void ATTPlayerCharacter::BeginPlay ()
 
 	if (IsValid ( PlayerController ) == true)
 	{
-		PlayerController->SetControlRotation (FRotator(0.f , -70.f , 0.f ));
-		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f ;
-		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f ;
+		PlayerController->SetControlRotation ( FRotator ( 0.f , -70.f , 0.f ) );
+		PlayerController->PlayerCameraManager->ViewPitchMin = -80.f;
+		PlayerController->PlayerCameraManager->ViewPitchMax = -30.f;
 
 
 		// ----- Outgame 담당자가 수정함 -----
-		/* 
+		/*
 		 * LoadPlayerSaveData 호출 비활성화:
 		 * - SaveGame 로드가 PlayerState 데이터를 덮어쓰는 문제 발생
 		 * - Seamless Travel을 사용하므로 PlayerState가 자동으로 유지됨
 		 * PlayerController->LoadPlayerSaveData ( TEXT ( "MySaveSlot_01" ) , 0 );
 		 */
-		// ----------------------------------
+		 // ----------------------------------
 
 
-		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer() );
+		UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( PlayerController->GetLocalPlayer () );
 
 		if (IsValid ( Subsystem ) == true)
 		{
@@ -136,14 +121,14 @@ void ATTPlayerCharacter::BeginPlay ()
 	// ----- Outgame 담당자가 수정함 -----
 	if (HasAuthority ())
 	{
-		if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
+		if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
 		{
 			if (USkeletalMesh* HeadMesh = PS->PersistedHeadMesh)
 			{
 				HeadMeshToReplicate = HeadMesh;
 				OnRep_HeadMesh ();
 			}
-			
+
 			if (USkeletalMesh* BodyMesh = PS->PersistedBodyMesh)
 			{
 				BodyMeshToReplicate = BodyMesh;
@@ -152,7 +137,7 @@ void ATTPlayerCharacter::BeginPlay ()
 		}
 	}
 	// ----------------------------------
-	SceneCapture->CaptureScene ();
+
 
 }
 
@@ -190,6 +175,7 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 		ServerRagdollVelocity = GetMesh ()->GetPhysicsLinearVelocity ( TEXT ( "pelvis" ) );
 		ServerRagdollAngularVelocity = GetMesh ()->GetPhysicsAngularVelocityInDegrees ( TEXT ( "pelvis" ) );
 	}
+
 }
 
 #pragma region Get,Set
@@ -271,6 +257,12 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME ( ATTPlayerCharacter , CurrentSword );
 	DOREPLIFETIME ( ATTPlayerCharacter , CurrentShield );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentSword02 );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentAxe );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentHammer );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentShield02 );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentComboCount );
+	DOREPLIFETIME ( ATTPlayerCharacter , bIsAttackKeyPressed );
 
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsBlocking );
 
@@ -305,11 +297,11 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 		EnhancedInputComponent->BindAction ( InputESC , ETriggerEvent::Started , this , &ATTPlayerCharacter::ESCMenu );
 		EnhancedInputComponent->BindAction ( InputTempKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::TempKey );
 
-		EnhancedInputComponent->BindAction ( InputPickUp , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUp);
+		EnhancedInputComponent->BindAction ( InputPickUp , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUp );
 		EnhancedInputComponent->BindAction ( InputThrowAway , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::ThrowAway );
 
-		EnhancedInputComponent->BindAction(InputPlayerKey, ETriggerEvent::Started, this, &ATTPlayerCharacter::OnAnimation);
-		EnhancedInputComponent->BindAction(InputPlayerKey, ETriggerEvent::Completed, this, &ATTPlayerCharacter::EndAnimation);
+		EnhancedInputComponent->BindAction ( InputPlayerKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::OnAnimation );
+		EnhancedInputComponent->BindAction ( InputPlayerKey , ETriggerEvent::Completed , this , &ATTPlayerCharacter::EndAnimation );
 	}
 }
 
@@ -343,7 +335,7 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 
 		if (!DesiredDirection.IsNearlyZero ())
 		{
-			if (!TargetRotation.Equals(DesiredDirection.Rotation(), 0.1f ))
+			if (!TargetRotation.Equals ( DesiredDirection.Rotation () , 0.1f ))
 			{
 				TargetRotation = DesiredDirection.Rotation ();
 
@@ -357,17 +349,17 @@ void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 
 void ATTPlayerCharacter::InChat ()
 {
-	if(ATTPlayerController* PC = Cast<ATTPlayerController>( GetController () ) )
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetController () ))
 	{
 		PC->ActivateChatBox ();
 	}
 }
 
-void ATTPlayerCharacter::ESCMenu()
+void ATTPlayerCharacter::ESCMenu ()
 {
-	if (ATTPlayerController* PC = Cast<ATTPlayerController>(GetController()))
+	if (ATTPlayerController* PC = Cast<ATTPlayerController> ( GetController () ))
 	{
-		PC->ActivateESCMenu();
+		PC->ActivateESCMenu ();
 	}
 }
 
@@ -423,14 +415,14 @@ void ATTPlayerCharacter::JumpEnd ()
 	Super::StopJumping ();
 }
 
-void ATTPlayerCharacter::PickUp(const FInputActionValue& Value)
+void ATTPlayerCharacter::PickUp ( const FInputActionValue& Value )
 {
 	ServerPickUp ();
 }
 
 void ATTPlayerCharacter::ThrowAway ( const FInputActionValue& Value )
 {
-	if (IsValid ( CurrentSword )||IsValid(CurrentShield))
+	if (IsHoldingAnything ())
 	{
 		ServerThorwAway ();
 	}
@@ -443,50 +435,76 @@ void ATTPlayerCharacter::ServerSetBlocking_Implementation ( bool bNewBlocking )
 
 void ATTPlayerCharacter::ServerThorwAway_Implementation ()
 {
-	if (IsValid ( CurrentSword ))
-	{
-		CurrentSword->HandleOnThrowAway ();
-		SetWeaponData ( FName ( "Hand" ) );
+	bool bHasWeapon = false;
 
-		CurrentSword = nullptr;
-	}
-	else if (IsValid ( CurrentShield ))
+	if (IsValid ( CurrentSword )) { CurrentSword->HandleOnThrowAway ();   CurrentSword = nullptr;   bHasWeapon = true; }
+	if (IsValid ( CurrentSword02 )) { CurrentSword02->HandleOnThrowAway (); CurrentSword02 = nullptr; bHasWeapon = true; }
+	if (IsValid ( CurrentAxe )) { CurrentAxe->HandleOnThrowAway ();     CurrentAxe = nullptr;     bHasWeapon = true; }
+	if (IsValid ( CurrentHammer )) { CurrentHammer->HandleOnThrowAway ();  CurrentHammer = nullptr;  bHasWeapon = true; }
+
+	if (bHasWeapon)
 	{
-		CurrentShield->HandleOnThrowAway ();
-		CurrentShield = nullptr;
+		SetWeaponData ( FName ( "Hand" ) );
 	}
+
+	if (IsValid ( CurrentShield )) { CurrentShield->HandleOnThrowAway ();   CurrentShield = nullptr; }
+	if (IsValid ( CurrentShield02 )) { CurrentShield02->HandleOnThrowAway (); CurrentShield02 = nullptr; }
+}
+
+bool ATTPlayerCharacter::HasAnyWeapon () const
+{
+	return IsValid ( CurrentSword ) || IsValid ( CurrentAxe ) || IsValid ( CurrentHammer );
 }
 
 void ATTPlayerCharacter::ServerPickUp_Implementation ()
 {
-	if (IsValid ( OverlappingPickupComponent ))
+	if (!IsValid ( OverlappingPickupComponent )) return;
+
+	AActor* PickedActor = OverlappingPickupComponent->GetOwner ();
+	if (!PickedActor) return;
+
+	bool bIsNewWeapon = PickedActor->IsA ( ATTSword::StaticClass () ) || PickedActor->IsA ( ATTSword02::StaticClass () ) ||
+		PickedActor->IsA ( ATTAxe::StaticClass () ) || PickedActor->IsA ( ATTHammer::StaticClass () );
+
+	bool bIsNewShield = PickedActor->IsA ( ATTShield::StaticClass () ) || PickedActor->IsA ( ATTShield02::StaticClass () );
+
+	if (bIsNewWeapon)
 	{
-		AActor* PickedActor = OverlappingPickupComponent->GetOwner ();
+		if (IsValid ( CurrentSword )) { CurrentSword->HandleOnThrowAway ();   CurrentSword = nullptr; }
+		if (IsValid ( CurrentSword02 )) { CurrentSword02->HandleOnThrowAway (); CurrentSword02 = nullptr; }
+		if (IsValid ( CurrentAxe )) { CurrentAxe->HandleOnThrowAway ();     CurrentAxe = nullptr; }
+		if (IsValid ( CurrentHammer )) { CurrentHammer->HandleOnThrowAway ();  CurrentHammer = nullptr; }
 
-		OverlappingPickupComponent->ForcePickUp ( this );
-
-		if (ATTSword* NewSword = Cast<ATTSword> ( PickedActor ))
-		{
-			if (IsValid ( CurrentSword ))
-			{
-				ServerThorwAway ();
-				CurrentSword = nullptr;
-			}
-
-			CurrentSword = NewSword;
-			SetWeaponData ( CurrentSword->WeaponRowName );
-		}
-		else if (ATTShield* NewShield = Cast<ATTShield> ( PickedActor ))
-		{
-			if (IsValid ( CurrentShield ))
-			{
-				CurrentShield->HandleOnThrowAway ();
-				CurrentShield=nullptr;
-			}
-
-			CurrentShield = NewShield;
-		}
+		if (ATTSword* NewSword = Cast<ATTSword> ( PickedActor )) { CurrentSword = NewSword; SetWeaponData ( NewSword->WeaponRowName ); }
+		else if (ATTSword02* NewSw02 = Cast<ATTSword02> ( PickedActor )) { CurrentSword02 = NewSw02; SetWeaponData ( NewSw02->WeaponRowName ); }
+		else if (ATTAxe* NewAxe = Cast<ATTAxe> ( PickedActor )) { CurrentAxe = NewAxe; SetWeaponData ( NewAxe->WeaponRowName ); }
+		else if (ATTHammer* NewHam = Cast<ATTHammer> ( PickedActor )) { CurrentHammer = NewHam; SetWeaponData ( NewHam->WeaponRowName ); }
 	}
+	else if (bIsNewShield)
+	{
+		if (IsValid ( CurrentShield )) { CurrentShield->HandleOnThrowAway ();   CurrentShield = nullptr; }
+		if (IsValid ( CurrentShield02 )) { CurrentShield02->HandleOnThrowAway (); CurrentShield02 = nullptr; }
+
+		if (ATTShield* NewSh = Cast<ATTShield> ( PickedActor )) { CurrentShield = NewSh; }
+		else if (ATTShield02* NewSh02 = Cast<ATTShield02> ( PickedActor )) { CurrentShield02 = NewSh02; }
+	}
+
+	OverlappingPickupComponent->ForcePickUp ( this );
+}
+bool ATTPlayerCharacter::IsHoldingWeapon () const
+{
+	// 공격 무기
+	return (IsValid ( CurrentSword ) || IsValid ( CurrentSword02 ) || IsValid ( CurrentAxe ) || IsValid ( CurrentHammer ));
+}
+
+bool ATTPlayerCharacter::IsHoldingShield () const
+{
+	// 방패
+	return (IsValid ( CurrentShield ) || IsValid ( CurrentShield02 ));
+}
+bool ATTPlayerCharacter::IsHoldingAnything () const
+{
+	return (IsValid ( CurrentSword ) || IsValid ( CurrentSword02 ) || IsValid ( CurrentAxe ) || IsValid ( CurrentHammer ) || IsValid ( CurrentShield ) || IsValid ( CurrentShield02 ));
 }
 
 void ATTPlayerCharacter::OnAnimation ()
@@ -530,7 +548,7 @@ void ATTPlayerCharacter::ServerSprintStart_Implementation ()
 
 void ATTPlayerCharacter::ServerSprintEnd_Implementation ()
 {
-	SetSprintSpeed (false);
+	SetSprintSpeed ( false );
 }
 
 #pragma endregion
@@ -606,20 +624,7 @@ void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 		return;
 	}
 
-	//UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	//if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
-	//{
-	//	AnimInstance->Montage_Play ( AttackMeleeMontage );
-	//}
-	if (0 == CurrentComboCount)
-	{
-		BeginAttack ();
-	}
-	else
-	{
-		ensure ( FMath::IsWithinInclusive<int32> ( CurrentComboCount , 1 , MaxComboCount ) );
-		bIsAttackKeyPressed = true;
-	}
+	ServerStartAttack ();
 
 	if (IsValid ( WeaponData ))
 	{
@@ -631,23 +636,65 @@ void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 	}
 
 }
+void ATTPlayerCharacter::ServerStartAttack_Implementation ()
+{
+	if (bIsStunned) return;
+	if (GetCharacterMovement ()->IsFalling ()) return;
+
+	if (CurrentComboCount != 0)
+	{
+		bIsAttackKeyPressed = true;
+		return;
+	}
+
+	CurrentComboCount = 1;
+	bIsAttackKeyPressed = false;
+	bHasHitThisCombo = false;
+	MulticastPlayAttackMontage ( CurrentComboCount );
+}
+void ATTPlayerCharacter::MulticastPlayAttackMontage_Implementation ( int32 ComboIndex )
+{
+	if (bIsStunned || bIsDead)
+		return;
+
+	UTTAnimInstance* AnimInstance =
+		Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
+
+	if (!AnimInstance || !AttackMeleeMontage)
+		return;
+
+	// 첫 공격일 때만 Play
+	if (!AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ))
+	{
+		AnimInstance->Montage_Play ( AttackMeleeMontage );
+
+		FOnMontageEnded EndDelegate;
+		EndDelegate.BindUObject ( this , &ATTPlayerCharacter::EndAttack );
+		AnimInstance->Montage_SetEndDelegate ( EndDelegate , AttackMeleeMontage );
+	}
+
+	// 콤보 섹션 이동
+	const FName SectionName =
+		*FString::Printf ( TEXT ( "%s%02d" ) ,
+			*AttackAnimMontageSectionPrefix ,
+			ComboIndex );
+
+	AnimInstance->Montage_JumpToSection ( SectionName , AttackMeleeMontage );
+}
 
 void ATTPlayerCharacter::HandleOnCheckHit ()
 {
-	if (HasAuthority ())
-	{
-		ServerHandleOnCheckHit_Implementation ();
-	}
-	else
-	{
-		ServerHandleOnCheckHit ();
-	}
+	if (!IsLocallyControlled ()) return;
+	ServerHandleOnCheckHit ();
+
+
 
 }
 void ATTPlayerCharacter::ServerHandleOnCheckHit_Implementation ()
 {
 	if (!HasAuthority ()) return;
-
+	if (bHasHitThisCombo) return;
+	bHasHitThisCombo = true;
 	TArray<FHitResult> HitResults;
 	FCollisionQueryParams Params ( NAME_None , false , this );
 
@@ -660,86 +707,70 @@ void ATTPlayerCharacter::ServerHandleOnCheckHit_Implementation ()
 		FCollisionShape::MakeSphere ( AttackMeleeRadius ) ,
 		Params
 	);
+	TSet<AActor*> DamagedActors;
 
-	if (HitResults.IsEmpty () == false)
+	if (!bResult) return;
+
+	float CurrentStunPower = 0.f;
+
+	if (WeaponData)
 	{
-		float CurrentStunPower = 0.0f;
-		float CurrentKnockback = 0.0f;
-
-		if (IsValid ( WeaponData ))
+		if (FTTWeaponData* WeaponRow =
+			WeaponData->FindRow<FTTWeaponData> ( WeaponName , TEXT ( "CheckHit" ) ))
 		{
-			FTTWeaponData* WeaponRow = WeaponData->FindRow<FTTWeaponData> ( WeaponName , TEXT ( "CheckHit" ) );
-			if (WeaponRow)
-			{
-				CurrentStunPower = WeaponRow->StunAmount;
-				CurrentKnockback = WeaponRow->KnockbackAmount;
-			}
+			CurrentStunPower = WeaponRow->StunAmount;
 		}
+	}
 
-		for (FHitResult HitResult : HitResults)
-		{
+	for (const FHitResult& HitResult : HitResults)
+	{
+		AActor* HitActor = HitResult.GetActor ();
 
-			if (IsValid ( HitResult.GetActor () ) == true)
-			{
-				FDamageEvent DamageEvent;
-				HitResult.GetActor ()->TakeDamage ( CurrentStunPower , DamageEvent , GetController () , this );
-			}
-		}
+		if (!IsValid ( HitActor )) continue;
+		if (HitActor == this) continue;
+
+		// ❗ 이미 때린 액터면 스킵
+		if (DamagedActors.Contains ( HitActor )) continue;
+
+		DamagedActors.Add ( HitActor );
+
+		FDamageEvent DamageEvent;
+		HitActor->TakeDamage ( CurrentStunPower , DamageEvent , GetController () , this );
 	}
 }
 
 void ATTPlayerCharacter::HandleOnCheckInputAttack ()
 {
-	//UKismetSystemLibrary::PrintString ( this , TEXT ( "HandleOnCheckInputAttack()" ) );
-	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
-
-	if (bIsAttackKeyPressed == true)
+	if (!HasAuthority ())
 	{
-		// 현재 콤보가 MaxComboCount보다 작을 때만 다음으로 진행
-		if (CurrentComboCount < MaxComboCount)
-		{
-			CurrentComboCount++;
-
-			FName NextSectionName = *FString::Printf ( TEXT ( "%s%02d" ) , *AttackAnimMontageSectionPrefix , CurrentComboCount );
-			AnimInstance->Montage_JumpToSection ( NextSectionName , AttackMeleeMontage );
-		}
-
-		bIsAttackKeyPressed = false;
+		ServerRequestNextCombo ();
+		return;
 	}
+
+	ServerRequestNextCombo_Implementation ();
 
 }
-void ATTPlayerCharacter::BeginAttack ()
+void ATTPlayerCharacter::ServerRequestNextCombo_Implementation ()
 {
-	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
-	checkf ( IsValid ( AnimInstance ) == true , TEXT ( "Invalid AnimInstance" ) );
-	bIsNowAttacking = true;
-	if (IsValid ( AnimInstance ) == true && IsValid ( AttackMeleeMontage ) == true && AnimInstance->Montage_IsPlaying ( AttackMeleeMontage ) == false)
-	{
-		AnimInstance->Montage_Play ( AttackMeleeMontage );
-	}
+	if (!bIsAttackKeyPressed)
+		return;
 
-	CurrentComboCount = 1;
-	if (OnMeleeAttackMontageEndedDelegate.IsBound () == false)
-	{
-		OnMeleeAttackMontageEndedDelegate.BindUObject ( this , &ThisClass::EndAttack );
-		AnimInstance->Montage_SetEndDelegate ( OnMeleeAttackMontageEndedDelegate , AttackMeleeMontage );
-	}
+	if (CurrentComboCount >= MaxComboCount)
+		return;
+
+	CurrentComboCount++;
+	bIsAttackKeyPressed = false;
+	bHasHitThisCombo = false;
+	MulticastPlayAttackMontage ( CurrentComboCount );
 }
 
 void ATTPlayerCharacter::EndAttack ( UAnimMontage* InMontage , bool bInterruped )
 {
-	ensureMsgf ( CurrentComboCount != 0 , TEXT ( "CurrentComboCount == 0" ) );
+	if (!HasAuthority ()) return;
 
 	CurrentComboCount = 0;
 	bIsAttackKeyPressed = false;
-	bIsNowAttacking = false;
-	//GetCharacterMovement ()->SetMovementMode ( EMovementMode::MOVE_Walking );
-
-	if (OnMeleeAttackMontageEndedDelegate.IsBound () == true)
-	{
-		OnMeleeAttackMontageEndedDelegate.Unbind ();
-	}
+	bHasHitThisCombo = false;
 }
 
 float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
@@ -763,8 +794,6 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 	Super::TakeDamage ( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
 
 	// 피해자쪽 로직.
-
-	//const UDamageType* DamageType = DamageEvent.DamageTypeClass? DamageEvent.DamageTypeClass->GetDefaultObject<UDamageType> (): nullptr;
 
 	const float FinalDamageAmount = DamageAmount;
 
@@ -851,7 +880,7 @@ void ATTPlayerCharacter::OnRep_IsStunned ()
 		FVector RagdollLoc = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
 		float CapsuleHalfHeight = GetCapsuleComponent ()->GetScaledCapsuleHalfHeight ();
 
-		FVector TargetLoc = FVector ( RagdollLoc.X , RagdollLoc.Y , RagdollLoc.Z + CapsuleHalfHeight +20.0f);
+		FVector TargetLoc = FVector ( RagdollLoc.X , RagdollLoc.Y , RagdollLoc.Z + CapsuleHalfHeight + 20.0f );
 
 		SetActorLocation ( TargetLoc , false , nullptr , ETeleportType::TeleportPhysics );
 

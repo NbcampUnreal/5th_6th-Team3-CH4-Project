@@ -18,6 +18,10 @@ class USceneCaptureComponent2D;
 class UTTPickupComponent;
 class ATTSword;
 class ATTShield;
+class ATTSword02;
+class ATTShield02;
+class ATTAxe;
+class ATTHammer;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE ( FOnPlayerDiedDelegate );
 
@@ -135,11 +139,28 @@ protected:
 	UPROPERTY ( VisibleInstanceOnly , Category = "Interaction" )
 	UTTPickupComponent* OverlappingPickupComponent;
 
-	UPROPERTY(VisibleInstanceOnly, Replicated, Category = "Interaction")
-	ATTSword* CurrentSword;
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	TObjectPtr<ATTSword> CurrentSword;
 
 	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
-	ATTShield* CurrentShield;
+	TObjectPtr<ATTShield> CurrentShield;
+
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	TObjectPtr<ATTSword02> CurrentSword02;
+
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	TObjectPtr<ATTAxe> CurrentAxe;
+
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	TObjectPtr<ATTHammer> CurrentHammer;
+
+	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
+	TObjectPtr<ATTShield02> CurrentShield02;
+
+	bool IsHoldingAnything () const;
+	bool IsHoldingWeapon () const;
+	bool IsHoldingShield () const;
+	bool HasAnyWeapon () const;
 
 	UPROPERTY ( VisibleAnywhere , Replicated , Category = "State" )
 	bool bIsBlocking;
@@ -229,8 +250,6 @@ public:
 	UFUNCTION ()
 	void HandleOnCheckInputAttack ();
 
-	virtual void BeginAttack ();
-
 	UFUNCTION ()
 	virtual void EndAttack ( UAnimMontage* InMontage , bool bInterruped );
 
@@ -246,11 +265,11 @@ protected:
 	FString AttackAnimMontageSectionPrefix = FString ( TEXT ( "Attack" ) );
 
 	int32 MaxComboCount = 5;
-
+	UPROPERTY ( Replicated )
 	int32 CurrentComboCount = 0;
 
 	bool bIsNowAttacking = false;
-
+	UPROPERTY ( Replicated )
 	bool bIsAttackKeyPressed = false;
 
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , ReplicatedUsing = OnRep_IsStunned )
@@ -301,6 +320,17 @@ protected:
 	UFUNCTION ( NetMulticast , Unreliable )
 	void MulticastPlayHitMontage ();
 
+	UFUNCTION ( Server , Reliable )
+	void ServerStartAttack ();
+
+	UFUNCTION ( NetMulticast , Reliable )
+	void MulticastPlayAttackMontage ( int32 ComboIndex );
+
+	UFUNCTION ( Server , Reliable )
+	void ServerRequestNextCombo ();
+
+	UPROPERTY ()
+	bool bHasHitThisCombo = false;
 #pragma endregion
 
 #pragma region HP

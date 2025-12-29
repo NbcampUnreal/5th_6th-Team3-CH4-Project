@@ -25,11 +25,17 @@ AThrowableBase::AThrowableBase ()
 	SetReplicateMovement ( true );
 
 	bDestroyed = false;
+	bAllowPickUp = false;
 }
 
 void AThrowableBase::BeginPlay ()
 {
 	Super::BeginPlay ();
+
+	if (GetOwner () == nullptr)
+	{
+		bAllowPickUp = false;
+	}
 
 	if (MeshComp)
 	{
@@ -51,7 +57,12 @@ void AThrowableBase::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 {
 	if (!InPickUpCharacter) return;
 
-	if (HasAuthority()) return;
+	if (!HasAuthority ()) return;
+
+	if (!bAllowPickUp)
+	{
+		return;
+	}
 
 	if (OwnerCharacter)
 	{
@@ -72,7 +83,6 @@ void AThrowableBase::OnHit (UPrimitiveComponent* HitComp ,AActor* OtherActor ,UP
 
 }
 
-
 void AThrowableBase::ServerThrow_Implementation (const FVector& Direction ,float Power)
 {
 	Throw ( Direction , Power );
@@ -82,12 +92,13 @@ void AThrowableBase::Throw (const FVector& Direction ,float Power)
 {
 	if (!MeshComp) return;
 
+	bAllowPickUp = true;
+
 	SetActorHiddenInGame ( false );
 	SetActorEnableCollision ( true );
 
 	MeshComp->AddImpulse ( Direction * Power , NAME_None , true );
 }
-
 
 void AThrowableBase::Explode_Implementation ()
 {

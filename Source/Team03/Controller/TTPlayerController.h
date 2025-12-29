@@ -94,6 +94,14 @@ public:
 	void OnAnimation ();
 	UFUNCTION ()
 	void EndAnimation ();
+
+	UFUNCTION ()
+	void WinAnimation ();
+	UFUNCTION ()
+	void LoseAnimation ();
+	UFUNCTION ()
+	void DeadAnimation ();
+
 	UFUNCTION ( Client , Reliable )
 	void ClientPlayStartAnim ();
 
@@ -104,7 +112,7 @@ public:
 	void ClientPlayingGame ( int32 minutes , int32 seconds )const;
 
 	UFUNCTION ( Client , Reliable )
-	void ClientAddportrait ( const FString& PlayerName , UTexture2D* portrait ) const;
+	void ClientAddportrait ( const FString& PlayerName , UMaterialInstanceDynamic* portrait ) const;
 protected:
 
 	bool bClientReady = false;

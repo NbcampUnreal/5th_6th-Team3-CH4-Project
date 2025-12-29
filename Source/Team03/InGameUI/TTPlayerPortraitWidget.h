@@ -15,10 +15,7 @@ class TEAM03_API UTTPlayerPortraitWidget : public UUserWidget
 	GENERATED_BODY()
 public:
 	void SetNameText (const FString& Name);
-	void SetPortraitTexture (UTexture2D* portrait );
 private:
 	UPROPERTY ( meta = (BindWidget) )
 	TObjectPtr<class UTextBlock> PlayerName;
-	UPROPERTY ( meta = (BindWidget) )
-	TObjectPtr<class UImage> playerportrait;
 };

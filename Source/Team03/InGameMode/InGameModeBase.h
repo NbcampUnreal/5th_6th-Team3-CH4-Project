@@ -32,7 +32,7 @@ public:
 	void CountDownTimer ();
 	void Ready ();
 	void EndRound ();
-	void Sendportrait ( const FString& PlayerName , UTexture2D* portrait ) const;
+	void Sendportrait ( const FString& PlayerName , UMaterialInstanceDynamic* portrait ) const;
 private:
 	FTimerHandle TimeCountHandle;
 
