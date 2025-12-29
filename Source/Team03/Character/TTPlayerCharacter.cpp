@@ -168,7 +168,7 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	//		InitializeMesh ( PS );
 	//	}
 	//}
-	if (bIsStunned && HasAuthority ())
+	if ((bIsStunned || bIsDead) && HasAuthority ())
 	{
 		ServerRagdollLocation = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
 		ServerRagdollRotation = GetMesh ()->GetSocketRotation ( TEXT ( "pelvis" ) );
@@ -267,6 +267,8 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsBlocking );
 
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsInvincibility );
+
+	DOREPLIFETIME ( ATTPlayerCharacter , bIsDead );
 
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
@@ -821,7 +823,10 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 
 	if (CurrentHP <= 0.f && !bIsDead)
 	{
-		bIsDead = true;
+		if (HasAuthority ())
+		{
+			ServerDeath ();
+		}
 	}
 
 	if (CurrentStun >= MaxStun && !bIsStunned)
@@ -909,7 +914,7 @@ void ATTPlayerCharacter::WakeUp ()
 
 void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 {
-	if (!bIsStunned || HasAuthority ()) return;
+	if (!bIsStunned || bIsDead ==0 || HasAuthority ()) return;
 
 	FVector CurrentLoc = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
 
@@ -996,6 +1001,52 @@ void ATTPlayerCharacter::AddThrowable ( AThrowableBase* Throwable )
 	if (!Throwable) return;
 
 	CurrentThrowable = Throwable;
+}
+
+void ATTPlayerCharacter::OnRep_IsDead ()
+{
+	if (bIsDead == 1)
+	{
+		GetMesh ()->SetCollisionProfileName ( TEXT ( "Ragdoll" ) );
+		GetMesh ()->SetSimulatePhysics ( true );
+
+		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::NoCollision );
+
+		GetCharacterMovement ()->StopMovementImmediately ();
+		GetCharacterMovement ()->DisableMovement ();
+
+		if (OnPlayerDied.IsBound ())
+		{
+			OnPlayerDied.Broadcast ();
+		}
+	}
+}
+
+void ATTPlayerCharacter::ServerDeath_Implementation ()
+{
+	if (bIsDead != 0) return;
+
+	bIsDead = 1;
+
+	if (GetWorld () && GhostClass)
+	{
+		if (APlayerController* PC = Cast<APlayerController> ( GetController () ))
+		{
+			FVector SpawnLoc = GetActorLocation ();
+			FRotator SpawnRot = GetControlRotation ();
+
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+			ACharacter* GhostChar = GetWorld ()->SpawnActor<ACharacter> ( GhostClass , SpawnLoc , SpawnRot , SpawnParams );
+
+			if (GhostChar)
+			{
+				PC->Possess ( GhostChar );
+			}
+		}
+	}
+	OnRep_IsDead ();
 }
 
 void ATTPlayerCharacter::ClearSlow ()
