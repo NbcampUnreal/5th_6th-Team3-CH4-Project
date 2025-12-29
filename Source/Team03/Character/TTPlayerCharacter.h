@@ -195,6 +195,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
 	TSubclassOf<ACharacter> GhostClass;
 
+	FTimerHandle DeathTimerHandle;
+
+	void StartGhost ();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Death")
+	float SpectateDelayTime = 3.0f;
+
 
 
 #pragma region GetSet
