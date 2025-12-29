@@ -114,7 +114,7 @@ protected:
 	void ServerPickUp ();
 
 	UFUNCTION(Server, Reliable)
-	void ServerThorwAway ();
+	void ServerThrowAway ();
 
 	void OnAnimation();
 	void EndAnimation();
