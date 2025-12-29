@@ -55,6 +55,11 @@ void ATTPlayerController::OnPossess ( APawn* InPawn )
 			NewChar->InitializeMesh ( PS );
 		}
 	}
+
+	if (IsLocalController ())
+	{
+		PlayerSetUp ();
+	}
 }
 
 void ATTPlayerController::BeginPlay ()
@@ -101,6 +106,42 @@ void ATTPlayerController::BeginPlay ()
 		// ---------- Ingame 담당자가 추가 ----------
 		UE_LOG ( LogTemp , Warning , TEXT ( "ServerAddportrait0" ));
 		ServerClientReady ();
+	}
+}
+
+void ATTPlayerController::OnRep_Pawn ()
+{
+	Super::OnRep_Pawn ();
+
+	PlayerSetUp ();
+}
+
+void ATTPlayerController::PlayerSetUp ()
+{
+	APawn* CurrentPawn = GetPawn ();
+	if (!CurrentPawn) return;
+
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( GetLocalPlayer () ))
+	{
+		Subsystem->ClearAllMappings ();
+		if (InputMappingContext)
+		{
+			Subsystem->AddMappingContext ( InputMappingContext , 0 );
+		}
+	}
+
+	if (PlayerCameraManager)
+	{
+		if (!CurrentPawn->IsA ( ATTPlayerCharacter::StaticClass () ))
+		{
+			PlayerCameraManager->ViewPitchMin = -90.f;
+			PlayerCameraManager->ViewPitchMax = 90.f;
+		}
+		else
+		{
+			PlayerCameraManager->ViewPitchMin = -80.f;
+			PlayerCameraManager->ViewPitchMax = -30.f;
+		}
 	}
 }
 

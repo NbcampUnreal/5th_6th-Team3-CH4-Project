@@ -36,6 +36,11 @@ public:
 	UInputAction* BlockingAction;
 
 	virtual void BeginPlay () override;
+
+protected:
+
+	virtual void OnRep_Pawn () override;
+	void PlayerSetUp ();
 	
 #pragma region ChatUI
 public:
