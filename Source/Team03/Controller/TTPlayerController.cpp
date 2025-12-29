@@ -18,7 +18,12 @@ ATTPlayerController::ATTPlayerController ()
 	JumpAction ( nullptr ) ,
 	SprintAction ( nullptr ) ,
 	AttackAction ( nullptr ) ,
-	BlockingAction ( nullptr )
+	BlockingAction ( nullptr ),
+	Dance1Action ( nullptr ),
+	Dance2Action ( nullptr ) ,
+	Dance3Action ( nullptr ) ,
+	Dance4Action ( nullptr ) ,
+	Dance5Action ( nullptr )
 {
 	bReplicates = true;
 }

@@ -34,6 +34,16 @@ public:
 	UInputAction* AttackAction;
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
 	UInputAction* BlockingAction;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* Dance1Action;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* Dance2Action;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* Dance3Action;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* Dance4Action;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* Dance5Action;
 
 	virtual void BeginPlay () override;
 
