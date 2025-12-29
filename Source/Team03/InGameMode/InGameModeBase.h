@@ -33,6 +33,7 @@ public:
 	void Ready ();
 	void EndRound ();
 	void Sendportrait ( const FString& PlayerName , UMaterialInstanceDynamic* portrait ) const;
+	void ServerTravelMap ();
 private:
 	FTimerHandle TimeCountHandle;
 
@@ -42,5 +43,5 @@ private:
 	int32 InPlayerCount;
 
 	int32 minutes = 3;
-	int32 seconds = 00;
+	int32 seconds = 0;
 };

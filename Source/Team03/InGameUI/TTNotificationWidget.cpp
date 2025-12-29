@@ -58,3 +58,8 @@ void UTTNotificationWidget::DeadAnimation ()
 {
 	PlayAnimation ( DeadAnim );
 }
+
+void UTTNotificationWidget::DrawAnimation ()
+{
+	PlayAnimation ( DrawAnim );
+}

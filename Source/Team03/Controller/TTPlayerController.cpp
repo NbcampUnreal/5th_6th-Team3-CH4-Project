@@ -343,6 +343,14 @@ void ATTPlayerController::DeadAnimation ()
 	}
 }
 
+void ATTPlayerController::DrawAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->DrawAnimation ();
+	}
+}
+
 void ATTPlayerController::ClientPlayStartAnim_Implementation ()
 {
 	if (IsValid ( TTInGameHUD ))

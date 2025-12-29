@@ -96,6 +96,8 @@ public:
 	void LoseAnimation ();
 	UFUNCTION ()
 	void DeadAnimation ();
+	UFUNCTION ()
+	void DrawAnimation ();
 
 	UFUNCTION ( Client , Reliable )
 	void ClientPlayStartAnim ();

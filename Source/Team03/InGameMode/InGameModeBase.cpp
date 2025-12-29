@@ -36,8 +36,7 @@ void AInGameModeBase::Tick ( float Delatasecond )
 	}
 	else
 	{
-
-		//EndRound ();
+		EndRound ();
 	}
 }
 
@@ -63,7 +62,6 @@ void AInGameModeBase::Logout ( AController* ExitPlayer )
 {
 	--InPlayerCount;
 	--PlayerCount;
-	EndRound ();
 	Super::Logout ( ExitPlayer );
 }
 
@@ -140,7 +138,8 @@ void AInGameModeBase::CountDownTimer ()
 #pragma region end
 void AInGameModeBase::EndRound ()
 {
-	Teams T = Teams::None;
+	int32 RedTeamCount = 0;
+	int32 BlueTeamCount = 0;
 	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It) // 현제 접속중인 컨트롤러를 순회
 	{
 		APlayerController* PC = It->Get ();
@@ -152,42 +151,97 @@ void AInGameModeBase::EndRound ()
 			if (ATTPlayerCharacter* TTP = Cast<ATTPlayerCharacter> ( TTPS->GetPawn () ))
 			{
 				if (TTP->IsDead ()) // 컨트롤러의 캐릭터가 죽은 상태라면 체크하지 않음
-					continue;
-			}
-			if (T == Teams::None)
-			{
-				T = TTPS->GetTeam ();// 최초 팀 등록
-			}
-			else
-			{
-				if (T != TTPS->GetTeam ()) // 최초 등록 이후 순회과정에서 다른 팀이 존재하면 
 				{
-					return; // 게임이 종료 되지 않음
+					//continue;
+				}
+			}
+			if (TTPS->GetTeam () == Teams::Blue)
+			{
+				++BlueTeamCount;
+			}
+			else if (TTPS->GetTeam () == Teams::Red)
+			{
+				++RedTeamCount;
+			}
+		}
+	}
+	if (RedTeamCount == 0 || BlueTeamCount == 0)
+	{
+		Teams WinTeam = RedTeamCount == 0 ? Teams::Blue : Teams::Red;
+		if (RedTeamCount == BlueTeamCount)
+		{
+			WinTeam = Teams::None;
+		}
+		for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It) // 현제 접속중인 컨트롤러를 순회
+		{
+			ATTPlayerController* TTPC = Cast<ATTPlayerController> ( It->Get () );
+
+			if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->PlayerState ))
+			{
+				if (WinTeam == Teams::None)
+				{
+					TTPC->DrawAnimation ();
+					continue;
+				}
+				if (TTPS->GetTeam () == WinTeam)
+				{
+					// 승리 노티파이케이션 출력
+					TTPC->WinAnimation ();
+				}
+				else
+				{
+					// 패배 노티파이케이션 출력
+					TTPC->LoseAnimation ();
 				}
 			}
 		}
+		// 일정 시간 후 로비로 이동
+		FTimerHandle EndHandle;
+		GetWorldTimerManager ().SetTimer (
+			EndHandle ,
+			this ,
+			&ThisClass::ServerTravelMap ,
+			5.f ,
+			false
+		);
 	}
-	if (T == Teams::None)
+	else if (bIsGameEnd)
 	{
-		return;
-	}
-	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It) // 현제 접속중인 컨트롤러를 순회
-	{
-		ATTPlayerController* TTPC = Cast<ATTPlayerController> ( It->Get () );
-
-		if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->PlayerState ))
+		Teams WinTeam = RedTeamCount > BlueTeamCount ? Teams::Red : Teams::Blue;
+		WinTeam = RedTeamCount == BlueTeamCount ? Teams::None : WinTeam;
+		for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It) // 현제 접속중인 컨트롤러를 순회
 		{
-			if (TTPS->GetTeam () == T)
+			ATTPlayerController* TTPC = Cast<ATTPlayerController> ( It->Get () );
+
+			if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->PlayerState ))
 			{
-				// 승리 노티파이케이션 출력
-				TTPC->WinAnimation ();
-			}
-			else
-			{
-				// 패배 노티파이케이션 출력
-				TTPC->LoseAnimation ();
+				if (WinTeam == Teams::None)
+				{
+					// 무승부 노티파이케이션 출력
+					TTPC->DrawAnimation ();
+					continue;
+				}
+				if (TTPS->GetTeam () == WinTeam)
+				{
+					// 승리 노티파이케이션 출력
+					TTPC->WinAnimation ();
+				}
+				else
+				{
+					// 패배 노티파이케이션 출력
+					TTPC->LoseAnimation ();
+				}
 			}
 		}
+
+		FTimerHandle EndHandle;
+		GetWorldTimerManager ().SetTimer (
+			EndHandle ,
+			this ,
+			&ThisClass::ServerTravelMap ,
+			5.f ,
+			false
+		);
 	}
 }
 #pragma endregion
@@ -203,4 +257,11 @@ void AInGameModeBase::Sendportrait ( const FString& PlayerName , UMaterialInstan
 			PC->ClientAddportrait ( PlayerName , portrait );
 		}
 	}
+}
+
+void AInGameModeBase::ServerTravelMap ()
+{
+	bIsGameStart = false;
+	bIsGameEnd = false;
+	GetWorld ()->ServerTravel ( TEXT ( "/Game/Maps/LobbyLevel?listen" ) );
 }

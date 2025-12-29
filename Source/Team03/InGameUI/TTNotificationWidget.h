@@ -34,6 +34,8 @@ private:
 	TObjectPtr<class UWidgetAnimation> WinAnim;
 	UPROPERTY ( Transient , meta = (BindWidgetAnim) )
 	TObjectPtr<class UWidgetAnimation> DeadAnim;
+	UPROPERTY ( Transient , meta = (BindWidgetAnim) )
+	TObjectPtr<class UWidgetAnimation> DrawAnim;
 #pragma endregion
 #pragma region PlayGame
 public:
@@ -46,6 +48,8 @@ public:
 	void LoseAnimation ();
 
 	void DeadAnimation ();
+
+	void DrawAnimation ();
 private:
 	UPROPERTY ( meta = (BindWidget) )
 	TObjectPtr<class UTextBlock> NotificationText;
