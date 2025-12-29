@@ -26,6 +26,7 @@
 #include "LHO/TTHammer.h"
 #include "LHO/TTShield02.h"
 #include "LHO/TTSword02.h"
+#include "InGameMode/InGameModeBase.h"
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 //
 //FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
@@ -1051,7 +1052,21 @@ void ATTPlayerCharacter::ServerDeath_Implementation ()
 	if (bIsDead != 0) return;
 
 	bIsDead = 1;
-
+	AInGameModeBase* TTGM = Cast<AInGameModeBase> ( GetWorld ()->GetAuthGameMode () );
+	if (IsValid ( TTGM ))
+	{
+		if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
+		{
+			if(PS->GetTeam() == Teams::Blue)
+			{
+				TTGM->SetBlueTeamCount ();
+			}
+			if(PS->GetTeam() == Teams::Red)
+			{
+				TTGM->SetRedTeamCount ();
+			}
+		}
+	}
 	OnRep_IsDead ();
 
 	if (GetWorld ())

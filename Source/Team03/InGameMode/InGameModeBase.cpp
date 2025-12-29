@@ -120,12 +120,14 @@ void AInGameModeBase::PlayingGame ()
 
 void AInGameModeBase::CountDownTimer ()
 {
-	if (--seconds < 0)
+	--seconds;
+	if (seconds < 0)
 	{
-		if (--minutes < 0)
+		--minutes;
+		if (minutes < 0)
 		{
 			GetWorld ()->GetTimerManager ().ClearTimer ( TimeCountHandle );
-			bTimeUp = true;
+			bTimeUp = 1;
 			EndRound ();
 			return;
 		}
@@ -181,8 +183,9 @@ void AInGameModeBase::EndRound ()
 	//}
 	//UE_LOG ( LogTemp , Warning , TEXT ( "BlueTeamCount : " ) , *TTPS->GetUserNickname () );
 
-	if (bTimeUp)
+	if (bTimeUp == 1)
 	{
+		UE_LOG ( LogTemp , Warning , TEXT ( "BlueTeamCount : %d, RedTeamCount : %d" ) , BlueTeamCount, RedTeamCount);
 		Teams WinTeam = RedTeamCount > BlueTeamCount ? Teams::Red : Teams::Blue;
 		WinTeam = RedTeamCount == BlueTeamCount ? Teams::None : WinTeam;
 		for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It) // 현제 접속중인 컨트롤러를 순회
@@ -224,8 +227,9 @@ void AInGameModeBase::EndRound ()
 			);
 		}
 	}
-	if (RedTeamCount == 0 || BlueTeamCount == 0)
+	else if (RedTeamCount == 0 || BlueTeamCount == 0)
 	{
+		UE_LOG ( LogTemp , Warning , TEXT ( "else if : BlueTeamCount : %d, RedTeamCount : %d" ) , BlueTeamCount, RedTeamCount);
 		minutes = 0;
 		seconds = 1;
 	}
