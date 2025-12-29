@@ -178,6 +178,29 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 
 }
 
+void ATTPlayerCharacter::StartGhost ()
+{
+	if (APlayerController * PC = Cast<APlayerController> ( GetController () ))
+	{
+		if (GetWorld () && GhostClass)
+		{
+			FVector SpawnLoc = GetActorLocation ();
+			FRotator SpawnRot = GetControlRotation ();
+
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+			ACharacter* GhostChar = GetWorld ()->SpawnActor<ACharacter> ( GhostClass , SpawnLoc , SpawnRot , SpawnParams );
+
+			if (GhostChar)
+			{
+				PC->Possess ( GhostChar );
+			}
+		}
+	}
+
+}
+
 #pragma region Get,Set
 void ATTPlayerCharacter::SetMaxHP ( float amount )
 {
@@ -319,6 +342,7 @@ void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
 void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 {
 	if (bIsStunned) return;
+	if (bIsDead) return;
 	FVector2D MovementVector = Value.Get<FVector2D> ();
 	if (IsValid ( Controller ) == true)
 	{
@@ -1028,25 +1052,19 @@ void ATTPlayerCharacter::ServerDeath_Implementation ()
 
 	bIsDead = 1;
 
-	if (GetWorld () && GhostClass)
-	{
-		if (APlayerController* PC = Cast<APlayerController> ( GetController () ))
-		{
-			FVector SpawnLoc = GetActorLocation ();
-			FRotator SpawnRot = GetControlRotation ();
-
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-			ACharacter* GhostChar = GetWorld ()->SpawnActor<ACharacter> ( GhostClass , SpawnLoc , SpawnRot , SpawnParams );
-
-			if (GhostChar)
-			{
-				PC->Possess ( GhostChar );
-			}
-		}
-	}
 	OnRep_IsDead ();
+
+	if (GetWorld ())
+	{
+		GetWorld ()->GetTimerManager ().SetTimer
+		(
+			DeathTimerHandle ,
+			this ,
+			&ATTPlayerCharacter::StartGhost ,
+			SpectateDelayTime ,
+			false
+		);
+	}
 }
 
 void ATTPlayerCharacter::ClearSlow ()
