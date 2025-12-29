@@ -424,7 +424,6 @@ void ATTPlayerController::ClientAddportrait_Implementation ( const FString& Play
 {
 	if (IsValid ( TTInGameHUD ))
 	{
-		UE_LOG ( LogTemp , Warning , TEXT ( "ClientAddportrait1" ) );
 		TTInGameHUD->Addportrait ( PlayerName, portrait );
 	}
 }

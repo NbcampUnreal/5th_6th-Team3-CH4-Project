@@ -34,14 +34,29 @@ public:
 	void EndRound ();
 	void Sendportrait ( const FString& PlayerName , UMaterialInstanceDynamic* portrait ) const;
 	void ServerTravelMap ();
+
+	void SetBlueTeamCount ()
+	{
+		--BlueTeamCount;
+	}
+	void SetRedTeamCount ()
+	{
+		--RedTeamCount;
+	}
 private:
 	FTimerHandle TimeCountHandle;
+	FTimerHandle EndHandle;
+
 
 	uint8 bIsGameStart : 1 = false;
 	uint8 bIsGameEnd : 1 = false;
+	uint8 bTimeUp : 1 = false;
 	int32 PlayerCount;
 	int32 InPlayerCount;
 
+	int32 BlueTeamCount;
+	int32 RedTeamCount;
+	
 	int32 minutes = 3;
 	int32 seconds = 0;
 };
