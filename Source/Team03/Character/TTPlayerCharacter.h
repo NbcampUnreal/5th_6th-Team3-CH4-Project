@@ -23,6 +23,8 @@ class ATTShield02;
 class ATTAxe;
 class ATTHammer;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE ( FOnPlayerDiedDelegate );
+
 UCLASS()
 class TEAM03_API ATTPlayerCharacter : public ACharacter
 {
@@ -37,6 +39,15 @@ public:
 	TObjectPtr<UCameraComponent> Camera;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Head")
 	TObjectPtr<USkeletalMeshComponent> Head;
+
+	UPROPERTY( EditDefaultsOnly , BlueprintReadOnly, Category = "SceneCapture")
+	TObjectPtr<USceneCaptureComponent2D> SceneCapture;
+
+	UPROPERTY ( EditDefaultsOnly , Category = "UI Capture" )
+	UTextureRenderTarget2D* CaptureRT;
+
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FOnPlayerDiedDelegate OnPlayerDied;
 
 #pragma region Input
 public:
@@ -180,6 +191,12 @@ public:
 	virtual void BeginPlay () override;
 	virtual void Tick ( float DeltaTime ) override;
 
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Death")
+	TSubclassOf<ACharacter> GhostClass;
+
+
+
 #pragma region GetSet
 public:
 	void SetMaxHP (float amount);
@@ -321,15 +338,21 @@ protected:
 public:
 	bool IsDead () const { return bIsDead; }
 protected:
-	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly )
+	UPROPERTY ( VisibleAnywhere , ReplicatedUsing = OnRep_IsDead , BlueprintReadOnly )
 	uint8 bIsDead : 1;
 
-#pragma endregion Throw_Glass
+#pragma endregion
+#pragma region Throw_Glass
 public:
 
 	void ApplySlow ( float Amount , float Duration );
 	void ApplyStun ( float Amount );
 	void AddThrowable ( AThrowableBase* Throwable );
+
+	UFUNCTION()
+	void OnRep_IsDead ();
+	UFUNCTION(Server, Reliable)
+	void ServerDeath ();
 
 protected:
 
@@ -346,7 +369,7 @@ protected:
 
 #pragma endregion
 
-#pragma endregion Throw_BOMBs
+#pragma region Throw_BOMBs
 public:
 
 
