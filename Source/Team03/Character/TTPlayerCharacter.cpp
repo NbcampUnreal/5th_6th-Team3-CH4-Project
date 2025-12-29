@@ -449,7 +449,7 @@ void ATTPlayerCharacter::ThrowAway ( const FInputActionValue& Value )
 {
 	if (IsHoldingAnything ())
 	{
-		ServerThorwAway ();
+		ServerThrowAway ();
 	}
 }
 
@@ -458,7 +458,7 @@ void ATTPlayerCharacter::ServerSetBlocking_Implementation ( bool bNewBlocking )
 	bIsBlocking = bNewBlocking;
 }
 
-void ATTPlayerCharacter::ServerThorwAway_Implementation ()
+void ATTPlayerCharacter::ServerThrowAway_Implementation ()
 {
 	bool bHasWeapon = false;
 
@@ -1032,6 +1032,9 @@ void ATTPlayerCharacter::OnRep_IsDead ()
 {
 	if (bIsDead == 1)
 	{
+		if (CurrentSword) ServerThrowAway ();
+		if (CurrentShield) ServerThrowAway ();
+
 		GetMesh ()->SetCollisionProfileName ( TEXT ( "Ragdoll" ) );
 		GetMesh ()->SetSimulatePhysics ( true );
 

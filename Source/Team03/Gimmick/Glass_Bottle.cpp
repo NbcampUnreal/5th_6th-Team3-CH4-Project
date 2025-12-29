@@ -3,14 +3,12 @@
 #include "Glass_Bottle.h"
 #include "Kismet/GameplayStatics.h"
 
-void AGlassBase::OnHit (
-	UPrimitiveComponent* HitComp ,
-	AActor* OtherActor ,
-	UPrimitiveComponent* OtherComp ,
-	FVector NormalImpulse ,
-	const FHitResult& Hit
-)
+void AGlassBase::OnHit (UPrimitiveComponent* HitComp ,AActor* OtherActor ,UPrimitiveComponent* OtherComp ,FVector NormalImpulse ,const FHitResult& Hit)
 {
+	if (!HasAuthority ())
+	{
+		return;
+	}
 	Explode ();
 }
 
