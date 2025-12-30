@@ -18,7 +18,12 @@ ATTPlayerController::ATTPlayerController ()
 	JumpAction ( nullptr ) ,
 	SprintAction ( nullptr ) ,
 	AttackAction ( nullptr ) ,
-	BlockingAction ( nullptr )
+	BlockingAction ( nullptr ),
+	Dance1Action ( nullptr ),
+	Dance2Action ( nullptr ) ,
+	Dance3Action ( nullptr ) ,
+	Dance4Action ( nullptr ) ,
+	Dance5Action ( nullptr )
 {
 	bReplicates = true;
 }
@@ -54,6 +59,11 @@ void ATTPlayerController::OnPossess ( APawn* InPawn )
 		{
 			NewChar->InitializeMesh ( PS );
 		}
+	}
+
+	if (IsLocalController ())
+	{
+		PlayerSetUp ();
 	}
 }
 
@@ -101,6 +111,42 @@ void ATTPlayerController::BeginPlay ()
 		// ---------- Ingame 담당자가 추가 ----------
 		UE_LOG ( LogTemp , Warning , TEXT ( "ServerAddportrait0" ));
 		ServerClientReady ();
+	}
+}
+
+void ATTPlayerController::OnRep_Pawn ()
+{
+	Super::OnRep_Pawn ();
+
+	PlayerSetUp ();
+}
+
+void ATTPlayerController::PlayerSetUp ()
+{
+	APawn* CurrentPawn = GetPawn ();
+	if (!CurrentPawn) return;
+
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( GetLocalPlayer () ))
+	{
+		Subsystem->ClearAllMappings ();
+		if (InputMappingContext)
+		{
+			Subsystem->AddMappingContext ( InputMappingContext , 0 );
+		}
+	}
+
+	if (PlayerCameraManager)
+	{
+		if (!CurrentPawn->IsA ( ATTPlayerCharacter::StaticClass () ))
+		{
+			PlayerCameraManager->ViewPitchMin = -90.f;
+			PlayerCameraManager->ViewPitchMax = 90.f;
+		}
+		else
+		{
+			PlayerCameraManager->ViewPitchMin = -80.f;
+			PlayerCameraManager->ViewPitchMax = -30.f;
+		}
 	}
 }
 
@@ -343,6 +389,14 @@ void ATTPlayerController::DeadAnimation ()
 	}
 }
 
+void ATTPlayerController::DrawAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->DrawAnimation ();
+	}
+}
+
 void ATTPlayerController::ClientPlayStartAnim_Implementation ()
 {
 	if (IsValid ( TTInGameHUD ))
@@ -375,7 +429,6 @@ void ATTPlayerController::ClientAddportrait_Implementation ( const FString& Play
 {
 	if (IsValid ( TTInGameHUD ))
 	{
-		UE_LOG ( LogTemp , Warning , TEXT ( "ClientAddportrait1" ) );
 		TTInGameHUD->Addportrait ( PlayerName, portrait );
 	}
 }

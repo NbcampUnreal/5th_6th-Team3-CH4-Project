@@ -99,6 +99,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Session")
 	void TravelToPendingSession();
 
+    // 네트워크 모드 설정 (LAN vs Steam)
+    UPROPERTY(BlueprintReadWrite, Category = "Session")
+    bool bUseLAN = false;
+
+    UFUNCTION(BlueprintCallable, Category = "Session")
+    void SetNetworkMode(bool bIsLAN);
+
 private:
     FString PendingConnectString;
 #pragma endregion

@@ -150,6 +150,11 @@ void ATTInGameHUD::DeadAnimation () const
 	Notification->DeadAnimation ();
 }
 
+void ATTInGameHUD::DrawAnimation () const
+{
+	Notification->DrawAnimation ();
+}
+
 void ATTInGameHUD::Addportrait (const FString& PlayerName, UMaterialInstanceDynamic* portrait ) const
 {
 	if (IsValid ( Notification ))

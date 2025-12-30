@@ -39,6 +39,10 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UComboBoxString> Combo_WindowMode;
 
+    // 네트워크 모드
+    UPROPERTY(meta = (BindWidget))
+    TObjectPtr<UComboBoxString> Combo_NetworkMode;
+
 #pragma region Graphics Options
 	// --- 그래픽 품질 상세 설정 ---
 	UPROPERTY(meta = (BindWidget))
@@ -88,6 +92,9 @@ private:
 
 	UFUNCTION()
 	void OnWindowModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
+
+    UFUNCTION()
+    void OnNetworkModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType);
 
 	// 그래픽 옵션 변경 핸들러
 	UFUNCTION()

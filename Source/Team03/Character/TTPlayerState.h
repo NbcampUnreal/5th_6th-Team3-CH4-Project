@@ -24,7 +24,13 @@ class TEAM03_API ATTPlayerState : public APlayerState
 public:
 	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
 
+	virtual void CopyProperties ( APlayerState* NewPlayerState ) override;
+
+	virtual void OverrideWith ( APlayerState* OldPlayerState ) override;
+
+	UFUNCTION ( Server , Reliable )
 	void SetTeam ( Teams NewTeam );
+
 	Teams GetTeam () const { return Team; }
 	FString GetUserNickname () const { return UserNickname; }
 public:

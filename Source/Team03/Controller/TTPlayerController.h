@@ -34,12 +34,27 @@ public:
 	UInputAction* AttackAction;
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
 	UInputAction* BlockingAction;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* Dance1Action;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* Dance2Action;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* Dance3Action;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* Dance4Action;
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Input" )
+	UInputAction* Dance5Action;
 
 	virtual void BeginPlay () override;
+
+protected:
+
+	virtual void OnRep_Pawn () override;
+	void PlayerSetUp ();
 	
 #pragma region ChatUI
 public:
-	UFUNCTION ()
+	UFUNCTION (BlueprintCallable)
 	void ActivateChatBox ();
 
 	UFUNCTION ( Server , Reliable )
@@ -59,7 +74,7 @@ private:
 
 #pragma region ESCMenu
 public:
-	UFUNCTION ()
+	UFUNCTION ( BlueprintCallable )
 	void ActivateESCMenu ();
 #pragma endregion
 
@@ -96,6 +111,8 @@ public:
 	void LoseAnimation ();
 	UFUNCTION ()
 	void DeadAnimation ();
+	UFUNCTION ()
+	void DrawAnimation ();
 
 	UFUNCTION ( Client , Reliable )
 	void ClientPlayStartAnim ();

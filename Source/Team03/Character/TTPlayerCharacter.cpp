@@ -26,6 +26,8 @@
 #include "LHO/TTHammer.h"
 #include "LHO/TTShield02.h"
 #include "LHO/TTSword02.h"
+#include "InGameMode/InGameModeBase.h"
+#include "Components/AudioComponent.h"
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 //
 //FAutoConsoleVariableRef CVarShowAttackMeleeDebug (
@@ -168,12 +170,35 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 	//		InitializeMesh ( PS );
 	//	}
 	//}
-	if (bIsStunned && HasAuthority ())
+	if ((bIsStunned || bIsDead) && HasAuthority ())
 	{
 		ServerRagdollLocation = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
 		ServerRagdollRotation = GetMesh ()->GetSocketRotation ( TEXT ( "pelvis" ) );
 		ServerRagdollVelocity = GetMesh ()->GetPhysicsLinearVelocity ( TEXT ( "pelvis" ) );
 		ServerRagdollAngularVelocity = GetMesh ()->GetPhysicsAngularVelocityInDegrees ( TEXT ( "pelvis" ) );
+	}
+
+}
+
+void ATTPlayerCharacter::StartGhost ()
+{
+	if (APlayerController * PC = Cast<APlayerController> ( GetController () ))
+	{
+		if (GetWorld () && GhostClass)
+		{
+			FVector SpawnLoc = GetActorLocation ();
+			FRotator SpawnRot = GetControlRotation ();
+
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+			ACharacter* GhostChar = GetWorld ()->SpawnActor<ACharacter> ( GhostClass , SpawnLoc , SpawnRot , SpawnParams );
+
+			if (GhostChar)
+			{
+				PC->Possess ( GhostChar );
+			}
+		}
 	}
 
 }
@@ -268,6 +293,8 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsInvincibility );
 
+	DOREPLIFETIME ( ATTPlayerCharacter , bIsDead );
+
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
 	
 }
@@ -297,6 +324,11 @@ void ATTPlayerCharacter::SetupPlayerInputComponent ( UInputComponent* PlayerInpu
 
 		EnhancedInputComponent->BindAction ( InputPickUp , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::PickUp );
 		EnhancedInputComponent->BindAction ( InputThrowAway , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::ThrowAway );
+		EnhancedInputComponent->BindAction ( InputDance1 , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Dance1 );
+		EnhancedInputComponent->BindAction ( InputDance2 , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Dance2);
+		EnhancedInputComponent->BindAction ( InputDance3 , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Dance3 );
+		EnhancedInputComponent->BindAction ( InputDance4 , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Dance4);
+		EnhancedInputComponent->BindAction ( InputDance5 , ETriggerEvent::Triggered , this , &ATTPlayerCharacter::Dance5 );
 
 		EnhancedInputComponent->BindAction ( InputPlayerKey , ETriggerEvent::Started , this , &ATTPlayerCharacter::OnAnimation );
 		EnhancedInputComponent->BindAction ( InputPlayerKey , ETriggerEvent::Completed , this , &ATTPlayerCharacter::EndAnimation );
@@ -317,7 +349,14 @@ void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
 void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 {
 	if (bIsStunned) return;
+	if (bIsDead) return;
+	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
+
 	FVector2D MovementVector = Value.Get<FVector2D> ();
+	if (!MovementVector.IsNearlyZero ())
+	{
+		StopDanceAndMusic ();
+	}
 	if (IsValid ( Controller ) == true)
 	{
 		const FRotator Rotation = Controller->GetControlRotation ();
@@ -389,7 +428,10 @@ void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 	{
 		return;
 	}
-
+	if (bInputState)
+	{
+		StopDanceAndMusic ();
+	}
 	UTTAnimInstance* AnimInstance = Cast<UTTAnimInstance> ( GetMesh ()->GetAnimInstance () );
 	if (IsValid ( AnimInstance ) == true && IsValid ( BlockingMontage ) == true && AnimInstance->Montage_IsPlaying ( BlockingMontage ) == false)
 	{
@@ -402,7 +444,7 @@ void ATTPlayerCharacter::PlayerBlocking ( const FInputActionValue& Value )
 void ATTPlayerCharacter::JumpStart ()
 {
 	if (bIsStunned) return;
-
+	StopDanceAndMusic ();
 	Super::Jump ();
 }
 
@@ -412,7 +454,74 @@ void ATTPlayerCharacter::JumpEnd ()
 
 	Super::StopJumping ();
 }
+void ATTPlayerCharacter::Dance1 ( const FInputActionValue& Value )
+{
+	ServerPlayDance ( 0 );
+}
+void ATTPlayerCharacter::Dance2 ( const FInputActionValue& Value )
+{
+	ServerPlayDance ( 1 );
+}
+void ATTPlayerCharacter::Dance3 ( const FInputActionValue& Value )
+{
+	ServerPlayDance ( 2 );
+}
+void ATTPlayerCharacter::Dance4 ( const FInputActionValue& Value )
+{
+	ServerPlayDance ( 3 );
+}
+void ATTPlayerCharacter::Dance5 ( const FInputActionValue& Value )
+{
+	ServerPlayDance ( 4 );
+}
+void ATTPlayerCharacter::ServerPlayDance_Implementation ( int32 Index )
+{
+	if (bIsStunned || bIsDead || CurrentComboCount > 0) return;
 
+	MulticastPlayDance ( Index );
+}
+
+void ATTPlayerCharacter::MulticastPlayDance_Implementation ( int32 Index )
+{
+	if (DanceMontages.IsValidIndex ( Index ) && DanceMontages[Index])
+	{
+		UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
+		if (AnimInstance)
+		{
+			StopDanceAndMusic ();
+
+			AnimInstance->Montage_Play ( DanceMontages[Index] );
+
+			if (DanceSounds.IsValidIndex ( Index ) && DanceSounds[Index])
+			{
+				// 사운드 재생 후 변수에 저장 (나중에 끄기 위함)
+				CurrentDanceAudio = UGameplayStatics::SpawnSoundAttached ( DanceSounds[Index] , GetRootComponent () );
+			}
+		}
+	}
+}
+void ATTPlayerCharacter::StopDanceAndMusic()
+{
+	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
+
+	if (AnimInstance)
+	{
+		bool bIsDancing = false;
+		for (UAnimMontage* Montage : DanceMontages)
+		{
+			if (AnimInstance->Montage_IsPlaying ( Montage ))
+			{
+				bIsDancing = true;
+				AnimInstance->Montage_Stop ( 0.25f , Montage );
+			}
+		}
+	}
+	if (CurrentDanceAudio && CurrentDanceAudio->IsPlaying ())
+	{
+		CurrentDanceAudio->Stop ();
+		CurrentDanceAudio = nullptr;
+	}
+}
 void ATTPlayerCharacter::PickUp ( const FInputActionValue& Value )
 {
 	ServerPickUp ();
@@ -422,7 +531,7 @@ void ATTPlayerCharacter::ThrowAway ( const FInputActionValue& Value )
 {
 	if (IsHoldingAnything ())
 	{
-		ServerThorwAway ();
+		ServerThrowAway ();
 	}
 }
 
@@ -431,7 +540,7 @@ void ATTPlayerCharacter::ServerSetBlocking_Implementation ( bool bNewBlocking )
 	bIsBlocking = bNewBlocking;
 }
 
-void ATTPlayerCharacter::ServerThorwAway_Implementation ()
+void ATTPlayerCharacter::ServerThrowAway_Implementation ()
 {
 	bool bHasWeapon = false;
 
@@ -616,6 +725,7 @@ void ATTPlayerCharacter::ChangeBody ( USkeletalMesh* NewMesh )
 
 void ATTPlayerCharacter::Attack ( const FInputActionValue& Value )
 {
+	StopDanceAndMusic ();
 	if (bIsStunned) return;
 	if (GetCharacterMovement ()->IsFalling () == true)
 	{
@@ -816,12 +926,16 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 
 	if (FinalDamageAmount> 0.f && !bIsStunned && !bIsDead)
 	{
+		StopDanceAndMusic ();
 		MulticastPlayHitMontage ();
 	}
 
 	if (CurrentHP <= 0.f && !bIsDead)
 	{
-		bIsDead = true;
+		if (HasAuthority ())
+		{
+			ServerDeath ();
+		}
 	}
 
 	if (CurrentStun >= MaxStun && !bIsStunned)
@@ -909,7 +1023,7 @@ void ATTPlayerCharacter::WakeUp ()
 
 void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 {
-	if (!bIsStunned || HasAuthority ()) return;
+	if (!bIsStunned || bIsDead ==0 || HasAuthority ()) return;
 
 	FVector CurrentLoc = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
 
@@ -996,6 +1110,63 @@ void ATTPlayerCharacter::AddThrowable ( AThrowableBase* Throwable )
 	if (!Throwable) return;
 
 	CurrentThrowable = Throwable;
+}
+
+void ATTPlayerCharacter::OnRep_IsDead ()
+{
+	if (bIsDead == 1)
+	{
+		if (CurrentSword) ServerThrowAway ();
+		if (CurrentShield) ServerThrowAway ();
+
+		GetMesh ()->SetCollisionProfileName ( TEXT ( "Ragdoll" ) );
+		GetMesh ()->SetSimulatePhysics ( true );
+
+		GetCapsuleComponent ()->SetCollisionEnabled ( ECollisionEnabled::NoCollision );
+
+		GetCharacterMovement ()->StopMovementImmediately ();
+		GetCharacterMovement ()->DisableMovement ();
+
+		if (OnPlayerDied.IsBound ())
+		{
+			OnPlayerDied.Broadcast ();
+		}
+	}
+}
+
+void ATTPlayerCharacter::ServerDeath_Implementation ()
+{
+	if (bIsDead != 0) return;
+
+	bIsDead = 1;
+	AInGameModeBase* TTGM = Cast<AInGameModeBase> ( GetWorld ()->GetAuthGameMode () );
+	if (IsValid ( TTGM ))
+	{
+		if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
+		{
+			if(PS->GetTeam() == Teams::Blue)
+			{
+				TTGM->SetBlueTeamCount ();
+			}
+			if(PS->GetTeam() == Teams::Red)
+			{
+				TTGM->SetRedTeamCount ();
+			}
+		}
+	}
+	OnRep_IsDead ();
+
+	if (GetWorld ())
+	{
+		GetWorld ()->GetTimerManager ().SetTimer
+		(
+			DeathTimerHandle ,
+			this ,
+			&ATTPlayerCharacter::StartGhost ,
+			SpectateDelayTime ,
+			false
+		);
+	}
 }
 
 void ATTPlayerCharacter::ClearSlow ()
