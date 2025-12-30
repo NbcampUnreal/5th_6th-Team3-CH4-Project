@@ -483,45 +483,62 @@ void ATTPlayerCharacter::ServerPlayDance_Implementation ( int32 Index )
 
 void ATTPlayerCharacter::MulticastPlayDance_Implementation ( int32 Index )
 {
-	if (DanceMontages.IsValidIndex ( Index ) && DanceMontages[Index])
+	if (bIsStunned || bIsDead) return;
+	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
+	if (AnimInstance && DanceMontages.IsValidIndex ( Index ) && DanceMontages[Index])
 	{
-		UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
-		if (AnimInstance)
+		if (CurrentDanceAudio)
 		{
-			StopDanceAndMusic ();
+			CurrentDanceAudio->Stop ();
+			CurrentDanceAudio = nullptr;
+		}
 
-			AnimInstance->Montage_Play ( DanceMontages[Index] );
-			SetHoldablesVisible ( false );
-			if (DanceSounds.IsValidIndex ( Index ) && DanceSounds[Index])
-			{
-				// 사운드 재생 후 변수에 저장 (나중에 끄기 위함)
-				CurrentDanceAudio = UGameplayStatics::SpawnSoundAttached ( DanceSounds[Index] , GetRootComponent () );
-			}
+		AnimInstance->Montage_Play ( DanceMontages[Index] );
+
+		SetHoldablesVisible ( false );
+
+		if (DanceSounds.IsValidIndex ( Index ) && DanceSounds[Index])
+		{
+			CurrentDanceAudio = UGameplayStatics::SpawnSoundAttached ( DanceSounds[Index] , GetRootComponent () );
 		}
 	}
 }
 void ATTPlayerCharacter::StopDanceAndMusic()
 {
+	if (IsLocallyControlled ())
+	{
+		ServerStopDance ();
+	}
+	if (HasAuthority ())
+	{
+		MulticastStopDanceAndMusic ();
+	}
+}
+void ATTPlayerCharacter::MulticastStopDanceAndMusic_Implementation ()
+{
+	// 1. 애니메이션 중지 로직
 	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
-
 	if (AnimInstance)
 	{
-		bool bIsDancing = false;
 		for (UAnimMontage* Montage : DanceMontages)
 		{
 			if (AnimInstance->Montage_IsPlaying ( Montage ))
 			{
-				bIsDancing = true;
 				AnimInstance->Montage_Stop ( 0.25f , Montage );
 			}
 		}
 	}
 	SetHoldablesVisible ( true );
-	if (CurrentDanceAudio && CurrentDanceAudio->IsPlaying ())
+	if (CurrentDanceAudio)
 	{
 		CurrentDanceAudio->Stop ();
+		CurrentDanceAudio->DestroyComponent ();
 		CurrentDanceAudio = nullptr;
 	}
+}
+void ATTPlayerCharacter::ServerStopDance_Implementation ()
+{
+	MulticastStopDanceAndMusic ();
 }
 void ATTPlayerCharacter::SetHoldablesVisible ( bool bVisible )
 {

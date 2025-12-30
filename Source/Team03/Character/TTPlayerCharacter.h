@@ -199,6 +199,10 @@ protected:
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Sound" )
 	TObjectPtr<USoundBase> ShieldBlockSound;
 	void SetHoldablesVisible ( bool bVisible );
+	UFUNCTION ( Server , Reliable )
+	void ServerStopDance ();
+	UFUNCTION ( NetMulticast , Reliable )
+	void MulticastStopDanceAndMusic ();
 #pragma endregion
 
 private:
