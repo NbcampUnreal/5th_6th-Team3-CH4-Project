@@ -196,7 +196,9 @@ protected:
 
 	UPROPERTY ( VisibleAnywhere , Replicated , Category = "State" )
 	bool bIsBlocking;
-	
+	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Sound" )
+	TObjectPtr<USoundBase> ShieldBlockSound;
+	void SetHoldablesVisible ( bool bVisible );
 #pragma endregion
 
 private:

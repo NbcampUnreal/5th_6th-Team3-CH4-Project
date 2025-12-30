@@ -491,7 +491,7 @@ void ATTPlayerCharacter::MulticastPlayDance_Implementation ( int32 Index )
 			StopDanceAndMusic ();
 
 			AnimInstance->Montage_Play ( DanceMontages[Index] );
-
+			SetHoldablesVisible ( false );
 			if (DanceSounds.IsValidIndex ( Index ) && DanceSounds[Index])
 			{
 				// 사운드 재생 후 변수에 저장 (나중에 끄기 위함)
@@ -516,11 +516,21 @@ void ATTPlayerCharacter::StopDanceAndMusic()
 			}
 		}
 	}
+	SetHoldablesVisible ( true );
 	if (CurrentDanceAudio && CurrentDanceAudio->IsPlaying ())
 	{
 		CurrentDanceAudio->Stop ();
 		CurrentDanceAudio = nullptr;
 	}
+}
+void ATTPlayerCharacter::SetHoldablesVisible ( bool bVisible )
+{
+	if (CurrentSword) CurrentSword->SetActorHiddenInGame ( !bVisible );
+	if (CurrentSword02) CurrentSword02->SetActorHiddenInGame ( !bVisible );
+	if (CurrentAxe) CurrentAxe->SetActorHiddenInGame ( !bVisible );
+	if (CurrentHammer) CurrentHammer->SetActorHiddenInGame ( !bVisible );
+	if (CurrentShield) CurrentShield->SetActorHiddenInGame ( !bVisible );
+	if (CurrentShield02) CurrentShield02->SetActorHiddenInGame ( !bVisible );
 }
 void ATTPlayerCharacter::PickUp ( const FInputActionValue& Value )
 {
@@ -895,6 +905,10 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 
 		if (DotResult > 0.5f)
 		{
+			if (ShieldBlockSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation ( this , ShieldBlockSound , GetActorLocation () );
+			}
 			return 0.0f;
 		}
 	}
