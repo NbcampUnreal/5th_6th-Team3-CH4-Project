@@ -20,7 +20,7 @@ public class Team03 : ModuleRules
 			"EngineSettings",
             
             // DLSS (Disabled for now)
-            // "DLSSBlueprint"
+            "DLSSBlueprint"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "SelectSkeletal", });
