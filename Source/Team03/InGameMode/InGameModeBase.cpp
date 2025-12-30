@@ -7,6 +7,8 @@
 #include "Character/TTPlayerState.h"
 #include "Outgame/TTGameInstance.h"
 #include "InGameMode/TTGameStateBase.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 //스폰
 #include "GameFramework/PlayerStart.h"
@@ -169,18 +171,29 @@ void AInGameModeBase::PlayingGame ()
 
 void AInGameModeBase::CountDownTimer ()
 {
-	--seconds;
+
+	seconds -= 1;
+	UE_LOG ( LogTemp , Warning , TEXT ( "seconds : %d" ) , seconds );
 	if (seconds < 0)
 	{
-		--minutes;
+		minutes -= 1;
+		UE_LOG ( LogTemp , Warning , TEXT ( "minutes : %d" ) , minutes );
+
 		if (minutes < 0)
 		{
+			UE_LOG ( LogTemp , Warning , TEXT ( "minutes : %d, seconds : %d" ) , minutes , seconds );
 			GetWorld ()->GetTimerManager ().ClearTimer ( TimeCountHandle );
 			bTimeUp = 1;
 			EndRound ();
 			return;
 		}
 		seconds = 59;
+	}
+	if (RedTeamCount == 0 || BlueTeamCount == 0)
+	{
+		UE_LOG ( LogTemp , Warning , TEXT ( "else if : BlueTeamCount : %d, RedTeamCount : %d" ) , BlueTeamCount , RedTeamCount );
+		minutes = 0;
+		seconds = 0;
 	}
 	for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It)
 	{
@@ -189,7 +202,6 @@ void AInGameModeBase::CountDownTimer ()
 			TTPC->ClientPlayingGame ( minutes , seconds );
 		}
 	}
-	EndRound ();
 }
 #pragma endregion
 
@@ -234,7 +246,7 @@ void AInGameModeBase::EndRound ()
 
 	if (bTimeUp == 1)
 	{
-		UE_LOG ( LogTemp , Warning , TEXT ( "BlueTeamCount : %d, RedTeamCount : %d" ) , BlueTeamCount, RedTeamCount);
+		UE_LOG ( LogTemp , Warning , TEXT ( "BlueTeamCount : %d, RedTeamCount : %d" ) , BlueTeamCount , RedTeamCount );
 		Teams WinTeam = RedTeamCount > BlueTeamCount ? Teams::Red : Teams::Blue;
 		WinTeam = RedTeamCount == BlueTeamCount ? Teams::None : WinTeam;
 		for (FConstPlayerControllerIterator It = GetWorld ()->GetPlayerControllerIterator (); It; ++It) // 현제 접속중인 컨트롤러를 순회
@@ -265,7 +277,7 @@ void AInGameModeBase::EndRound ()
 				}
 			}
 		}
-		if (!GetWorldTimerManager ().IsTimerActive ( EndHandle ))
+		if (HasAuthority ())
 		{
 			GetWorldTimerManager ().SetTimer (
 				EndHandle ,
@@ -275,12 +287,7 @@ void AInGameModeBase::EndRound ()
 				false
 			);
 		}
-	}
-	else if (RedTeamCount == 0 || BlueTeamCount == 0)
-	{
-		UE_LOG ( LogTemp , Warning , TEXT ( "else if : BlueTeamCount : %d, RedTeamCount : %d" ) , BlueTeamCount, RedTeamCount);
-		minutes = 0;
-		seconds = 1;
+
 	}
 }
 #pragma endregion
@@ -299,9 +306,15 @@ void AInGameModeBase::Sendportrait ( const FString& PlayerName , UMaterialInstan
 
 void AInGameModeBase::ServerTravelMap ()
 {
-	//bIsGameStart = false;
-	//bIsGameEnd = false;
-	//bIsEnd = false;
-	GetWorld ()->ServerTravel ( TEXT ( "/Game/Maps/LobbyLevel?listen" ) );
+	if (!HasAuthority ())
+	{
+		return; 
+	}
+
+	GetWorld ()->ServerTravel ( TEXT ( "/Game/Maps/LobbyLevel?listen" ) , /*bAbsolute=*/true );
+	
+	// 호스트에서만 실행이 된다
+	UKismetSystemLibrary::PrintString ( GetWorld () , TEXT ( "ServerTravelMap" ) , true , true , FLinearColor::Green , 2.f );
+	//GEngine->AddOnScreenDebugMessage ( -1 , 2.f , FColor::Blue , TEXT ( "ServerTravelMap" ) );
 }
 

@@ -483,44 +483,71 @@ void ATTPlayerCharacter::ServerPlayDance_Implementation ( int32 Index )
 
 void ATTPlayerCharacter::MulticastPlayDance_Implementation ( int32 Index )
 {
-	if (DanceMontages.IsValidIndex ( Index ) && DanceMontages[Index])
+	if (bIsStunned || bIsDead) return;
+	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
+	if (AnimInstance && DanceMontages.IsValidIndex ( Index ) && DanceMontages[Index])
 	{
-		UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
-		if (AnimInstance)
+		if (CurrentDanceAudio)
 		{
-			StopDanceAndMusic ();
+			CurrentDanceAudio->Stop ();
+			CurrentDanceAudio = nullptr;
+		}
 
-			AnimInstance->Montage_Play ( DanceMontages[Index] );
+		AnimInstance->Montage_Play ( DanceMontages[Index] );
 
-			if (DanceSounds.IsValidIndex ( Index ) && DanceSounds[Index])
-			{
-				// 사운드 재생 후 변수에 저장 (나중에 끄기 위함)
-				CurrentDanceAudio = UGameplayStatics::SpawnSoundAttached ( DanceSounds[Index] , GetRootComponent () );
-			}
+		SetHoldablesVisible ( false );
+
+		if (DanceSounds.IsValidIndex ( Index ) && DanceSounds[Index])
+		{
+			CurrentDanceAudio = UGameplayStatics::SpawnSoundAttached ( DanceSounds[Index] , GetRootComponent () );
 		}
 	}
 }
 void ATTPlayerCharacter::StopDanceAndMusic()
 {
+	if (IsLocallyControlled ())
+	{
+		ServerStopDance ();
+	}
+	if (HasAuthority ())
+	{
+		MulticastStopDanceAndMusic ();
+	}
+}
+void ATTPlayerCharacter::MulticastStopDanceAndMusic_Implementation ()
+{
+	// 1. 애니메이션 중지 로직
 	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
-
 	if (AnimInstance)
 	{
-		bool bIsDancing = false;
 		for (UAnimMontage* Montage : DanceMontages)
 		{
 			if (AnimInstance->Montage_IsPlaying ( Montage ))
 			{
-				bIsDancing = true;
 				AnimInstance->Montage_Stop ( 0.25f , Montage );
 			}
 		}
 	}
-	if (CurrentDanceAudio && CurrentDanceAudio->IsPlaying ())
+	SetHoldablesVisible ( true );
+	if (CurrentDanceAudio)
 	{
 		CurrentDanceAudio->Stop ();
+		CurrentDanceAudio->DestroyComponent ();
 		CurrentDanceAudio = nullptr;
 	}
+}
+void ATTPlayerCharacter::ServerStopDance_Implementation ()
+{
+	MulticastStopDanceAndMusic ();
+}
+void ATTPlayerCharacter::SetHoldablesVisible ( bool bVisible )
+{
+	if (CurrentSword) CurrentSword->SetActorHiddenInGame ( !bVisible );
+	if (CurrentSword02) CurrentSword02->SetActorHiddenInGame ( !bVisible );
+	if (CurrentAxe) CurrentAxe->SetActorHiddenInGame ( !bVisible );
+	if (CurrentHammer) CurrentHammer->SetActorHiddenInGame ( !bVisible );
+	if (CurrentShield) CurrentShield->SetActorHiddenInGame ( !bVisible );
+	if (CurrentShield02) CurrentShield02->SetActorHiddenInGame ( !bVisible );
 }
 void ATTPlayerCharacter::PickUp ( const FInputActionValue& Value )
 {
@@ -895,6 +922,10 @@ float ATTPlayerCharacter::TakeDamage ( float DamageAmount , FDamageEvent const& 
 
 		if (DotResult > 0.5f)
 		{
+			if (ShieldBlockSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation ( this , ShieldBlockSound , GetActorLocation () );
+			}
 			return 0.0f;
 		}
 	}

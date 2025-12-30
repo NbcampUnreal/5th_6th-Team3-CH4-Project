@@ -76,13 +76,18 @@ FItemSpawnRow* ASpawnVolume::GetRandomItem () const
 
 void ASpawnVolume::SpawnItem ( TSubclassOf<AActor> ItemClass )
 {
-	if (!ItemClass) return;
+	if (!ItemClass || !HasAuthority ())
+	{
+		return;
+	}
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
-	GetWorld ()->SpawnActor<AActor> 
-		(
+	GetWorld ()->SpawnActor<AActor> (
 		ItemClass ,
 		GetRandomPointInVolume () ,
-		FRotator::ZeroRotator
+		FRotator::ZeroRotator ,
+		SpawnParams
 	);
 }
 

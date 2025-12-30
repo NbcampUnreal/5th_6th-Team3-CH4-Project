@@ -12,8 +12,8 @@
 #include "TTGameInstance.h"
 #include "Misc/Optional.h"
 
-// [DLSS Toggle] 팀원 플러그인 미보유 이슈로 비활성화. 활성화하려면 1로 변경.
-#define ENABLE_DLSS 0
+// [DLSS Toggle] 활성화하려면 1로 변경.
+#define ENABLE_DLSS 1
 
 #if ENABLE_DLSS
 // DLSS
@@ -199,23 +199,9 @@ void UUW_Option::InitGraphicsSettings()
 	{
 		static IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(TEXT("r.MotionBlurQuality"));
         
-        // Force OFF by default if desired (여기서는 유저 요청대로 초기값을 OFF로 강제)
+        // Force OFF by default if desired
         if (CVar && CVar->GetInt() > 0)
         {
-            // 하지만 이미 유저가 켰을 수도 있으므로, 저장된 값이 없을 때만 꺼야 함.
-            // 여기서는 단순하게, 위젯 열릴 때 CVar 상태를 반영하되, 
-            // 만약 "Default OFF"를 원한다면 초기화 시점에 꺼버릴 수도 있음.
-            // 요청사항: "초기값은 OFF여야 함". -> CVar를 0으로 설정.
-            
-            // 하지만 매번 끄면 옵션을 켜도 다시 들어오면 꺼짐.
-            // SaveGame 시스템이 없으므로 GameUserSettings에 의존하거나, 
-            // 여기서는 그냥 현재 상태를 보여주는게 맞음.
-            // 단, "초기값"이 Off가 아니라는 불만이므로, 최초 실행 시 Off로 설정되도록 해야 함.
-            // GameUserSettings에 MotionBlur 항목이 없으므로 수동 관리 필요.
-            // 일단 현재 값을 반영하되, 만약 켜져있다면... 사용자가 킨 것일 수도 있음.
-            
-            // 타협: CVar의 현재 값을 신뢰하되, r.MotionBlurQuality는 엔진 기본값이 4임.
-            // 따라서 4라면(기본값) 0으로 강제 변경.
             if (CVar->GetInt() == 4) 
             {
                 CVar->Set(0, ECVF_SetByGameSetting);
