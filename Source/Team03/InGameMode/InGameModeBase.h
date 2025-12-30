@@ -50,7 +50,7 @@ private:
 
 	uint8 bIsGameStart : 1 = false;
 	uint8 bIsGameEnd : 1 = false;
-	uint8 bTimeUp : 1 = 0;
+	uint8 bTimeUp : 1 = false;
 	int32 PlayerCount;
 	int32 InPlayerCount;
 

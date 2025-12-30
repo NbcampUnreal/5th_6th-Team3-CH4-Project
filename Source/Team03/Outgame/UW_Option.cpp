@@ -13,7 +13,7 @@
 #include "Misc/Optional.h"
 
 // [DLSS Toggle] 팀원 플러그인 미보유 이슈로 비활성화. 활성화하려면 1로 변경.
-#define ENABLE_DLSS 0
+#define ENABLE_DLSS 1
 
 #if ENABLE_DLSS
 // DLSS
