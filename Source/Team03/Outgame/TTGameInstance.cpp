@@ -13,6 +13,7 @@ UTTGameInstance::UTTGameInstance()
 {
 	UserNickname = TEXT("Player");
 	SelectedCharacterRowName = NAME_None;
+    bUseLAN = false; // Default to Steam
 }
 
 void UTTGameInstance::Init()
@@ -55,7 +56,11 @@ void UTTGameInstance::CreateGameSession(bool bIsLAN)
 			SessionSettings.NumPublicConnections = 4; // 최대 4명
 			SessionSettings.bAllowJoinInProgress = true;
 			SessionSettings.bShouldAdvertise = true;
-			SessionSettings.bUsesPresence = true;
+			
+            // - true: Steam 오버레이, 친구 초대 등 플랫폼 기능 사용 (Steam 모드 필수)
+            // - false: 플랫폼 기능 차단. 순수 로컬 네트워크 플레이 (LAN 모드 권장)
+            // * 개발/테스트 편의를 위해 LAN에서도 Steam 기능을 쓰고 싶다면 true로 변경 가능
+			SessionSettings.bUsesPresence = !bIsLAN;
 			
 			// 클라이언트에게 알릴 호스트 이름 저장
 			FString HostName = UserNickname.IsEmpty() ? TEXT("Unknown") : UserNickname;
@@ -131,6 +136,11 @@ void UTTGameInstance::DestroyGameSession()
 			SessionInterface->DestroySession(NAME_GameSession);
 		}
 	}
+}
+
+void UTTGameInstance::SetNetworkMode(bool bIsLAN)
+{
+    bUseLAN = bIsLAN;
 }
 
 TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const

@@ -91,6 +91,31 @@ void UUW_Option::InitSettings()
 			Combo_WindowMode->SetSelectedOption(TEXT("Windowed"));
 	}
 
+    // 네트워크 모드 초기화
+    if (Combo_NetworkMode)
+    {
+        Combo_NetworkMode->ClearOptions();
+        Combo_NetworkMode->AddOption(TEXT("Steam (Internet)"));
+        Combo_NetworkMode->AddOption(TEXT("LAN (Local)"));
+
+        if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+        {
+            if (GI->bUseLAN)
+            {
+                Combo_NetworkMode->SetSelectedOption(TEXT("LAN (Local)"));
+            }
+            else
+            {
+                Combo_NetworkMode->SetSelectedOption(TEXT("Steam (Internet)"));
+            }
+        }
+        
+        if (!Combo_NetworkMode->OnSelectionChanged.IsBound())
+        {
+            Combo_NetworkMode->OnSelectionChanged.AddDynamic(this, &ThisClass::OnNetworkModeChanged);
+        }
+    }
+
     // 해상도 초기화 (동적 - 하드웨어 지원 목록 사용)
     if (Combo_Resolution)
     {
@@ -416,6 +441,15 @@ void UUW_Option::OnDLSSChanged(FString SelectedItem, ESelectInfo::Type Selection
 		UDLSSLibrary::SetDLSSMode(this, Mode); // Fixed: Added 'this'
 	}
 #endif
+}
+
+void UUW_Option::OnNetworkModeChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
+{
+    if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+    {
+        bool bIsLAN = (SelectedItem == TEXT("LAN (Local)"));
+        GI->SetNetworkMode(bIsLAN);
+    }
 }
 
 #pragma endregion
