@@ -109,8 +109,8 @@ void UUW_TitleLevel::OnCreateClicked()
 	SetLoadingState(true);
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
-		// LAN 연결
-		GI->CreateGameSession(true);
+		// LAN 연결 vs Steam (GI 설정을 따름)
+		GI->CreateGameSession(GI->bUseLAN);
 	}
 }
 
@@ -204,7 +204,7 @@ void UUW_TitleLevel::OnFindClicked()
 
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
-		GI->FindGameSessions(true);
+		GI->FindGameSessions(GI->bUseLAN);
 	}
 }
 

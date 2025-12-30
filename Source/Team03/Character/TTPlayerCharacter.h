@@ -22,6 +22,7 @@ class ATTSword02;
 class ATTShield02;
 class ATTAxe;
 class ATTHammer;
+class UAudioComponent;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE ( FOnPlayerDiedDelegate );
 
@@ -76,8 +77,32 @@ public:
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputAction> InputPickUp;
 	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputDance1;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputDance2;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputDance3;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputDance4;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
+	TObjectPtr<UInputAction> InputDance5;
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Input" )
 	TObjectPtr<UInputMappingContext> IMC_Character;
 
+	UPROPERTY ( EditAnywhere , BlueprintReadOnly , Category = "Animation" )
+	TArray<TObjectPtr<UAnimMontage>> DanceMontages;
+
+	UPROPERTY ( EditAnywhere , Category = "Sound" )
+	TArray<TObjectPtr<USoundBase>> DanceSounds;
+
+	void StopDanceAndMusic ();
+	UPROPERTY ()
+	TObjectPtr<UAudioComponent> CurrentDanceAudio;
+	UFUNCTION ( Server , Reliable )
+	void ServerPlayDance ( int32 Index );
+
+	UFUNCTION ( NetMulticast , Reliable )
+	void MulticastPlayDance ( int32 Index );
 public:
 	virtual void SetupPlayerInputComponent ( class UInputComponent* PlayerInputComponent ) override;
 	virtual void GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& OutLifetimeProps ) const override;
@@ -106,6 +131,11 @@ protected:
 	void JumpEnd ();
 	void PickUp(const FInputActionValue& Value);
 	void ThrowAway ( const FInputActionValue& Value );
+	void Dance1 ( const FInputActionValue& Value );
+	void Dance2 ( const FInputActionValue& Value );
+	void Dance3 ( const FInputActionValue& Value );
+	void Dance4 ( const FInputActionValue& Value );
+	void Dance5 ( const FInputActionValue& Value );
 
 	UFUNCTION(Server, Reliable)
 	void ServerSetBlocking ( bool bNewBlocking );
@@ -156,6 +186,8 @@ protected:
 
 	UPROPERTY ( VisibleInstanceOnly , Replicated , Category = "Interaction" )
 	TObjectPtr<ATTShield02> CurrentShield02;
+
+
 
 	bool IsHoldingAnything () const;
 	bool IsHoldingWeapon () const;
