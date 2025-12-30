@@ -66,6 +66,9 @@ void UTTGameInstance::CreateGameSession(bool bIsLAN)
 			FString HostName = UserNickname.IsEmpty() ? TEXT("Unknown") : UserNickname;
 			SessionSettings.Set(FName("HostName"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
+            // [Filter] 다른 Steam AppID 480 게임과 섞이지 않도록 식별자 추가
+            SessionSettings.Set(FName("PROJECT_ID"), FString("Team03_Project"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+
 			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 			SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, SessionSettings);
 		}
@@ -82,7 +85,14 @@ void UTTGameInstance::FindGameSessions(bool bIsLAN)
 		{
 			SessionSearch = MakeShareable(new FOnlineSessionSearch());
 			SessionSearch->bIsLanQuery = bIsLAN;
-			SessionSearch->MaxSearchResults = 20;
+			SessionSearch->MaxSearchResults = 100; // 검색 범위 확장
+            SessionSearch->PingBucketSize = 50; // 핑 50ms 단위로 그룹화 (검색 속도 향상 도움)
+
+            // [Filter] LAN이 아닐 때(Steam)는 "PROJECT_ID"가 일치하는 방만 검색
+            if (!bIsLAN)
+            {
+                SessionSearch->QuerySettings.Set(FName("PROJECT_ID"), FString("Team03_Project"), EOnlineComparisonOp::Equals);
+            }
 
 			OnFindSessionsCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FOnFindSessionsCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnFindSessionsComplete));
 
@@ -117,9 +127,9 @@ void UTTGameInstance::JoinGameSession(int32 SessionIndex)
 
 			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
 			if (!SessionInterface->JoinSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, Result))
-            {
+			{
 				// Join Fail logic
-            }
+			}
 		}
 	}
 }
@@ -216,15 +226,30 @@ void UTTGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucces
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
 		SessionInterface->ClearOnCreateSessionCompleteDelegate_Handle(OnCreateSessionCompleteDelegateHandle);
 	}
+    
+    // [Debug] Create Session 결과 로깅
+    if (bWasSuccessful)
+    {
+        UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] Create Session SUCCESS: %s"), *SessionName.ToString());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("[TTGameInstance] Create Session FAILED: %s"), *SessionName.ToString());
+    }
 
 	if (bWasSuccessful)
 	{
 		// C++에서 바로 이동하지 않고 UI가 애니메이션 후 이동하도록 변경
 		// UGameplayStatics::OpenLevel(GetWorld(), TEXT("LobbyLevel"), true, TEXT("listen"));
         
-	// 델리게이트 브로드캐스트
-	OnCreateSessionCompleteBP.Broadcast(bWasSuccessful);
-}
+    	// 델리게이트 브로드캐스트
+    	OnCreateSessionCompleteBP.Broadcast(bWasSuccessful);
+    }
+    else
+    {
+        // 실패 시에도 UI에 알림
+        OnCreateSessionCompleteBP.Broadcast(false);
+    }
 }
 
 void UTTGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
