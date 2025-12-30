@@ -68,6 +68,7 @@ public:
 	void WinAnimation ()const;
 	void LoseAnimation ()const;
 	void DeadAnimation ()const;
+	void DrawAnimation ()const;
 	void Addportrait ( const FString& PlayerName , UMaterialInstanceDynamic* portrait ) const;
 public:
 	UPROPERTY ( EditDefaultsOnly )

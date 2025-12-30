@@ -28,6 +28,8 @@ void ATTSword::HandleOnThrowAway ()
 		PickupComponent->SetSimulatePhysics ( true );
 		PickupComponent->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
 
+		PickupComponent->SetCollisionResponseToChannel ( ECC_Pawn , ECR_Ignore );
+
 		FVector ThrowDir = GetActorForwardVector () + FVector ( 0 , 0 , 0.5f );
 		PickupComponent->AddImpulse ( ThrowDir * 300.0f , NAME_None , true );
 	}

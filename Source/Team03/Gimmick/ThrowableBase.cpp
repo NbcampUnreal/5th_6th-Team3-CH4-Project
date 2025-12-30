@@ -32,17 +32,17 @@ void AThrowableBase::BeginPlay ()
 {
 	Super::BeginPlay ();
 
-	if (GetOwner () == nullptr)
-	{
-		bAllowPickUp = false;
-	}
-
 	if (MeshComp)
 	{
 		MeshComp->OnComponentHit.AddDynamic (
 			this ,
 			&AThrowableBase::OnHit
 		);
+	}
+
+	if (PickupComponent)
+	{
+		PickupComponent->SetCollisionEnabled ( ECollisionEnabled::NoCollision );
 	}
 }
 
@@ -51,6 +51,9 @@ void AThrowableBase::GetLifetimeReplicatedProps (TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps ( OutLifetimeProps );
 
 	DOREPLIFETIME ( AThrowableBase , bDestroyed );
+
+	DOREPLIFETIME ( AThrowableBase , bAllowPickUp );
+
 }
 
 void AThrowableBase::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
@@ -59,15 +62,9 @@ void AThrowableBase::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 
 	if (!HasAuthority ()) return;
 
-	if (!bAllowPickUp)
-	{
-		return;
-	}
-
-	if (OwnerCharacter)
-	{
-		return;
-	}
+	if (!bAllowPickUp) return;
+	
+	if (OwnerCharacter) return;
 
 	OwnerCharacter = InPickUpCharacter;
 	SetOwner ( InPickUpCharacter );
@@ -93,6 +90,11 @@ void AThrowableBase::Throw (const FVector& Direction ,float Power)
 	if (!MeshComp) return;
 
 	bAllowPickUp = true;
+
+	if (PickupComponent)
+	{
+		PickupComponent->SetCollisionEnabled ( ECollisionEnabled::QueryOnly );
+	}
 
 	SetActorHiddenInGame ( false );
 	SetActorEnableCollision ( true );

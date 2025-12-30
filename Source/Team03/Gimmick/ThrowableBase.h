@@ -32,7 +32,7 @@ protected:
 	UPROPERTY ( Replicated )
 	bool bDestroyed = false;
 
-	UPROPERTY ( EditInstanceOnly , Category = "Throwable" )
+	UPROPERTY ( Replicated , EditInstanceOnly , Category = "Throwable" )
 	bool bAllowPickUp = false;
 
 	virtual void GetLifetimeReplicatedProps (TArray<FLifetimeProperty>& OutLifetimeProps) const override;

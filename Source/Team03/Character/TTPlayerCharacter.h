@@ -144,7 +144,7 @@ protected:
 	void ServerPickUp ();
 
 	UFUNCTION(Server, Reliable)
-	void ServerThorwAway ();
+	void ServerThrowAway ();
 
 	void OnAnimation();
 	void EndAnimation();
@@ -226,6 +226,13 @@ public:
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
 	TSubclassOf<ACharacter> GhostClass;
+
+	FTimerHandle DeathTimerHandle;
+
+	void StartGhost ();
+
+	UPROPERTY(EditDefaultsOnly, Category = "Death")
+	float SpectateDelayTime = 3.0f;
 
 
 

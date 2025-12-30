@@ -389,6 +389,14 @@ void ATTPlayerController::DeadAnimation ()
 	}
 }
 
+void ATTPlayerController::DrawAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->DrawAnimation ();
+	}
+}
+
 void ATTPlayerController::ClientPlayStartAnim_Implementation ()
 {
 	if (IsValid ( TTInGameHUD ))
@@ -421,7 +429,6 @@ void ATTPlayerController::ClientAddportrait_Implementation ( const FString& Play
 {
 	if (IsValid ( TTInGameHUD ))
 	{
-		UE_LOG ( LogTemp , Warning , TEXT ( "ClientAddportrait1" ) );
 		TTInGameHUD->Addportrait ( PlayerName, portrait );
 	}
 }

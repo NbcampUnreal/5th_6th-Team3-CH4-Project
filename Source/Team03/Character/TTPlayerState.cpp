@@ -23,13 +23,34 @@ void ATTPlayerState::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>& Out
     DOREPLIFETIME(ATTPlayerState, bIsHost);
 }
 
-void ATTPlayerState::SetTeam ( Teams NewTeam )
+void ATTPlayerState::CopyProperties ( APlayerState* NewPlayerState )
 {
-	if (HasAuthority ())
+	Super::CopyProperties ( NewPlayerState );
+
+	if (ATTPlayerState* PS = Cast<ATTPlayerState> ( NewPlayerState ))
 	{
-		Team = NewTeam;
-		OnRep_Team (); // 서버에서도 즉시 반영
+		PS->Team = Team;
+		UE_LOG ( LogTemp , Warning , TEXT ( "[CopyProperties] COPIED Team=%d" ) , (uint8)PS->Team );
 	}
+	else
+	{
+		UE_LOG ( LogTemp , Warning , TEXT ( "[CopyProperties] Cast FAILED" ) );
+	}
+}
+
+void ATTPlayerState::OverrideWith ( APlayerState* OldPlayerState )
+{
+	Super::OverrideWith ( OldPlayerState );
+	if (ATTPlayerState* PS = Cast<ATTPlayerState> ( OldPlayerState ))
+	{
+		Team = PS->Team;
+	}
+}
+
+void ATTPlayerState::SetTeam_Implementation ( Teams NewTeam )
+{
+	Team = NewTeam;
+	ForceNetUpdate ();
 }
 
 void ATTPlayerState::SetPortraitRenderTarget ( UTextureRenderTarget2D* InRT )
@@ -38,8 +59,6 @@ void ATTPlayerState::SetPortraitRenderTarget ( UTextureRenderTarget2D* InRT )
 		return;
 
 	PortraitMID = UMaterialInstanceDynamic::Create ( PortraitBaseMaterial , this );
-	UE_LOG ( LogTemp , Warning , TEXT ( "CaptureRTtemp" ) );
-	UE_LOG ( LogTemp , Warning , TEXT ( "CaptureRT=%s" ) , *GetNameSafe ( InRT ) );
 	static const FName PortraitParamName = TEXT ( "PortraitTexture" );
 	PortraitMID->SetTextureParameterValue ( PortraitParamName , InRT );
 }

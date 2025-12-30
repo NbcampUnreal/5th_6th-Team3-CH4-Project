@@ -26,6 +26,7 @@
 #include "LHO/TTHammer.h"
 #include "LHO/TTShield02.h"
 #include "LHO/TTSword02.h"
+#include "InGameMode/InGameModeBase.h"
 #include "Components/AudioComponent.h"
 //int32 ATTPlayerCharacter::ShowAttackMeleeDebug = 0;
 //
@@ -179,6 +180,29 @@ void ATTPlayerCharacter::Tick ( float DeltaTime )
 
 }
 
+void ATTPlayerCharacter::StartGhost ()
+{
+	if (APlayerController * PC = Cast<APlayerController> ( GetController () ))
+	{
+		if (GetWorld () && GhostClass)
+		{
+			FVector SpawnLoc = GetActorLocation ();
+			FRotator SpawnRot = GetControlRotation ();
+
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+			ACharacter* GhostChar = GetWorld ()->SpawnActor<ACharacter> ( GhostClass , SpawnLoc , SpawnRot , SpawnParams );
+
+			if (GhostChar)
+			{
+				PC->Possess ( GhostChar );
+			}
+		}
+	}
+
+}
+
 #pragma region Get,Set
 void ATTPlayerCharacter::SetMaxHP ( float amount )
 {
@@ -325,6 +349,7 @@ void ATTPlayerCharacter::Look ( const FInputActionValue& Value )
 void ATTPlayerCharacter::Move ( const FInputActionValue& Value )
 {
 	if (bIsStunned) return;
+	if (bIsDead) return;
 	UAnimInstance* AnimInstance = GetMesh ()->GetAnimInstance ();
 
 	FVector2D MovementVector = Value.Get<FVector2D> ();
@@ -506,7 +531,7 @@ void ATTPlayerCharacter::ThrowAway ( const FInputActionValue& Value )
 {
 	if (IsHoldingAnything ())
 	{
-		ServerThorwAway ();
+		ServerThrowAway ();
 	}
 }
 
@@ -515,7 +540,7 @@ void ATTPlayerCharacter::ServerSetBlocking_Implementation ( bool bNewBlocking )
 	bIsBlocking = bNewBlocking;
 }
 
-void ATTPlayerCharacter::ServerThorwAway_Implementation ()
+void ATTPlayerCharacter::ServerThrowAway_Implementation ()
 {
 	bool bHasWeapon = false;
 
@@ -1091,6 +1116,9 @@ void ATTPlayerCharacter::OnRep_IsDead ()
 {
 	if (bIsDead == 1)
 	{
+		if (CurrentSword) ServerThrowAway ();
+		if (CurrentShield) ServerThrowAway ();
+
 		GetMesh ()->SetCollisionProfileName ( TEXT ( "Ragdoll" ) );
 		GetMesh ()->SetSimulatePhysics ( true );
 
@@ -1111,26 +1139,34 @@ void ATTPlayerCharacter::ServerDeath_Implementation ()
 	if (bIsDead != 0) return;
 
 	bIsDead = 1;
-
-	if (GetWorld () && GhostClass)
+	AInGameModeBase* TTGM = Cast<AInGameModeBase> ( GetWorld ()->GetAuthGameMode () );
+	if (IsValid ( TTGM ))
 	{
-		if (APlayerController* PC = Cast<APlayerController> ( GetController () ))
+		if(ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
 		{
-			FVector SpawnLoc = GetActorLocation ();
-			FRotator SpawnRot = GetControlRotation ();
-
-			FActorSpawnParameters SpawnParams;
-			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-			ACharacter* GhostChar = GetWorld ()->SpawnActor<ACharacter> ( GhostClass , SpawnLoc , SpawnRot , SpawnParams );
-
-			if (GhostChar)
+			if(PS->GetTeam() == Teams::Blue)
 			{
-				PC->Possess ( GhostChar );
+				TTGM->SetBlueTeamCount ();
+			}
+			if(PS->GetTeam() == Teams::Red)
+			{
+				TTGM->SetRedTeamCount ();
 			}
 		}
 	}
 	OnRep_IsDead ();
+
+	if (GetWorld ())
+	{
+		GetWorld ()->GetTimerManager ().SetTimer
+		(
+			DeathTimerHandle ,
+			this ,
+			&ATTPlayerCharacter::StartGhost ,
+			SpectateDelayTime ,
+			false
+		);
+	}
 }
 
 void ATTPlayerCharacter::ClearSlow ()

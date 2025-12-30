@@ -54,7 +54,7 @@ protected:
 	
 #pragma region ChatUI
 public:
-	UFUNCTION ()
+	UFUNCTION (BlueprintCallable)
 	void ActivateChatBox ();
 
 	UFUNCTION ( Server , Reliable )
@@ -74,7 +74,7 @@ private:
 
 #pragma region ESCMenu
 public:
-	UFUNCTION ()
+	UFUNCTION ( BlueprintCallable )
 	void ActivateESCMenu ();
 #pragma endregion
 
@@ -111,6 +111,8 @@ public:
 	void LoseAnimation ();
 	UFUNCTION ()
 	void DeadAnimation ();
+	UFUNCTION ()
+	void DrawAnimation ();
 
 	UFUNCTION ( Client , Reliable )
 	void ClientPlayStartAnim ();
