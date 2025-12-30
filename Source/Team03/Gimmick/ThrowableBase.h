@@ -49,6 +49,8 @@ protected:
 	UFUNCTION ()
 	virtual void HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter );
 
+	virtual void EndPlay ( const EEndPlayReason::Type EndPlayReason ) override;
+
 public:
 	UFUNCTION ( Server , Reliable )
 	void ServerThrow ( const FVector& Direction , float Power );

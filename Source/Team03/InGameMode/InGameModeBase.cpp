@@ -8,6 +8,55 @@
 #include "Outgame/TTGameInstance.h"
 #include "InGameMode/TTGameStateBase.h"
 
+//스폰
+#include "GameFramework/PlayerStart.h"
+#include "Kismet/GameplayStatics.h"
+
+AActor* AInGameModeBase::ChoosePlayerStart_Implementation ( AController* Player )
+{
+	ATTPlayerState* TTPS = Player->GetPlayerState<ATTPlayerState> ();
+	FName TargetTag = NAME_None;
+	int32* CurrentTeamIndex = nullptr;
+
+	if (TTPS)
+	{
+		if (TTPS->GetTeam () == Teams::Blue)
+		{
+			TargetTag = FName ( "BlueTeam" );
+			CurrentTeamIndex = &BlueSpawnIndex;
+		}
+
+		else if (TTPS->GetTeam () == Teams::Red)
+		{
+			TargetTag = FName ( "RedTeam" );
+			CurrentTeamIndex = &RedSpawnIndex;
+		}
+	}
+
+	TArray<AActor*> FoundStarts;
+	UGameplayStatics::GetAllActorsOfClass ( GetWorld () , APlayerStart::StaticClass () , FoundStarts );
+
+	TArray<APlayerStart*> ValidStarts;
+	for (AActor* Start : FoundStarts)
+	{
+		APlayerStart* PStart = Cast<APlayerStart> ( Start );
+		if (PStart && PStart->PlayerStartTag == TargetTag)
+		{
+			ValidStarts.Add ( PStart );
+		}
+	}
+
+	if (ValidStarts.Num () > 0 && CurrentTeamIndex != nullptr)
+	{
+		int32 SelectedIndex = (*CurrentTeamIndex) % ValidStarts.Num ();
+
+		(*CurrentTeamIndex)++;
+
+		return ValidStarts[SelectedIndex];
+	}
+
+	return Super::ChoosePlayerStart_Implementation ( Player );
+}
 
 // ----- Outgame 담당자가 추가함 ----- 
 AInGameModeBase::AInGameModeBase () :
@@ -255,3 +304,4 @@ void AInGameModeBase::ServerTravelMap ()
 	//bIsEnd = false;
 	GetWorld ()->ServerTravel ( TEXT ( "/Game/Maps/LobbyLevel?listen" ) );
 }
+

@@ -32,6 +32,8 @@ void AThrowableBase::BeginPlay ()
 {
 	Super::BeginPlay ();
 
+	UE_LOG ( LogTemp , Warning , TEXT ( "%s : BeginPlay 호출됨" ) , *GetName () );
+
 	if (MeshComp)
 	{
 		MeshComp->OnComponentHit.AddDynamic (
@@ -73,6 +75,31 @@ void AThrowableBase::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 	SetActorEnableCollision ( false );
 
 	InPickUpCharacter->AddThrowable ( this );
+}
+
+void AThrowableBase::EndPlay ( const EEndPlayReason::Type EndPlayReason )
+{
+	Super::EndPlay ( EndPlayReason );
+
+	FString Reason;
+	switch (EndPlayReason)
+	{
+	case EEndPlayReason::Destroyed:
+		Reason = TEXT ( "Destroyed (코드로 인한 파괴)" );
+		break;
+	case EEndPlayReason::LevelTransition:
+		Reason = TEXT ( "Level Transition (레벨 이동)" );
+		break;
+	case EEndPlayReason::RemovedFromWorld:
+		Reason = TEXT ( "Removed From World (월드에서 제거됨)" );
+		break;
+	default:
+		Reason = TEXT ( "Other Reason" );
+		break;
+	}
+
+	// 로그 출력 (빨간색으로 표시됨)
+	UE_LOG ( LogTemp , Error , TEXT ( "==== [%s] 액터가 사라짐! 사유: %s ====" ) , *GetName () , *Reason );
 }
 
 void AThrowableBase::OnHit (UPrimitiveComponent* HitComp ,AActor* OtherActor ,UPrimitiveComponent* OtherComp ,FVector NormalImpulse ,const FHitResult& Hit)

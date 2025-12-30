@@ -14,6 +14,14 @@ class TEAM03_API AInGameModeBase : public AGameModeBase
 {
 	GENERATED_BODY()
 	
+//스폰
+protected:
+	virtual AActor* ChoosePlayerStart_Implementation ( AController* Player ) override;
+
+private:
+	int32 BlueSpawnIndex = 0;
+	int32 RedSpawnIndex = 0;
+
 public:
 	AInGameModeBase();
 
@@ -59,4 +67,6 @@ private:
 	
 	int32 minutes = 3;
 	int32 seconds = 0;
+
+
 };
