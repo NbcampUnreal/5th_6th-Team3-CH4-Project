@@ -77,7 +77,10 @@ void UTTGameInstance::OnDestroySessionComplete_DelayedCreate(FName SessionName, 
     SessionSettings.bAllowJoinInProgress = true;
     SessionSettings.bShouldAdvertise = true;
     SessionSettings.bUsesPresence = !bUseLAN;
-    SessionSettings.bUseLobbiesIfAvailable = true; // [Fix] Force Lobbies for AppID 480
+    
+    // [Fix] LAN(NULL Subsystem)은 로비를 지원하지 않음. Steam일 때만 true.
+    SessionSettings.bUseLobbiesIfAvailable = !bUseLAN; 
+    
     
     // 클라이언트에게 알릴 호스트 이름 저장
     FString HostName = UserNickname.IsEmpty() ? TEXT("Unknown") : UserNickname;
@@ -229,6 +232,23 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 
 			if (SearchResult.IsValid())
 			{
+                // [Filter] Client-Side Strict Filtering for PROJECT_ID
+                // Steam 검색(480)은 필터가 부정확할 수 있으므로 여기서 2차 검증
+                FString SessionProjectID;
+                if (SearchResult.Session.SessionSettings.Get(FName("PROJECT_ID"), SessionProjectID))
+                {
+                    if (SessionProjectID != TEXT("Team03_Project"))
+                    {
+                        continue; // 다른 프로젝트의 세션임
+                    }
+                }
+                else
+                {
+                    // PROJECT_ID가 아예 없으면 우리 게임 방이 아님 (Steam Spacewar 등)
+                    // -> LAN도 생성 시 넣도록 했으므로, 없으면 무시하는 게 안전.
+                    continue; 
+                }
+
 				FTTSessionInfo Info;
 				Info.SessionIndex = i; // 원래 인덱스 저장
 				
