@@ -15,6 +15,30 @@ ATTGameModeBase_Lobby::ATTGameModeBase_Lobby()
 	bUseSeamlessTravel = true;
 }
 
+void ATTGameModeBase_Lobby::InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage)
+{
+    Super::InitGame(MapName, Options, ErrorMessage);
+
+    // [Critical Check] 패키징 빌드에서 Listen 옵션 누락 시 9999ms 발생
+#if !WITH_EDITOR
+    if (!Options.Contains(TEXT("listen")))
+    {
+        UE_LOG(LogTemp, Error, TEXT("[CRITICAL] Server started WITHOUT '?listen' option! Clients cannot join."));
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 60.f, FColor::Red, TEXT("[CRITICAL ERROR] Server NOT listening! Check 'OpenLevel' node options for 'listen'."));
+        }
+    }
+    else
+    {
+        if (GEngine)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, TEXT("[Success] Server is LISTENING (GameMode Verified)."));
+        }
+    }
+#endif
+}
+
 void ATTGameModeBase_Lobby::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);

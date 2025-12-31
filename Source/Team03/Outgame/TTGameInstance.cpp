@@ -36,100 +36,83 @@ void UTTGameInstance::Init()
 
 void UTTGameInstance::CreateGameSession(bool bIsLAN)
 {
-	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    // [Fix] LAN 모드일 때는 'NULL' 서브시스템 강제 사용, Steam일 때는 기본(Steam) 사용
+    FName SubsystemName = bIsLAN ? FName("NULL") : NAME_None;
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(SubsystemName);
 	if (OnlineSub)
 	{
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
 		if (SessionInterface.IsValid())
 		{
-			// 기존 세션 확인
-			auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession);
-			if (ExistingSession != nullptr)
-			{
-				SessionInterface->DestroySession(NAME_GameSession);
-			}
-
-			OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(FOnCreateSessionCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnCreateSessionComplete));
-
-			FOnlineSessionSettings SessionSettings;
-			SessionSettings.bIsLANMatch = bIsLAN;
-			SessionSettings.NumPublicConnections = 4; // 최대 4명
-			SessionSettings.bAllowJoinInProgress = true;
-			SessionSettings.bShouldAdvertise = true;
+			OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(FOnDestroySessionCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnDestroySessionComplete_DelayedCreate));
 			
-            // - true: Steam 오버레이, 친구 초대 등 플랫폼 기능 사용 (Steam 모드 필수)
-            // - false: 플랫폼 기능 차단. 순수 로컬 네트워크 플레이 (LAN 모드 권장)
-            // * 개발/테스트 편의를 위해 LAN에서도 Steam 기능을 쓰고 싶다면 true로 변경 가능
-			SessionSettings.bUsesPresence = !bIsLAN;
 			
-			// 클라이언트에게 알릴 호스트 이름 저장
-			FString HostName = UserNickname.IsEmpty() ? TEXT("Unknown") : UserNickname;
-			SessionSettings.Set(FName("HostName"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+            UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] Cleaning up any previous sessions before creating..."));
 
-            // [Filter] 다른 Steam AppID 480 게임과 섞이지 않도록 식별자 추가
-            SessionSettings.Set(FName("PROJECT_ID"), FString("Team03_Project"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-
-            const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-            
-            // [Debug] Step-by-step Diagnostics
-            if (GEngine)
+			if (!SessionInterface->DestroySession(NAME_GameSession))
             {
-                // 1. Check Subsystem
-                GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, FString::Printf(TEXT("[System] Subsystem: %s"), *OnlineSub->GetSubsystemName().ToString()));
-            
-                // 2. Check Existing Session
-                auto ExistingSessionCheck = SessionInterface->GetNamedSession(NAME_GameSession);
-                if (ExistingSessionCheck)
-                {
-                     GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, TEXT("[System] WARNING: Session already exists! Destroying... (May cause conflict if not waited)"));
-                }
-
-                // 3. Check Local Player
-                if (!LocalPlayer)
-                {
-                    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] FATAL: LocalPlayer is NULL!"));
-                    return; // Stop execution
-                }
-                else
-                {
-                    // 4. Check UniqueNetId
-                    FUniqueNetIdRepl NetId = LocalPlayer->GetPreferredUniqueNetId();
-                    if (!NetId.IsValid())
-                    {
-                        GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] FATAL: UniqueNetId is INVALID! (Steam Login Failed?)"));
-                        return; // Stop execution (cannot create session without valid ID)
-                    }
-                    else
-                    {
-                         GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("[System] UniqueNetId is VALID"));
-                    }
-                }
-            }
-
-            if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("[System] Calling SessionInterface->CreateSession..."));
-
-			bool bResult = SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, SessionSettings);
-            
-            if (!bResult)
-            {
-                if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] CreateSession FAILED immediately (returned false)! Check UniqueNetId or Subsystem state."));
-                
-                // 에러 원인이 될만한 요소 다시 출력
-                if (!LocalPlayer->GetPreferredUniqueNetId().IsValid())
-                {
-                     if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[Cause] Invalid UniqueNetId (No Steam User)"));
-                }
-                
-                UE_LOG(LogTemp, Error, TEXT("[TTGameInstance] CreateSession returned false."));
-                OnCreateSessionCompleteBP.Broadcast(false);
+                // 즉시 파괴 실패 (존재하지 않음) -> 바로 생성 시도
+                SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
+                OnDestroySessionComplete_DelayedCreate(NAME_GameSession, true);
             }
 		}
 	}
 }
 
+void UTTGameInstance::OnDestroySessionComplete_DelayedCreate(FName SessionName, bool bWasSuccessful)
+{
+    // [Fix] 저장된 bUseLAN 상태에 따라 서브시스템 가져오기
+    FName SubsystemName = bUseLAN ? FName("NULL") : NAME_None;
+    IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(SubsystemName);
+    if (!OnlineSub) return;
+    IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
+    if (!SessionInterface.IsValid()) return;
+
+    SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
+
+
+
+    // === Real Create Logic ===
+    OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(FOnCreateSessionCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnCreateSessionComplete));
+
+    FOnlineSessionSettings SessionSettings;
+    SessionSettings.bIsLANMatch = bUseLAN; // Saved value
+    SessionSettings.NumPublicConnections = 4;
+    SessionSettings.bAllowJoinInProgress = true;
+    SessionSettings.bShouldAdvertise = true;
+    SessionSettings.bUsesPresence = !bUseLAN;
+    
+    // [Fix] LAN(NULL Subsystem)은 로비를 지원하지 않음. Steam일 때만 true.
+    SessionSettings.bUseLobbiesIfAvailable = !bUseLAN; 
+    
+    
+    // 클라이언트에게 알릴 호스트 이름 저장
+    FString HostName = UserNickname.IsEmpty() ? TEXT("Unknown") : UserNickname;
+    SessionSettings.Set(FName("HostName"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+
+    // [Filter] 검색(Ping) 단계에서 보이도록 ViaOnlineServiceAndPing으로 복구
+    SessionSettings.Set(FName("PROJECT_ID"), FString("Team03_Project"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+
+    const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+    
+    // [Debug] Step-by-step Diagnostics Removed (User Request)
+    if (!LocalPlayer) return;
+    if (!LocalPlayer->GetPreferredUniqueNetId().IsValid()) return;
+
+    bool bResult = SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, SessionSettings);
+    
+    if (!bResult)
+    {
+        UE_LOG(LogTemp, Error, TEXT("[TTGameInstance] CreateSession returned false."));
+        OnCreateSessionCompleteBP.Broadcast(false);
+    }
+}
+
 void UTTGameInstance::FindGameSessions(bool bIsLAN)
 {
-	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    // [Fix] LAN 모드일 때는 'NULL' 서브시스템 사용
+    FName SubsystemName = bIsLAN ? FName("NULL") : NAME_None;
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(SubsystemName);
 	if (OnlineSub)
 	{
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
@@ -156,7 +139,9 @@ void UTTGameInstance::FindGameSessions(bool bIsLAN)
 
 void UTTGameInstance::JoinGameSession(int32 SessionIndex)
 {
-	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    // [Fix] 현재 설정된 bUseLAN에 따라 서브시스템 결정
+    FName SubsystemName = bUseLAN ? FName("NULL") : NAME_None;
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(SubsystemName);
 	if (OnlineSub && SessionSearch.IsValid())
 	{
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
@@ -188,7 +173,9 @@ void UTTGameInstance::JoinGameSession(int32 SessionIndex)
 
 void UTTGameInstance::DestroyGameSession()
 {
-	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    // [Fix] 현재 설정된 bUseLAN에 따라 서브시스템 결정
+    FName SubsystemName = bUseLAN ? FName("NULL") : NAME_None;
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(SubsystemName);
 	if (OnlineSub)
 	{
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
@@ -227,6 +214,23 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 
 			if (SearchResult.IsValid())
 			{
+                // [Filter] Client-Side Strict Filtering for PROJECT_ID
+                // Steam 검색(480)은 필터가 부정확할 수 있으므로 여기서 2차 검증
+                FString SessionProjectID;
+                if (SearchResult.Session.SessionSettings.Get(FName("PROJECT_ID"), SessionProjectID))
+                {
+                    if (SessionProjectID != TEXT("Team03_Project"))
+                    {
+                        continue; // 다른 프로젝트의 세션임
+                    }
+                }
+                else
+                {
+                    // PROJECT_ID가 아예 없으면 우리 게임 방이 아님 (Steam Spacewar 등)
+                    // -> LAN도 생성 시 넣도록 했으므로, 없으면 무시하는 게 안전.
+                    continue; 
+                }
+
 				FTTSessionInfo Info;
 				Info.SessionIndex = i; // 원래 인덱스 저장
 				
@@ -248,7 +252,7 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 
 				// Null Subsystem(LAN/에디터)에서는 Host가 세션 생성 시 Open Connection을 소모하지 않음
 				// 따라서 0명으로 표시되는 문제를 해결하기 위해 Host(+1)를 추가
-				if (IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get())
+				if (IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(bUseLAN ? FName("NULL") : NAME_None))
 				{
 					if (OnlineSub->GetSubsystemName() == TEXT("NULL"))
 					{
@@ -258,6 +262,12 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 
 				Info.MaxPlayers = MaxConnections;
 				Info.Ping = SearchResult.PingInMs;
+
+                if (Info.Ping == 9999)
+                {
+                    // [Debug] LAN 환경에서 9999는 방화벽 차단 가능성 높음
+                   // UE_LOG(LogTemp, Warning, TEXT("Session %d has 9999ms ping. Check Firewall/UDP 7777."), i);
+                }
 
 				Results.Add(Info);
 			}
@@ -272,7 +282,9 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 
 void UTTGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSuccessful)
 {
-	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    // [Fix] Callback 시점에서도 올바른 서브시스템 핸들을 해제해야 함
+    FName SubsystemName = bUseLAN ? FName("NULL") : NAME_None;
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(SubsystemName);
 	if (OnlineSub)
 	{
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
@@ -291,10 +303,10 @@ void UTTGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucces
 
 	if (bWasSuccessful)
 	{
-		// C++에서 바로 이동하지 않고 UI가 애니메이션 후 이동하도록 변경
+		// C++에서 바로 이동하지 않고 UI가 애니메이션 후 이동하도록 변경 (User Request)
 		// UGameplayStatics::OpenLevel(GetWorld(), TEXT("LobbyLevel"), true, TEXT("listen"));
         
-    	// 델리게이트 브로드캐스트
+    	// 델리게이트 브로드캐스트 (UI 연출용)
     	OnCreateSessionCompleteBP.Broadcast(bWasSuccessful);
     }
     else
@@ -306,7 +318,8 @@ void UTTGameInstance::OnCreateSessionComplete(FName SessionName, bool bWasSucces
 
 void UTTGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 {
-	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    FName SubsystemName = bUseLAN ? FName("NULL") : NAME_None;
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(SubsystemName);
 	if (OnlineSub)
 	{
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
@@ -318,7 +331,8 @@ void UTTGameInstance::OnFindSessionsComplete(bool bWasSuccessful)
 
 void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result)
 {
-	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    FName SubsystemName = bUseLAN ? FName("NULL") : NAME_None;
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(SubsystemName);
 	if (OnlineSub)
 	{
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
@@ -357,7 +371,8 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
 
 void UTTGameInstance::OnDestroySessionBeforeJoin(FName SessionName, bool bWasSuccessful)
 {
-    IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    FName SubsystemName = bUseLAN ? FName("NULL") : NAME_None;
+    IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(SubsystemName);
     if (OnlineSub)
     {
         IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
@@ -374,7 +389,8 @@ void UTTGameInstance::OnDestroySessionBeforeJoin(FName SessionName, bool bWasSuc
 
 void UTTGameInstance::OnDestroySessionComplete(FName SessionName, bool bWasSuccessful)
 {
-	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    FName SubsystemName = bUseLAN ? FName("NULL") : NAME_None;
+	IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(SubsystemName);
 	if (OnlineSub)
 	{
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
