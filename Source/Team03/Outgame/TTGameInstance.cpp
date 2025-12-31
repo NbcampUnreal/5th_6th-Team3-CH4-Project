@@ -86,8 +86,8 @@ void UTTGameInstance::OnDestroySessionComplete_DelayedCreate(FName SessionName, 
     FString HostName = UserNickname.IsEmpty() ? TEXT("Unknown") : UserNickname;
     SessionSettings.Set(FName("HostName"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
-    // [Filter] ViaOnlineService으로 변경 (안정성)
-    SessionSettings.Set(FName("PROJECT_ID"), FString("Team03_Project"), EOnlineDataAdvertisementType::ViaOnlineService);
+    // [Filter] 검색(Ping) 단계에서 보이도록 ViaOnlineServiceAndPing으로 복구
+    SessionSettings.Set(FName("PROJECT_ID"), FString("Team03_Project"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
     const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
     
@@ -280,6 +280,12 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 
 				Info.MaxPlayers = MaxConnections;
 				Info.Ping = SearchResult.PingInMs;
+
+                if (Info.Ping == 9999)
+                {
+                    // [Debug] LAN 환경에서 9999는 방화벽 차단 가능성 높음
+                   // UE_LOG(LogTemp, Warning, TEXT("Session %d has 9999ms ping. Check Firewall/UDP 7777."), i);
+                }
 
 				Results.Add(Info);
 			}
