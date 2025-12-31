@@ -1,4 +1,5 @@
 ﻿//MapsGimmick.h
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -6,6 +7,7 @@
 #include "MapsGimmick.generated.h"
 
 class UBoxComponent;
+class UStaticMeshComponent;
 
 UCLASS ()
 class TEAM03_API AMapsGimmick : public AActor
@@ -33,8 +35,12 @@ protected:
 	void GasDamage ();
 
 	//게임 시작후 가스 방출
-	UPROPERTY ( Replicated )
+
+	UPROPERTY ( ReplicatedUsing = OnRep_GasActive )
 	bool bGasActive = false;
+
+	UFUNCTION ()
+	void OnRep_GasActive ();
 
 	FTimerHandle GasStartTimer;
 
@@ -67,6 +73,9 @@ protected:
 	//가스 시작 딜레이
 	UPROPERTY ( EditAnywhere , BlueprintReadWrite , Category = "Gas Stats" )
 	float GasStartDelay = 10.f;
+
+	UPROPERTY ( VisibleAnywhere , BlueprintReadOnly , Category = "Gas Visual" )
+	UStaticMeshComponent* GasMesh;
 
 public:
 	virtual void Tick ( float DeltaTime ) override;

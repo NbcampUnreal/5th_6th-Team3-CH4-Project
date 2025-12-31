@@ -2,6 +2,49 @@
 #include "Components/BoxComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
+#include "TimerManager.h"
+
+void ASpawnVolume::BeginPlay ()
+{
+	Super::BeginPlay ();
+
+	if (HasAuthority ())
+	{
+		StartSpawnTimer ();
+	}
+}
+
+void ASpawnVolume::StartSpawnTimer ()
+{
+	if (!HasAuthority ())
+	{
+		return;
+	}
+
+	if (GetWorld ()->GetTimerManager ().IsTimerActive ( SpawnTimerHandle ))
+	{
+		return;
+	}
+
+	GetWorld ()->GetTimerManager ().SetTimer (
+		SpawnTimerHandle ,
+		this ,
+		&ASpawnVolume::SpawnRandomItem ,
+		SpawnInterval ,
+		true ,
+		InitialSpawnDelay
+	);
+}
+
+void ASpawnVolume::StopSpawnTimer ()
+{
+	if (!HasAuthority ())
+	{
+		return;
+	}
+
+	GetWorld ()->GetTimerManager ().ClearTimer ( SpawnTimerHandle );
+}
 
 ASpawnVolume::ASpawnVolume()
 {

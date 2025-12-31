@@ -1,42 +1,70 @@
-﻿// Slow_Glass.cpp
+﻿//Slow_Glass.cpp
 
 #include "Slow_Glass.h"
 #include "Character/TTPlayerCharacter.h"
-#include "Engine/World.h"
-#include "Kismet/GameplayStatics.h"
 
 ASlow_Glass::ASlow_Glass ()
 {
 	SlowAmount = 0.5f;
 	SlowDuration = 3.f;
+
+	SlowTrigger = CreateDefaultSubobject<USphereComponent> ( TEXT ( "SlowTrigger" ) );
+	SlowTrigger->SetupAttachment ( RootComponent );
+	SlowTrigger->SetSphereRadius ( 200.f );
+	SlowTrigger->SetCollisionEnabled ( ECollisionEnabled::QueryOnly );
+	SlowTrigger->SetCollisionResponseToAllChannels ( ECR_Ignore );
+	SlowTrigger->SetCollisionResponseToChannel ( ECC_Pawn , ECR_Overlap );
+
+	SlowTrigger->SetGenerateOverlapEvents ( false );
 }
 
-void ASlow_Glass::Explode_Implementation ()
+void ASlow_Glass::BeginPlay ()
 {
-	Super::Explode_Implementation ();
+	Super::BeginPlay ();
 
 	if (!HasAuthority ()) return;
 
-	TArray<AActor*> Overlaps;
-	UGameplayStatics::GetAllActorsOfClass (
-		GetWorld () ,
-		ATTPlayerCharacter::StaticClass () ,
-		Overlaps
+	SlowTrigger->OnComponentBeginOverlap.AddDynamic (
+		this ,
+		&ASlow_Glass::OnSlowOverlap
 	);
 
-	const float Radius = 300.f;
-
-	for (AActor* Actor : Overlaps)
-	{
-		if (ATTPlayerCharacter* Player = Cast<ATTPlayerCharacter> ( Actor ))
+	FTimerHandle ArmTimer;
+	GetWorld ()->GetTimerManager ().SetTimer (
+		ArmTimer ,
+		[this]()
 		{
-			const float DistSq =
-				FVector::DistSquared ( Player->GetActorLocation () , GetActorLocation () );
+			bArmed = true;
+			SlowTrigger->SetGenerateOverlapEvents ( true );
+		} ,
+		0.3f ,
+		false
+	);
+}
 
-			if (DistSq <= Radius * Radius)
-			{
-				Player->ApplySlow ( SlowAmount , SlowDuration );
-			}
-		}
+void ASlow_Glass::OnSlowOverlap (
+	UPrimitiveComponent* OverlappedComp ,
+	AActor* OtherActor ,
+	UPrimitiveComponent* OtherComp ,
+	int32 OtherBodyIndex ,
+	bool bFromSweep ,
+	const FHitResult& SweepResult
+)
+{
+	if (!HasAuthority ())
+	{
+		return;
+	}
+
+	if (!bArmed || bIgnoreInitialOverlap)
+	{
+		return;
+	}
+
+	if (ATTPlayerCharacter* Player = Cast<ATTPlayerCharacter> ( OtherActor ))
+	{
+		Player->ApplySlow ( SlowAmount , SlowDuration );
+
+		Explode ();
 	}
 }
