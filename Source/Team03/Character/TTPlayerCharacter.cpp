@@ -296,6 +296,10 @@ void ATTPlayerCharacter::GetLifetimeReplicatedProps ( TArray<FLifetimeProperty>&
 	DOREPLIFETIME ( ATTPlayerCharacter , bIsDead );
 
 	DOREPLIFETIME_CONDITION ( ATTPlayerCharacter , TargetRotation, COND_SkipOwner );
+
+	//HP 레플리케이션 추가
+	DOREPLIFETIME ( ATTPlayerCharacter , MaxHP );
+	DOREPLIFETIME ( ATTPlayerCharacter , CurrentHP );
 	
 }
 
