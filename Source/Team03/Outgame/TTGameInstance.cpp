@@ -81,13 +81,14 @@ void UTTGameInstance::CreateGameSession(bool bIsLAN)
                 auto ExistingSessionCheck = SessionInterface->GetNamedSession(NAME_GameSession);
                 if (ExistingSessionCheck)
                 {
-                     GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Orange, TEXT("[System] WARNING: Session already exists! Destroying... (May cause conflict if not waited)"));
+                     GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, TEXT("[System] WARNING: Session already exists! Destroying... (May cause conflict if not waited)"));
                 }
 
                 // 3. Check Local Player
                 if (!LocalPlayer)
                 {
                     GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] FATAL: LocalPlayer is NULL!"));
+                    return; // Stop execution
                 }
                 else
                 {
@@ -96,10 +97,11 @@ void UTTGameInstance::CreateGameSession(bool bIsLAN)
                     if (!NetId.IsValid())
                     {
                         GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] FATAL: UniqueNetId is INVALID! (Steam Login Failed?)"));
+                        return; // Stop execution (cannot create session without valid ID)
                     }
                     else
                     {
-                         GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("[System] UniqueNetId Valid: %s"), *NetId.ToString()));
+                         GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("[System] UniqueNetId is VALID"));
                     }
                 }
             }
