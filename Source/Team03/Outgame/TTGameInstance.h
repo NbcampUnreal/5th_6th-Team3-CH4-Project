@@ -119,8 +119,11 @@ protected:
 	virtual void OnJoinSessionComplete(FName SessionName, EOnJoinSessionCompleteResult::Type Result);
 	virtual void OnDestroySessionComplete(FName SessionName, bool bWasSuccessful);
 
-    // 헬퍼: 새 세션 참여 전 세션 정리
+    	// 헬퍼: 새 세션 참여 전 세션 정리
 	void OnDestroySessionBeforeJoin(FName SessionName, bool bWasSuccessful);
+    
+    // 헬퍼: 세션 생성 전 정리
+    void OnDestroySessionComplete_DelayedCreate(FName SessionName, bool bWasSuccessful);
 #pragma endregion
 
 private:

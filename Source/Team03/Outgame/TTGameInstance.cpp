@@ -42,89 +42,91 @@ void UTTGameInstance::CreateGameSession(bool bIsLAN)
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
 		if (SessionInterface.IsValid())
 		{
-			// 기존 세션 확인
-			auto ExistingSession = SessionInterface->GetNamedSession(NAME_GameSession);
-			if (ExistingSession != nullptr)
-			{
-				SessionInterface->DestroySession(NAME_GameSession);
-			}
-
-			OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(FOnCreateSessionCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnCreateSessionComplete));
-
-			FOnlineSessionSettings SessionSettings;
-			SessionSettings.bIsLANMatch = bIsLAN;
-			SessionSettings.NumPublicConnections = 4; // 최대 4명
-			SessionSettings.bAllowJoinInProgress = true;
-			SessionSettings.bShouldAdvertise = true;
+			OnDestroySessionCompleteDelegateHandle = SessionInterface->AddOnDestroySessionCompleteDelegate_Handle(FOnDestroySessionCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnDestroySessionComplete_DelayedCreate));
 			
-            // - true: Steam 오버레이, 친구 초대 등 플랫폼 기능 사용 (Steam 모드 필수)
-            // - false: 플랫폼 기능 차단. 순수 로컬 네트워크 플레이 (LAN 모드 권장)
-            // * 개발/테스트 편의를 위해 LAN에서도 Steam 기능을 쓰고 싶다면 true로 변경 가능
-			SessionSettings.bUsesPresence = !bIsLAN;
-			
-			// 클라이언트에게 알릴 호스트 이름 저장
-			FString HostName = UserNickname.IsEmpty() ? TEXT("Unknown") : UserNickname;
-			SessionSettings.Set(FName("HostName"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+            UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] Cleaning up any previous sessions before creating..."));
+            if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("[System] Cleaning up existing sessions..."));
 
-            // [Filter] 다른 Steam AppID 480 게임과 섞이지 않도록 식별자 추가
-            SessionSettings.Set(FName("PROJECT_ID"), FString("Team03_Project"), EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
-
-            const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
-            
-            // [Debug] Step-by-step Diagnostics
-            if (GEngine)
+			if (!SessionInterface->DestroySession(NAME_GameSession))
             {
-                // 1. Check Subsystem
-                GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, FString::Printf(TEXT("[System] Subsystem: %s"), *OnlineSub->GetSubsystemName().ToString()));
-            
-                // 2. Check Existing Session
-                auto ExistingSessionCheck = SessionInterface->GetNamedSession(NAME_GameSession);
-                if (ExistingSessionCheck)
-                {
-                     GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Yellow, TEXT("[System] WARNING: Session already exists! Destroying... (May cause conflict if not waited)"));
-                }
-
-                // 3. Check Local Player
-                if (!LocalPlayer)
-                {
-                    GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] FATAL: LocalPlayer is NULL!"));
-                    return; // Stop execution
-                }
-                else
-                {
-                    // 4. Check UniqueNetId
-                    FUniqueNetIdRepl NetId = LocalPlayer->GetPreferredUniqueNetId();
-                    if (!NetId.IsValid())
-                    {
-                        GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] FATAL: UniqueNetId is INVALID! (Steam Login Failed?)"));
-                        return; // Stop execution (cannot create session without valid ID)
-                    }
-                    else
-                    {
-                         GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("[System] UniqueNetId is VALID"));
-                    }
-                }
-            }
-
-            if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("[System] Calling SessionInterface->CreateSession..."));
-
-			bool bResult = SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, SessionSettings);
-            
-            if (!bResult)
-            {
-                if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] CreateSession FAILED immediately (returned false)! Check UniqueNetId or Subsystem state."));
-                
-                // 에러 원인이 될만한 요소 다시 출력
-                if (!LocalPlayer->GetPreferredUniqueNetId().IsValid())
-                {
-                     if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[Cause] Invalid UniqueNetId (No Steam User)"));
-                }
-                
-                UE_LOG(LogTemp, Error, TEXT("[TTGameInstance] CreateSession returned false."));
-                OnCreateSessionCompleteBP.Broadcast(false);
+                // 즉시 파괴 실패 (존재하지 않음) -> 바로 생성 시도
+                SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
+                OnDestroySessionComplete_DelayedCreate(NAME_GameSession, true);
             }
 		}
 	}
+}
+
+void UTTGameInstance::OnDestroySessionComplete_DelayedCreate(FName SessionName, bool bWasSuccessful)
+{
+    IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get();
+    if (!OnlineSub) return;
+    IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
+    if (!SessionInterface.IsValid()) return;
+
+    SessionInterface->ClearOnDestroySessionCompleteDelegate_Handle(OnDestroySessionCompleteDelegateHandle);
+
+    if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("[System] Session Cleanup Done. Creating New Session..."));
+
+    // === Real Create Logic ===
+    OnCreateSessionCompleteDelegateHandle = SessionInterface->AddOnCreateSessionCompleteDelegate_Handle(FOnCreateSessionCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnCreateSessionComplete));
+
+    FOnlineSessionSettings SessionSettings;
+    SessionSettings.bIsLANMatch = bUseLAN; // Saved value
+    SessionSettings.NumPublicConnections = 4;
+    SessionSettings.bAllowJoinInProgress = true;
+    SessionSettings.bShouldAdvertise = true;
+    SessionSettings.bUsesPresence = !bUseLAN;
+    SessionSettings.bUseLobbiesIfAvailable = true; // [Fix] Force Lobbies for AppID 480
+    
+    // 클라이언트에게 알릴 호스트 이름 저장
+    FString HostName = UserNickname.IsEmpty() ? TEXT("Unknown") : UserNickname;
+    SessionSettings.Set(FName("HostName"), HostName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+
+    // [Filter] ViaOnlineService으로 변경 (안정성)
+    SessionSettings.Set(FName("PROJECT_ID"), FString("Team03_Project"), EOnlineDataAdvertisementType::ViaOnlineService);
+
+    const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
+    
+    // [Debug] Step-by-step Diagnostics
+    if (GEngine)
+    {
+        // 1. Check Subsystem
+        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, FString::Printf(TEXT("[System] Subsystem: %s"), *OnlineSub->GetSubsystemName().ToString()));
+    
+        // 3. Check Local Player
+        if (!LocalPlayer)
+        {
+            GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] FATAL: LocalPlayer is NULL!"));
+            return; // Stop execution
+        }
+        else
+        {
+            // 4. Check UniqueNetId
+            FUniqueNetIdRepl NetId = LocalPlayer->GetPreferredUniqueNetId();
+            if (!NetId.IsValid())
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] FATAL: UniqueNetId is INVALID! (Steam Login Failed?)"));
+                return; // Stop execution (cannot create session without valid ID)
+            }
+            else
+            {
+                    GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("[System] UniqueNetId is VALID"));
+            }
+        }
+    }
+
+    if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("[System] Calling SessionInterface->CreateSession..."));
+
+    bool bResult = SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, SessionSettings);
+    
+    if (!bResult)
+    {
+        if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] CreateSession FAILED immediately (returned false)! Check UniqueNetId or Subsystem state."));
+        
+        UE_LOG(LogTemp, Error, TEXT("[TTGameInstance] CreateSession returned false."));
+        OnCreateSessionCompleteBP.Broadcast(false);
+    }
 }
 
 void UTTGameInstance::FindGameSessions(bool bIsLAN)
