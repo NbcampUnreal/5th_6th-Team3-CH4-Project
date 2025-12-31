@@ -81,11 +81,29 @@ void UUW_TitleLevel::NativeConstruct()
         Widget_SessionOverlay->SetVisibility(ESlateVisibility::Collapsed);
     }
     
-    // 타이틀 진입 시 페이드 인
+	// 타이틀 진입 시 페이드 인
     if (Anim_FadeIn)
     {
         PlayAnimation(Anim_FadeIn);
     }
+    
+    // [시스템 체크] Steam 연동 확인 (Development 빌드에서만, 60초간 표시)
+#if !UE_BUILD_SHIPPING
+    if (IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get())
+    {
+        FString SubsystemName = OnlineSub->GetSubsystemName().ToString();
+        if (SubsystemName == TEXT("Steam"))
+        {
+            // Steam 성공: 초록색
+            if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 60.f, FColor::Green, TEXT("Online Subsystem: Steam (Connected)"));
+        }
+        else
+        {
+            // Steam 실패 (NULL 등): 빨간색
+            if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 60.f, FColor::Red, FString::Printf(TEXT("Online Subsystem: %s (Steam NOT Connected)"), *SubsystemName));
+        }
+    }
+#endif
 
 	SetLoadingState(false);
 }
