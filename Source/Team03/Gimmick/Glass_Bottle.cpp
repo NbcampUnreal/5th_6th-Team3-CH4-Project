@@ -15,12 +15,12 @@ void AGlassBase::OnHit ( UPrimitiveComponent* HitComp , AActor* OtherActor , UPr
 		return;
 	}
 
-	//float HitIntensity = NormalImpulse.Size ();
+	float HitIntensity = NormalImpulse.Size ();
 
-	//if (HitIntensity > 1500.f)
-	//{
-	//	Explode ();
-	//}
+	if (HitIntensity > 1500.f)
+	{
+	Explode ();
+	}
 }
 
 void AGlassBase::Explode_Implementation ()
