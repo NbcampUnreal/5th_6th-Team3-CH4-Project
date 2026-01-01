@@ -123,11 +123,13 @@ void UTTGameInstance::FindGameSessions(bool bIsLAN)
 			SessionSearch->MaxSearchResults = 100; // 검색 범위 확장
             SessionSearch->PingBucketSize = 50; // 핑 50ms 단위로 그룹화 (검색 속도 향상 도움)
 
-            // [Filter] LAN이 아닐 때(Steam)는 "PROJECT_ID"가 일치하는 방만 검색
-            if (!bIsLAN)
-            {
-                SessionSearch->QuerySettings.Set(FName("PROJECT_ID"), FString("Team03_Project"), EOnlineComparisonOp::Equals);
-            }
+			// [Debug] Steam 480 ID에서 커스텀 필터가 제대로 동작하지 않을 수 있음.
+            // 따라서 서버 사이드 필터링(QuerySettings)을 제거하고,
+            // 검색된 모든 세션을 가져온 뒤 Client-Side에서 걸러내는 방식(GetSessionSearchResults)으로 변경.
+            // if (!bIsLAN)
+            // {
+            //      SessionSearch->QuerySettings.Set(FName("PROJECT_ID"), FString("Team03_Project"), EOnlineComparisonOp::Equals);
+            // }
 
 			OnFindSessionsCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FOnFindSessionsCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnFindSessionsComplete));
 
@@ -345,26 +347,39 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
 		if (SessionInterface->GetResolvedConnectString(SessionName, ConnectInfo))
 		{
-            // Null Subsystem의 Port 0 문제 수정
+            // Null Subsystem의 Port 0 문제 수정 (LAN Fix)
             if (ConnectInfo.EndsWith(TEXT(":0")))
             {
                 ConnectInfo = ConnectInfo.LeftChop(2); // Remove :0
                 ConnectInfo.Append(TEXT(":7777"));
             }
 
-            // 즉시 이동하지 않고 저장 후 UI에 알림
-            PendingConnectString = ConnectInfo;
-            OnJoinSessionCompleteBP.Broadcast(true);
+            // [Debug] Join Success -> Check URL
+            if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("[System] Join Success! Ready to travel to: %s"), *ConnectInfo));
 
-			// APlayerController* PlayerController = GetFirstLocalPlayerController();
-			// if (PlayerController)
+            // [Fix] 즉시 이동하지 않고 문자열 저장 (UI 애니메이션 후 BP에서 이동)
+            PendingConnectString = ConnectInfo;
+
+            // 실제 이동 처리는 주석 처리 (BP에 위임)
+			// APlayerController* PC = GetWorld()->GetFirstPlayerController();
+			// if (PC)
 			// {
-			// 	PlayerController->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
+			// 	PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
 			// }
+            
+            // UI 알림 (성공)
+            OnJoinSessionCompleteBP.Broadcast(true); 
 		}
+        else
+        {
+             if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, TEXT("[System] Join Success BUT Resolved URL is EMPTY! (Session info invalid?)"));
+             OnJoinSessionCompleteBP.Broadcast(false);
+        }
 	}
     else
     {
+        // [Debug] Join Failed Reason
+        if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Red, FString::Printf(TEXT("[System] Join FAILED! Error Code: %d (0:Success, 1:Full, 2:NoSession, 3:Unknown)"), (int32)Result));
         OnJoinSessionCompleteBP.Broadcast(false);
     }
 }
