@@ -1,33 +1,51 @@
-🕹️ 게임 제목 🕹️ : Pettt Animals
+# 🐾 Pettt Animals 🐾
+> **"누가 아군이고 적군인지 모른다! 혼돈의 대난투 파티!"** > Steam의 인기 게임 'Party Animals'를 모티브로 한 Unreal Engine 기반 3D 난투 게임입니다.
 
-게임 소개 : Steam게임 'Party Animals'의 카피캣 게임으로 8종류의 동물들이 누가 아군인지 적군인지 인지하지 못한 채 대난투를 벌이고 신나게 춤을 추는 게임입니다.
+---
 
-🎬 게임 영상 🎬 : 
+## 🎬 Game Play
+[![GamePlay Video](https://img.shields.io/badge/YouTube-Play_Video-red?style=for-the-badge&logo=youtube)](여기에_영상_링크_넣기)
 
-🛠 기술 스택 🛠
-- 엔진 : Unreal Engine
-- 언어 : C++
-- 협업 도구 : Git, Notion(https://www.notion.so/teamsparta/3-2a82dc3ef51480dab073eaa73a8eaa8d), Zep, Slack
-  
-👥 팀원 역할 분담 👥
-- 이호욱 : 캐릭터 애니메이션
-- 박진연 : 캐릭터 제작, 레그돌, 게임 패키징
-- 박찬영 : InGameUi 제작, 승패 로직 제작
-- 신지용 : OutGameUi 제작, 룸 기반 매칭 구현
-- 위우빈 : 기믹 상호작용 구현, 레벨 디자인
+---
 
-인게임 구현 기능
-- Title : 본인의 이름을 바꾸고 방을 찾거나 만들 수 있게 만들었습니다.
-  <img width="500" height="533" alt="스크린샷(4)" src="https://github.com/user-attachments/assets/01f815ed-6f6a-41a0-af7e-71c1663115ad" />
+## 🛠 Tech Stack
+- **Engine:** `Unreal Engine 5` 🎮
+- **Language:** `C++` 💻
+- **Tools:** - **Version Control:** `Git`
+  - **Collaboration:** `Notion`, `Zep`, `Slack`
+  - **Documentation:** [프로젝트 노션 페이지](https://www.notion.so/teamsparta/3-2a82dc3ef51480dab073eaa73a8eaa8d) 📝
 
-- Lobby  : 캐릭터의 팀 진형과 커스터마이즈 기능을 넣어 원하는 팀을 선택하고 원하는 동물과 옷을 입을 수 있도록 만들었습니다.
-![Team03 (64 비트, DebugGame PCD3D_SM6) 2025-12-31 14-11-07 (online-video-cutter com)](https://github.com/user-attachments/assets/d7814215-6e5f-4a58-b127-2ab10d3cd6cb)
+---
 
-- Settings : 플레이어가 원하는 사양에 맞게 플레이 할 수 있도록 다양한 설정들을 추가했습니다.
-<img width="1298" height="756" alt="스크린샷(2)" src="https://github.com/user-attachments/assets/c134b53e-477b-4ded-8371-5ce8bfcf8e25" />
+## 👥 Team & Roles
+| 이름 | 역할 | 담당 업무 |
+| :--- | :---: | :--- |
+| **이호욱** | 🏃 애니메이터 | 캐릭터 애니메이션 구현 및 리타겟팅 |
+| **박진연** | 🎨 캐릭터/패키징 | 캐릭터 제작, **레그돌(Ragdoll)** 시스템, 게임 패키징 |
+| **박찬영** | ⚔️ 인게임 로직 | InGame UI 제작, 승패 판정 로직 구현 |
+| **신지용** | 🏠 아웃게임/매칭 | OutGame UI 제작, **룸 기반 매칭 시스템** 구현 |
+| **위우빈** | 🗺️ 레벨 디자인 | 기믹 상호작용 구현 및 맵 레벨 디자인 |
 
-- Attack : 상대에게 주먹, 막대기, 검 등등 다양한 무기로 공격 시 상대는 레그돌에 빠지게 되도록 만들었습니다.
-  ![Uploading Team03 (64 비트, DebugGame PCD3D_SM6) 2025-12-31 14-11-07 (online-video-cutter.com).gif…]()
+---
 
-- Dance : 쓰러진 상대에게 굴욕의 댄스를 선보이세요.
-  ![Team03 (64 비트, DebugGame PCD3D_SM6) 2025-12-31 13-09-42 (online-video-cutter com) (1)](https://github.com/user-attachments/assets/03740b44-097d-4795-b341-c907618f8136)
+## 🕹️ Key Features
+
+### 1️⃣ Title & Matching
+본인의 닉네임을 설정하고, 방을 생성하거나 기존의 방을 찾아 입장할 수 있습니다.
+<br><img src="https://github.com/user-attachments/assets/01f815ed-6f6a-41a0-af7e-71c1663115ad" width="400" />
+
+### 2️⃣ Lobby & Customizing
+팀 진형을 선택하고, 8종의 다양한 동물 캐릭터와 의상을 취향대로 커스터마이징할 수 있습니다.
+<br><img src="https://github.com/user-attachments/assets/d7814215-6e5f-4a58-b127-2ab10d3cd6cb" width="400" />
+
+### 3️⃣ Settings
+플레이어의 환경에 맞춰 해상도, 그래픽 사양 등 다양한 옵션을 최적화할 수 있습니다.
+<br><img src="https://github.com/user-attachments/assets/c134b53e-477b-4ded-8371-5ce8bfcf8e25" width="400" />
+
+### 4️⃣ Battle & Ragdoll
+주먹, 막대기, 검 등 다양한 무기를 활용해 공격하세요! 공격당한 상대는 **레그돌 상태**가 되어 무력화됩니다.
+<br><img src="https://github.com/user-attachments/assets/03740b44-097d-4795-b341-c907618f8136" width="400" />
+
+### 5️⃣ Dance Time
+승리 후 혹은 상대가 쓰러졌을 때 신나는 댄스로 굴욕을 선사하세요! 💃🕺
+<br><img src="https://github.com/user-attachments/assets/03740b44-097d-4795-b341-c907618f8136" width="400
