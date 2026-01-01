@@ -3,7 +3,7 @@
 
 ---
 
-## 🎬 Game Play
+## 🎬 Game Play (아직X)
 [![GamePlay Video](https://img.shields.io/badge/YouTube-Play_Video-red?style=for-the-badge&logo=youtube)](여기에_영상_링크_넣기)
 
 ---
