@@ -369,11 +369,15 @@ void ATTPlayerController::EndAnimation ()
 void ATTPlayerController::ClientShowResult_Implementation ( Teams WinTeam )
 {
 	ATTPlayerState* TTPS = GetPlayerState<ATTPlayerState> ();
+	if (!IsValid ( TTPS ))
+	{
+		return;
+	}
 	if (WinTeam == Teams::None)
 	{
 		// 무승부 노티파이케이션 출력
 		DrawAnimation ();
-		continue;
+		return;
 	}
 	if (TTPS->GetTeam () == WinTeam)
 	{

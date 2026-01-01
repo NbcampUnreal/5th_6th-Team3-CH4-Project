@@ -256,9 +256,7 @@ void AInGameModeBase::EndRound ()
 			{
 				continue;
 			}
-			if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->PlayerState ))
-
-			}
+			TTPC->ClientShowResult ( WinTeam );
 		}
 		if (HasAuthority ())
 		{
