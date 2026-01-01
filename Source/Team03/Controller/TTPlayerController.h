@@ -105,6 +105,9 @@ public:
 	UFUNCTION ()
 	void EndAnimation ();
 
+	UFUNCTION ( Client , Reliable )
+	void ClientShowResult ( Teams WinTeam );
+
 	UFUNCTION ()
 	void WinAnimation ();
 	UFUNCTION ()

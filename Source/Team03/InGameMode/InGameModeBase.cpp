@@ -257,23 +257,7 @@ void AInGameModeBase::EndRound ()
 				continue;
 			}
 			if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( TTPC->PlayerState ))
-			{
-				if (WinTeam == Teams::None)
-				{
-					// 무승부 노티파이케이션 출력
-					TTPC->DrawAnimation ();
-					continue;
-				}
-				if (TTPS->GetTeam () == WinTeam)
-				{
-					// 승리 노티파이케이션 출력
-					TTPC->WinAnimation ();
-				}
-				else
-				{
-					// 패배 노티파이케이션 출력
-					TTPC->LoseAnimation ();
-				}
+
 			}
 		}
 		if (HasAuthority ())
