@@ -21,6 +21,14 @@ ATTSword::ATTSword ()
 
 void ATTSword::HandleOnThrowAway ()
 {
+	if (HasAuthority ())
+	{
+		MulticastThrowAway ();
+	}
+}
+
+void ATTSword::MulticastThrowAway_Implementation ()
+{
 	DetachFromActor ( FDetachmentTransformRules::KeepWorldTransform );
 
 	if (PickupComponent)
@@ -32,6 +40,15 @@ void ATTSword::HandleOnThrowAway ()
 
 		FVector ThrowDir = GetActorForwardVector () + FVector ( 0 , 0 , 0.5f );
 		PickupComponent->AddImpulse ( ThrowDir * 300.0f , NAME_None , true );
+
+		GetWorld ()->GetTimerManager ().SetTimer
+		(
+			CollisionRecoveryTimerHandle ,
+			this ,
+			&ATTSword::EnablePickupCollision ,
+			1.0f ,
+			false
+		);
 	}
 }
 
@@ -61,3 +78,10 @@ void ATTSword::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 	bool bResult = AttachToComponent ( InPickUpCharacter->GetMesh () , AttachmentRules , FName ( TEXT ( "hand_rSocket" ) ) );
 }
 
+void ATTSword::EnablePickupCollision ()
+{
+	if (PickupComponent)
+	{
+		PickupComponent->SetCollisionResponseToChannel ( ECC_Pawn , ECR_Overlap );
+	}
+}

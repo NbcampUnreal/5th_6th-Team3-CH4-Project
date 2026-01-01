@@ -26,12 +26,16 @@ public:
 
 	UFUNCTION ()
 	void HandleOnThrowAway ();
+	UFUNCTION ( NetMulticast , Reliable )
+	void MulticastThrowAway ();
 
 protected:
 	virtual void BeginPlay () override;
 
 	UFUNCTION ()
 	void HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter );
+	UFUNCTION ()
+	void EnablePickupCollision ();
 
 protected:
 	UPROPERTY ( EditDefaultsOnly , BlueprintReadOnly )
@@ -39,4 +43,5 @@ protected:
 
 	UPROPERTY ( EditDefaultsOnly , BlueprintReadOnly )
 	TObjectPtr<UAnimMontage> AttackMontage;
+	FTimerHandle CollisionRecoveryTimerHandle;
 };
