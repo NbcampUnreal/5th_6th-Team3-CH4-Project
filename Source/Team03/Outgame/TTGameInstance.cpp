@@ -3,7 +3,7 @@
 #include "TTGameInstance.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
-#include "Online/CoreOnline.h"
+#include "OnlineSubsystemUtils.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/AudioComponent.h"
 #include "Sound/SoundMix.h"
@@ -13,7 +13,7 @@ UTTGameInstance::UTTGameInstance()
 {
 	UserNickname = TEXT("Player");
 	SelectedCharacterRowName = NAME_None;
-    bUseLAN = false; // Default to Steam
+    bUseLAN = true; // [Fix] Default to LAN (User Request)
 }
 
 void UTTGameInstance::Init()
@@ -120,16 +120,14 @@ void UTTGameInstance::FindGameSessions(bool bIsLAN)
 		{
 			SessionSearch = MakeShareable(new FOnlineSessionSearch());
 			SessionSearch->bIsLanQuery = bIsLAN;
-			SessionSearch->MaxSearchResults = 100; // 검색 범위 확장
-            SessionSearch->PingBucketSize = 50; // 핑 50ms 단위로 그룹화 (검색 속도 향상 도움)
+			SessionSearch->MaxSearchResults = 1000; // [Fix] AppID 480 대응: 대량 검색 후 로컬 필터링
+            SessionSearch->PingBucketSize = 50; 
 
-			// [Debug] Steam 480 ID에서 커스텀 필터가 제대로 동작하지 않을 수 있음.
-            // 따라서 서버 사이드 필터링(QuerySettings)을 제거하고,
-            // 검색된 모든 세션을 가져온 뒤 Client-Side에서 걸러내는 방식(GetSessionSearchResults)으로 변경.
-            // if (!bIsLAN)
-            // {
-            //      SessionSearch->QuerySettings.Set(FName("PROJECT_ID"), FString("Team03_Project"), EOnlineComparisonOp::Equals);
-            // }
+            if (!bIsLAN)
+            {
+                // Steam 검색 시 Presence 기반 검색 필수
+                SessionSearch->QuerySettings.Set(TEXT("SEARCH_PRESENCE"), true, EOnlineComparisonOp::Equals);
+            }
 
 			OnFindSessionsCompleteDelegateHandle = SessionInterface->AddOnFindSessionsCompleteDelegate_Handle(FOnFindSessionsCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnFindSessionsComplete));
 
@@ -217,24 +215,14 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 			if (SearchResult.IsValid())
 			{
                 // [Filter] Client-Side Strict Filtering for PROJECT_ID
-                // Steam 검색(480)은 필터가 부정확할 수 있으므로 여기서 2차 검증
                 FString SessionProjectID;
-                if (SearchResult.Session.SessionSettings.Get(FName("PROJECT_ID"), SessionProjectID))
+                if (!SearchResult.Session.SessionSettings.Get(FName("PROJECT_ID"), SessionProjectID) || SessionProjectID != TEXT("Team03_Project"))
                 {
-                    if (SessionProjectID != TEXT("Team03_Project"))
-                    {
-                        continue; // 다른 프로젝트의 세션임
-                    }
-                }
-                else
-                {
-                    // PROJECT_ID가 아예 없으면 우리 게임 방이 아님 (Steam Spacewar 등)
-                    // -> LAN도 생성 시 넣도록 했으므로, 없으면 무시하는 게 안전.
-                    continue; 
+                    continue; // 다른 프로젝트의 세션
                 }
 
 				FTTSessionInfo Info;
-				Info.SessionIndex = i; // 원래 인덱스 저장
+				Info.SessionIndex = i; 
 				
 				FString HostName;
 				if (SearchResult.Session.SessionSettings.Get(FName("HostName"), HostName))
@@ -252,14 +240,12 @@ TArray<FTTSessionInfo> UTTGameInstance::GetSessionSearchResults() const
 				
 				Info.CurrentPlayers = MaxConnections - OpenConnections;
 
-				// Null Subsystem(LAN/에디터)에서는 Host가 세션 생성 시 Open Connection을 소모하지 않음
-				// 따라서 0명으로 표시되는 문제를 해결하기 위해 Host(+1)를 추가
-				if (IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get(bUseLAN ? FName("NULL") : NAME_None))
+				// Null Subsystem(LAN) 보정
+                IOnlineSubsystem* SearchOnlineSub = IOnlineSubsystem::Get(bUseLAN ? FName("NULL") : NAME_None);
+				if (SearchOnlineSub && SearchOnlineSub->GetSubsystemName() == TEXT("NULL"))
 				{
-					if (OnlineSub->GetSubsystemName() == TEXT("NULL"))
-					{
-						Info.CurrentPlayers++;
-					}
+                    // Null 서브시스템은 Host 본인을 소모 처리 안 하므로 +1
+					Info.CurrentPlayers++;
 				}
 
 				Info.MaxPlayers = MaxConnections;
@@ -341,21 +327,28 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
 		SessionInterface->ClearOnJoinSessionCompleteDelegate_Handle(OnJoinSessionCompleteDelegateHandle);
 	}
 
-	if (Result == EOnJoinSessionCompleteResult::Success)
+	if (Result == EOnJoinSessionCompleteResult::Success && OnlineSub)
 	{
 		FString ConnectInfo;
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
 		if (SessionInterface->GetResolvedConnectString(SessionName, ConnectInfo))
 		{
-            // Null Subsystem의 Port 0 문제 수정 (LAN Fix)
-            if (ConnectInfo.EndsWith(TEXT(":0")))
+            // [Fix] LAN(NULL) 환경에서 포트 누락 혹은 0번 포트 대응
+            if (OnlineSub->GetSubsystemName() == TEXT("NULL"))
             {
-                ConnectInfo = ConnectInfo.LeftChop(2); // Remove :0
-                ConnectInfo.Append(TEXT(":7777"));
+                if (ConnectInfo.EndsWith(TEXT(":0")))
+                {
+                    ConnectInfo = ConnectInfo.LeftChop(2);
+                }
+                
+                if (!ConnectInfo.Contains(TEXT(":")))
+                {
+                    ConnectInfo.Append(TEXT(":7777"));
+                }
             }
 
             // [Debug] Join Success -> Check URL
-            if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, FString::Printf(TEXT("[System] Join Success! Ready to travel to: %s"), *ConnectInfo));
+            if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 20.f, FColor::Green, FString::Printf(TEXT("[System] Join Success! Ready to travel to: %s"), *ConnectInfo));
 
             // [Fix] 즉시 이동하지 않고 문자열 저장 (UI 애니메이션 후 BP에서 이동)
             PendingConnectString = ConnectInfo;

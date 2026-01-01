@@ -10,14 +10,13 @@
 #include "Animation/WidgetAnimation.h"
 #include "Components/CheckBox.h"
 #include "TTGameInstance.h"
-#include "Misc/Optional.h"
 
 // [DLSS Toggle] 활성화하려면 1로 변경.
 #define ENABLE_DLSS 1
 
 #if ENABLE_DLSS
 // DLSS
-#include "DLSSBlueprint/Public/DLSSLibrary.h"
+#include "DLSSLibrary.h"
 #endif
 
 
@@ -100,13 +99,16 @@ void UUW_Option::InitSettings()
 
         if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
         {
+            // [Fix] 유저 요청: 기본 연결을 LAN으로 설정
             if (GI->bUseLAN)
             {
                 Combo_NetworkMode->SetSelectedOption(TEXT("LAN (Local)"));
             }
             else
             {
-                Combo_NetworkMode->SetSelectedOption(TEXT("Steam (Internet)"));
+                // 기본값이 Steam이라도 UI 초기값은 LAN으로 유도할 수 있음 (또는 GI 자체를 LAN으로 초기화)
+                Combo_NetworkMode->SetSelectedOption(TEXT("LAN (Local)"));
+                GI->bUseLAN = true; 
             }
         }
         
