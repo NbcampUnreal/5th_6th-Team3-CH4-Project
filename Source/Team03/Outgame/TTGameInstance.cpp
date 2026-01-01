@@ -365,12 +365,19 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
             const FOnlineSessionSearchResult& SearchResult = SessionSearch->SearchResults[PendingJoinSessionIndex];
             if (SearchResult.Session.SessionSettings.Get(FName("SERVER_IP_OVERRIDE"), OverriddenIP))
             {
-                ConnectInfo = OverriddenIP + TEXT(":7777");
+                ConnectInfo = OverriddenIP; // 포트는 아래 공통 로직에서 붙임
                 if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 20.f, FColor::Orange, FString::Printf(TEXT("[System] V-LAN Override Active! Target: %s"), *ConnectInfo));
             }
         }
 
-		if (ConnectInfo.IsEmpty() && SessionInterface->GetResolvedConnectString(SessionName, ConnectInfo))
+        // Override가 없으면 표준 방식으로 가져오기
+		if (ConnectInfo.IsEmpty())
+        {
+            SessionInterface->GetResolvedConnectString(SessionName, ConnectInfo);
+        }
+
+        // 최종적으로 ConnectInfo가 확보되었는지 확인
+        if (!ConnectInfo.IsEmpty())
 		{
             // [Fix] LAN(NULL) 환경에서 포트 누락 혹은 0번 포트 대응
             if (OnlineSub->GetSubsystemName() == TEXT("NULL"))
@@ -391,13 +398,6 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
 
             // [Fix] 즉시 이동하지 않고 문자열 저장 (UI 애니메이션 후 BP에서 이동)
             PendingConnectString = ConnectInfo;
-
-            // 실제 이동 처리는 주석 처리 (BP에 위임)
-			// APlayerController* PC = GetWorld()->GetFirstPlayerController();
-			// if (PC)
-			// {
-			// 	PC->ClientTravel(ConnectInfo, ETravelType::TRAVEL_Absolute);
-			// }
             
             // UI 알림 (성공)
             OnJoinSessionCompleteBP.Broadcast(true); 
