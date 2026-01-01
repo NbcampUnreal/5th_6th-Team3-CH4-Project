@@ -35,13 +35,30 @@ void ATTGameModeBase_Lobby::InitGame(const FString& MapName, const FString& Opti
     {
         if (GEngine)
         {
-            // [Fix] 호스트에게 자신의 Listening IP를 표시하여 진단 도움
+            // [Fix] 가상 LAN (26.xxx) 대응: 로컬 어댑터를 순회하여 가상 IP 탐색 후 우선 표시
             FString LocalIP = TEXT("Unknown IP");
-            bool bCanBind = false;
-            TSharedPtr<FInternetAddr> LocalAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->GetLocalHostAddr(*GLog, bCanBind);
-            if (LocalAddr.IsValid())
+            ISocketSubsystem* SocketSub = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
+            if (SocketSub)
             {
-                LocalIP = LocalAddr->ToString(false);
+                TArray<TSharedPtr<FInternetAddr>> LocalAddrs;
+                if (SocketSub->GetLocalAdapterAddresses(LocalAddrs))
+                {
+                    for (auto& Addr : LocalAddrs)
+                    {
+                        FString IPStr = Addr->ToString(false);
+                        if (IPStr.StartsWith(TEXT("26.")))
+                        {
+                            LocalIP = IPStr;
+                            break;
+                        }
+                    }
+                    
+                    // 가상 IP를 못 찾았다면 첫 번째 주소라도 표시
+                    if (LocalIP == TEXT("Unknown IP") && LocalAddrs.Num() > 0)
+                    {
+                        LocalIP = LocalAddrs[0]->ToString(false);
+                    }
+                }
             }
 
             GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, FString::Printf(TEXT("[Success] Server is LISTENING on %s:7777"), *LocalIP));

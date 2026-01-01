@@ -1,13 +1,12 @@
 ﻿// (c) 2024. Team03. All rights reserved.
 
 #include "TTGameInstance.h"
+#include "Sound/SoundClass.h"
+#include "SocketSubsystem.h"
+#include "IPAddress.h"
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystemUtils.h"
-#include "Kismet/GameplayStatics.h"
-#include "Components/AudioComponent.h"
-#include "Sound/SoundMix.h"
-#include "Sound/SoundClass.h"
 
 UTTGameInstance::UTTGameInstance()
 {
@@ -99,6 +98,32 @@ void UTTGameInstance::OnDestroySessionComplete_DelayedCreate(FName SessionName, 
     if (!LocalPlayer) return;
     if (!LocalPlayer->GetPreferredUniqueNetId().IsValid()) return;
 
+    // [Fix] 가상 LAN (26.xxx) 대응: 로컬 어댑터를 순회하여 가상 IP 탐색 후 강제 방송
+    FString VirtualIP;
+    ISocketSubsystem* SocketSub = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
+    if (SocketSub)
+    {
+        TArray<TSharedPtr<FInternetAddr>> LocalAddrs;
+        if (SocketSub->GetLocalAdapterAddresses(LocalAddrs))
+        {
+            for (auto& Addr : LocalAddrs)
+            {
+                FString IPStr = Addr->ToString(false);
+                if (IPStr.StartsWith(TEXT("26.")))
+                {
+                    VirtualIP = IPStr;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!VirtualIP.IsEmpty())
+    {
+        SessionSettings.Set(FName("SERVER_IP_OVERRIDE"), VirtualIP, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
+        UE_LOG(LogTemp, Log, TEXT("[TTGameInstance] Virtual LAN IP Detected: %s. Broadcasting override..."), *VirtualIP);
+    }
+
     bool bResult = SessionInterface->CreateSession(*LocalPlayer->GetPreferredUniqueNetId(), NAME_GameSession, SessionSettings);
     
     if (!bResult)
@@ -160,6 +185,7 @@ void UTTGameInstance::JoinGameSession(int32 SessionIndex)
 
 			OnJoinSessionCompleteDelegateHandle = SessionInterface->AddOnJoinSessionCompleteDelegate_Handle(FOnJoinSessionCompleteDelegate::CreateUObject(this, &UTTGameInstance::OnJoinSessionComplete));
 
+            PendingJoinSessionIndex = SessionIndex; // [Update] Always save for override check
 			const FOnlineSessionSearchResult& Result = SessionSearch->SearchResults[SessionIndex];
 
 			const ULocalPlayer* LocalPlayer = GetWorld()->GetFirstLocalPlayerFromController();
@@ -331,7 +357,20 @@ void UTTGameInstance::OnJoinSessionComplete(FName SessionName, EOnJoinSessionCom
 	{
 		FString ConnectInfo;
 		IOnlineSessionPtr SessionInterface = OnlineSub->GetSessionInterface();
-		if (SessionInterface->GetResolvedConnectString(SessionName, ConnectInfo))
+
+        // [Fix] 가상 LAN IP Override 확인
+        if (SessionSearch.IsValid() && SessionSearch->SearchResults.IsValidIndex(PendingJoinSessionIndex))
+        {
+            FString OverriddenIP;
+            const FOnlineSessionSearchResult& SearchResult = SessionSearch->SearchResults[PendingJoinSessionIndex];
+            if (SearchResult.Session.SessionSettings.Get(FName("SERVER_IP_OVERRIDE"), OverriddenIP))
+            {
+                ConnectInfo = OverriddenIP + TEXT(":7777");
+                if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 20.f, FColor::Orange, FString::Printf(TEXT("[System] V-LAN Override Active! Target: %s"), *ConnectInfo));
+            }
+        }
+
+		if (ConnectInfo.IsEmpty() && SessionInterface->GetResolvedConnectString(SessionName, ConnectInfo))
 		{
             // [Fix] LAN(NULL) 환경에서 포트 누락 혹은 0번 포트 대응
             if (OnlineSub->GetSubsystemName() == TEXT("NULL"))
