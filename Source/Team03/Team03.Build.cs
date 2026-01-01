@@ -14,10 +14,13 @@ public class Team03 : ModuleRules
 			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" , "UMG" , "Slate", "SlateCore",
 
 			// Online Subsystem Dependencies
-            "OnlineSubsystem", "OnlineSubsystemUtils",
+            "OnlineSubsystem", "OnlineSubsystemUtils", "CoreOnline",
 
 			// Engine Settings for GameMapsSettings
-			"EngineSettings"
+			"EngineSettings", "Sockets", "Networking",
+            
+            // DLSS 
+            "DLSSBlueprint"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[] { "SelectSkeletal", });
@@ -31,5 +34,6 @@ public class Team03 : ModuleRules
 		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
 
 		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
+        DynamicallyLoadedModuleNames.Add("OnlineSubsystemSteam");
 	}
 }

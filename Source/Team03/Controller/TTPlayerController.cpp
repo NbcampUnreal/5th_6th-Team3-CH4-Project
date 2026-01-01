@@ -1,15 +1,16 @@
 ﻿#include "TTPlayerController.h"
 #include "EnhancedInputSubsystems.h"
-#include "../InGameMode/InGameModeBase.h"
-#include "../InGameUI/TTInGameHUD.h"
-#include "../InGameUI/TTChatUI.h"
-#include "../Character/TTPlayerCharacter.h"
-#include "../Outgame/TTGameInstance.h"
-#include "../Character/TTPlayerState.h"
-#include "../Save/TTSaveGame.h"
+#include "InGameMode/InGameModeBase.h"
+#include "InGameUI/TTInGameHUD.h"
+#include "InGameUI/TTChatUI.h"
+#include "Character/TTPlayerCharacter.h"
+#include "Outgame/TTGameInstance.h"
+#include "Character/TTPlayerState.h"
+#include "Save/TTSaveGame.h"
 #include "Kismet/GameplayStatics.h"
 #include "SelectSkeletal/TTCharactorHeadSkeletalSelect.h"
 #include "SelectSkeletal/TTCharactorSkeletalMeshSelect.h"
+#include "InGameUI/TTPlayerPortraitWidget.h"
 
 ATTPlayerController::ATTPlayerController ()
 	: InputMappingContext ( nullptr ) ,
@@ -17,7 +18,12 @@ ATTPlayerController::ATTPlayerController ()
 	JumpAction ( nullptr ) ,
 	SprintAction ( nullptr ) ,
 	AttackAction ( nullptr ) ,
-	BlockingAction ( nullptr ) 
+	BlockingAction ( nullptr ),
+	Dance1Action ( nullptr ),
+	Dance2Action ( nullptr ) ,
+	Dance3Action ( nullptr ) ,
+	Dance4Action ( nullptr ) ,
+	Dance5Action ( nullptr )
 {
 	bReplicates = true;
 }
@@ -54,6 +60,11 @@ void ATTPlayerController::OnPossess ( APawn* InPawn )
 			NewChar->InitializeMesh ( PS );
 		}
 	}
+
+	if (IsLocalController ())
+	{
+		PlayerSetUp ();
+	}
 }
 
 void ATTPlayerController::BeginPlay ()
@@ -79,6 +90,7 @@ void ATTPlayerController::BeginPlay ()
 	if (TTInGameHUD)
 	{
 		TTInGameHUD->AddChat ();
+		TTInGameHUD->AddNotification ();
 	}
 
 // ---------- Outgame 담당자가 수정함 ----------
@@ -95,6 +107,45 @@ void ATTPlayerController::BeginPlay ()
 			int32 BodyIndex = GI->CustomizedBodyIndex;
 			
 			ServerRPC_InitPlayerInfo(GI->UserNickname, GI->SelectedCharacterRowName, HeadIndex, BodyIndex);
+		}
+		// ---------- Ingame 담당자가 추가 ----------
+		UE_LOG ( LogTemp , Warning , TEXT ( "ServerAddportrait0" ));
+		ServerClientReady ();
+	}
+}
+
+void ATTPlayerController::OnRep_Pawn ()
+{
+	Super::OnRep_Pawn ();
+
+	PlayerSetUp ();
+}
+
+void ATTPlayerController::PlayerSetUp ()
+{
+	APawn* CurrentPawn = GetPawn ();
+	if (!CurrentPawn) return;
+
+	if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem> ( GetLocalPlayer () ))
+	{
+		Subsystem->ClearAllMappings ();
+		if (InputMappingContext)
+		{
+			Subsystem->AddMappingContext ( InputMappingContext , 0 );
+		}
+	}
+
+	if (PlayerCameraManager)
+	{
+		if (!CurrentPawn->IsA ( ATTPlayerCharacter::StaticClass () ))
+		{
+			PlayerCameraManager->ViewPitchMin = -90.f;
+			PlayerCameraManager->ViewPitchMax = 90.f;
+		}
+		else
+		{
+			PlayerCameraManager->ViewPitchMin = -80.f;
+			PlayerCameraManager->ViewPitchMax = -30.f;
 		}
 	}
 }
@@ -159,9 +210,18 @@ void ATTPlayerController::ServerSendChatMessage_Implementation ( const FString& 
 {
 	if (!HasAuthority ())
 		return;
+
 	if (AInGameModeBase* GM = GetWorld ()->GetAuthGameMode<AInGameModeBase> ())
 	{
-		GM->SendChatMessage ( Message );
+		if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( GetPawn ()->GetPlayerState () ))
+		{
+			const FString NameMessage = TTPS->UserNickname + TEXT(" : ") + Message;
+			GM->SendChatMessage ( NameMessage );
+		}
+		else
+		{
+			GM->SendChatMessage ( Message );
+		}
 	}
 }
 
@@ -287,4 +347,90 @@ void ATTPlayerController::LoadPlayerSaveData ( const FString& SlotName , int32 U
 		}
 	}
 }
+#pragma endregion
+
+#pragma region Notification
+
+void ATTPlayerController::OnAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->OnAnimation ();
+	}
+}
+
+void ATTPlayerController::EndAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->EndAnimation ();
+	}
+}
+void ATTPlayerController::WinAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->WinAnimation ();
+	}
+}
+
+void ATTPlayerController::LoseAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->LoseAnimation ();
+	}
+}
+void ATTPlayerController::DeadAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->DeadAnimation ();
+	}
+}
+
+void ATTPlayerController::DrawAnimation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->DrawAnimation ();
+	}
+}
+
+void ATTPlayerController::ClientPlayStartAnim_Implementation ()
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->StartAnim ();
+	}
+}
+
+void ATTPlayerController::ServerClientReady_Implementation ()
+{
+	if (HasAuthority ())
+	{
+		if (AInGameModeBase* GM = GetWorld ()->GetAuthGameMode<AInGameModeBase> ())
+		{
+			GM->Ready ();
+		}
+	}
+
+}
+
+void ATTPlayerController::ClientPlayingGame_Implementation ( int32 minutes , int32 seconds )const
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->CountDownTimer ( minutes , seconds );
+	}
+}
+
+void ATTPlayerController::ClientAddportrait_Implementation ( const FString& PlayerName , UMaterialInstanceDynamic* portrait ) const
+{
+	if (IsValid ( TTInGameHUD ))
+	{
+		TTInGameHUD->Addportrait ( PlayerName, portrait );
+	}
+}
+
 #pragma endregion

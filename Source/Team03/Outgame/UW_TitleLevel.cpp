@@ -9,12 +9,19 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "TTGameInstance.h"
 #include "UW_LobbyEntry.h"
+#include "Animation/WidgetAnimation.h"
 
 void UUW_TitleLevel::NativeConstruct()
 {
 	Super::NativeConstruct();
 
 	// 이벤트 바인딩
+	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+	{
+		GI->PlayBGM(TitleBGM);
+	}
+    // 애니메이션 바인딩 확인 (디버깅 완료)
+
 	if (Btn_Create)
 	{
 		Btn_Create->OnClicked.AddDynamic(this, &UUW_TitleLevel::OnCreateClicked);
@@ -50,6 +57,8 @@ void UUW_TitleLevel::NativeConstruct()
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
 		GI->OnFindSessionsCompleteBP.AddDynamic(this, &UUW_TitleLevel::OnSessionSearchCompleted);
+		GI->OnCreateSessionCompleteBP.AddDynamic(this, &UUW_TitleLevel::OnSessionCreated);
+        GI->OnJoinSessionCompleteBP.AddDynamic(this, &ThisClass::OnSessionJoined);
 	}
 
 	if (Btn_CloseOverlay)
@@ -71,6 +80,30 @@ void UUW_TitleLevel::NativeConstruct()
     {
         Widget_SessionOverlay->SetVisibility(ESlateVisibility::Collapsed);
     }
+    
+	// 타이틀 진입 시 페이드 인
+    if (Anim_FadeIn)
+    {
+        PlayAnimation(Anim_FadeIn);
+    }
+    
+    // [시스템 체크] Steam 연동 확인 (Development 빌드에서만, 60초간 표시)
+#if !UE_BUILD_SHIPPING
+    if (IOnlineSubsystem* OnlineSub = IOnlineSubsystem::Get())
+    {
+        FString SubsystemName = OnlineSub->GetSubsystemName().ToString();
+        if (SubsystemName == TEXT("Steam"))
+        {
+            // Steam 성공: 초록색
+            if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 60.f, FColor::Green, TEXT("Online Subsystem: Steam (Connected)"));
+        }
+        else
+        {
+            // Steam 실패 (NULL 등): 빨간색
+            if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 60.f, FColor::Red, FString::Printf(TEXT("Online Subsystem: %s (Steam NOT Connected)"), *SubsystemName));
+        }
+    }
+#endif
 
 	SetLoadingState(false);
 }
@@ -89,22 +122,98 @@ void UUW_TitleLevel::NativeDestruct()
 
 void UUW_TitleLevel::OnCreateClicked()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	SetLoadingState(true);
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
-		// LAN 연결
-		GI->CreateGameSession(true);
+		// LAN 연결 vs Steam (GI 설정을 따름)
+		GI->CreateGameSession(GI->bUseLAN);
 	}
+}
+
+void UUW_TitleLevel::OnSessionCreated(bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		if (Anim_FadeOut)
+		{
+			PlayAnimation(Anim_FadeOut);
+            
+            // 애니메이션 길이만큼 대기 후 이동 (Timer 사용)
+            FTimerHandle WaitHandle;
+            float AnimDuration = Anim_FadeOut->GetEndTime() - Anim_FadeOut->GetStartTime();
+            GetWorld()->GetTimerManager().SetTimer(WaitHandle, [this]()
+            {
+                if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+                {
+                    GI->TravelToLobby();
+                }
+            }, AnimDuration, false);
+		}
+		else
+		{
+            // 애니메이션 없으면 즉시 이동
+			if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+			{
+				GI->TravelToLobby();
+			}
+		}
+	}
+    else
+    {
+        SetLoadingState(false);
+    }
+}
+
+void UUW_TitleLevel::OnSessionJoined(bool bWasSuccessful)
+{
+	if (bWasSuccessful)
+	{
+		if (Anim_FadeOut)
+		{
+			PlayAnimation(Anim_FadeOut);
+            
+            FTimerHandle WaitHandle;
+            float AnimDuration = Anim_FadeOut->GetEndTime() - Anim_FadeOut->GetStartTime();
+            GetWorld()->GetTimerManager().SetTimer(WaitHandle, [this]()
+            {
+                if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+                {
+                    GI->TravelToPendingSession();
+                }
+            }, AnimDuration, false);
+		}
+		else
+		{
+			if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+			{
+				GI->TravelToPendingSession();
+			}
+		}
+	}
+    else
+    {
+        SetLoadingState(false);
+        // 실패 메시지 표시 등 추가 가능
+    }
 }
 
 void UUW_TitleLevel::OnFindClicked()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	SetLoadingState(true);
     
-    // 오버레이 표시
+    // 오버레이 표시 및 애니메이션 재생
     if (Widget_SessionOverlay)
     {
         Widget_SessionOverlay->SetVisibility(ESlateVisibility::Visible);
+        
+        if (Anim_FindInfoSlide)
+        {
+            PlayAnimation(Anim_FindInfoSlide);
+        }
     }
     
     // 목록 초기화
@@ -113,12 +222,14 @@ void UUW_TitleLevel::OnFindClicked()
 
 	if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
 	{
-		GI->FindGameSessions(true);
+		GI->FindGameSessions(GI->bUseLAN);
 	}
 }
 
 void UUW_TitleLevel::OnCloseOverlayClicked()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
     if (Widget_SessionOverlay)
     	{
         Widget_SessionOverlay->SetVisibility(ESlateVisibility::Collapsed);
@@ -127,6 +238,8 @@ void UUW_TitleLevel::OnCloseOverlayClicked()
 
 void UUW_TitleLevel::OnOptionClicked()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	if (OptionWidgetClass)
 	{
 		UUserWidget* Widget = CreateWidget<UUserWidget>(GetOwningPlayer(), OptionWidgetClass);
@@ -147,6 +260,8 @@ void UUW_TitleLevel::OnOptionClicked()
 
 void UUW_TitleLevel::OnExitClicked()
 {
+	if (ClickSound) UGameplayStatics::PlaySound2D(this, ClickSound);
+
 	UKismetSystemLibrary::QuitGame(GetWorld(), GetOwningPlayer(), EQuitPreference::Quit, false);
 }
 
@@ -209,6 +324,19 @@ void UUW_TitleLevel::SetLoadingState(bool bIsLoading)
 	if (LoadingOverlay)
 	{
 		LoadingOverlay->SetVisibility(bIsLoading ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+
+        if (Anim_LoadingShake)
+        {
+            if (bIsLoading)
+            {
+                // 무한 반복 (Loop)
+                PlayAnimation(Anim_LoadingShake, 0.0f, 0); 
+            }
+            else
+            {
+                StopAnimation(Anim_LoadingShake);
+            }
+        }
 	}
 
 	if (Btn_Create) Btn_Create->SetIsEnabled(!bIsLoading);

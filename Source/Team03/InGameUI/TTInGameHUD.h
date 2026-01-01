@@ -58,4 +58,29 @@ public:
 	TObjectPtr<class UUserWidget> SelectedSkeletalMesh;
 
 #pragma endregion
+#pragma region NotificationWidget
+public:
+	void AddNotification () const;
+	void StartAnim ()const;
+	void CountDownTimer ( int32 minutes , int32 seconds )const;
+	void OnAnimation ()const;
+	void EndAnimation ()const;
+	void WinAnimation ()const;
+	void LoseAnimation ()const;
+	void DeadAnimation ()const;
+	void DrawAnimation ()const;
+	void Addportrait ( const FString& PlayerName , UMaterialInstanceDynamic* portrait ) const;
+public:
+	UPROPERTY ( EditDefaultsOnly )
+	TSubclassOf<class UTTNotificationWidget> NotificationClass;
+	UPROPERTY ( VisibleAnywhere )
+	TObjectPtr<UTTNotificationWidget> Notification;
+	UPROPERTY ( EditDefaultsOnly )
+	TSubclassOf<class UTTPlayerPortraitWidget> PortraitWidgetClass;
+#pragma endregion
+
+#pragma region sound
+	UPROPERTY ( EditDefaultsOnly , Category = "Audio" )
+	USoundBase* DesertBGM;
+#pragma endregion
 };

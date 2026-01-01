@@ -89,3 +89,11 @@ UpgradeLog.htm
 UpgradeLog2.htm
 Source/Team03/Outgame/TitleLevel_Guide.md
 Source/Team03/Outgame/SRS_Outgame.txt
+
+# Heavy Plugins (NVIDIA DLSS & friends)
+Plugins/DLSS*/
+Plugins/NIS/
+Plugins/Streamline*/
+Plugins/NVIDIA*/
+# If you want to ignore ALL plugins (not recommended if you make custom ones):
+# Plugins/
