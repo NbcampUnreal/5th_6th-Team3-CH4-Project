@@ -7,6 +7,10 @@
 #include "OnlineSubsystem.h"
 #include "OnlineSessionSettings.h"
 #include "OnlineSubsystemUtils.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundMix.h"
+#include "Sound/SoundClass.h"
 
 UTTGameInstance::UTTGameInstance()
 {
