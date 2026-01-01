@@ -80,7 +80,7 @@ void UTTGameInstance::OnDestroySessionComplete_DelayedCreate(FName SessionName, 
 
     FOnlineSessionSettings SessionSettings;
     SessionSettings.bIsLANMatch = bUseLAN; // Saved value
-    SessionSettings.NumPublicConnections = 4;
+    SessionSettings.NumPublicConnections = 6;
     SessionSettings.bAllowJoinInProgress = true;
     SessionSettings.bShouldAdvertise = true;
     SessionSettings.bUsesPresence = !bUseLAN;
