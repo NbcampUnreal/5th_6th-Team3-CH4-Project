@@ -511,6 +511,8 @@ void UTTGameInstance::TravelToPendingSession()
 {
     if (!PendingConnectString.IsEmpty())
     {
+        if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Cyan, FString::Printf(TEXT("[System] Transitioning to Server: %s"), *PendingConnectString));
+
         if (APlayerController* PlayerController = GetFirstLocalPlayerController())
         {
             PlayerController->ClientTravel(PendingConnectString, ETravelType::TRAVEL_Absolute);

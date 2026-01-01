@@ -8,6 +8,8 @@
 #include "Outgame/TTGameInstance.h"
 #include "UW_LobbyLevel.h"
 #include "InGameMode/TTGameStateBase.h"
+#include "SocketSubsystem.h"
+#include "IPAddress.h"
 
 
 ATTGameModeBase_Lobby::ATTGameModeBase_Lobby()
@@ -20,7 +22,7 @@ void ATTGameModeBase_Lobby::InitGame(const FString& MapName, const FString& Opti
     Super::InitGame(MapName, Options, ErrorMessage);
 
     // [Critical Check] 패키징 빌드에서 Listen 옵션 누락 시 9999ms 발생
-#if !WITH_EDITOR
+// #if !WITH_EDITOR
     if (!Options.Contains(TEXT("listen")))
     {
         UE_LOG(LogTemp, Error, TEXT("[CRITICAL] Server started WITHOUT '?listen' option! Clients cannot join."));
@@ -33,10 +35,19 @@ void ATTGameModeBase_Lobby::InitGame(const FString& MapName, const FString& Opti
     {
         if (GEngine)
         {
-            GEngine->AddOnScreenDebugMessage(-1, 10.f, FColor::Green, TEXT("[Success] Server is LISTENING (GameMode Verified)."));
+            // [Fix] 호스트에게 자신의 Listening IP를 표시하여 진단 도움
+            FString LocalIP = TEXT("Unknown IP");
+            bool bCanBind = false;
+            TSharedPtr<FInternetAddr> LocalAddr = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM)->GetLocalHostAddr(*GLog, bCanBind);
+            if (LocalAddr.IsValid())
+            {
+                LocalIP = LocalAddr->ToString(false);
+            }
+
+            GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, FString::Printf(TEXT("[Success] Server is LISTENING on %s:7777"), *LocalIP));
         }
     }
-#endif
+// #endif
 }
 
 void ATTGameModeBase_Lobby::PostLogin(APlayerController* NewPlayer)

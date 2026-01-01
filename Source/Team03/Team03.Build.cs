@@ -17,7 +17,7 @@ public class Team03 : ModuleRules
             "OnlineSubsystem", "OnlineSubsystemUtils", "CoreOnline",
 
 			// Engine Settings for GameMapsSettings
-			"EngineSettings",
+			"EngineSettings", "Sockets", "Networking",
             
             // DLSS 
             "DLSSBlueprint"
