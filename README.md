@@ -44,8 +44,9 @@
 
 ### 4️⃣ Battle & Ragdoll
 주먹, 막대기, 검 등 다양한 무기를 활용해 공격하세요! 공격당한 상대는 **레그돌 상태**가 되어 무력화됩니다.
-<br><img src="https://github.com/user-attachments/assets/03740b44-097d-4795-b341-c907618f8136" width="400" />
+![Team03 (64 비트, DebugGame PCD3D_SM6) 2025-12-31 14-11-07 (online-video-cutter com)](https://github.com/user-attachments/assets/34d3e8c5-e53e-4c23-bc76-01cbf50f8bde)
 
 ### 5️⃣ Dance Time
 승리 후 혹은 상대가 쓰러졌을 때 신나는 댄스로 굴욕을 선사하세요! 💃🕺
-<br><img src="https://github.com/user-attachments/assets/03740b44-097d-4795-b341-c907618f8136" width="400
+![Team03 (64 비트, DebugGame PCD3D_SM6) 2025-12-31 13-09-42 (online-video-cutter com) (1)](https://github.com/user-attachments/assets/95974fea-8911-4597-a207-643b7ecc3e5e)
+
