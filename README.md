@@ -20,8 +20,12 @@
 - Lobby  : 캐릭터의 팀 진형과 커스터마이즈 기능을 넣어 원하는 팀을 선택하고 원하는 동물과 옷을 입을 수 있도록 만들었습니다.
 ![Team03 (64 비트, DebugGame PCD3D_SM6) 2025-12-31 14-11-07 (online-video-cutter com)](https://github.com/user-attachments/assets/d7814215-6e5f-4a58-b127-2ab10d3cd6cb)
 
-- Settings :  
+- Settings : 플레이어가 원하는 사양에 맞게 플레이 할 수 있도록 다양한 설정들을 추가했습니다.
+<img width="1298" height="756" alt="스크린샷(2)" src="https://github.com/user-attachments/assets/c134b53e-477b-4ded-8371-5ce8bfcf8e25" />
 
 - Attack : 상대에게 주먹, 막대기, 검 등등 다양한 무기로 공격 시 상대는 레그돌에 빠지게 되도록 만들었습니다.
+  ![Uploading Team03 (64 비트, DebugGame PCD3D_SM6) 2025-12-31 14-11-07 (online-video-cutter.com).gif…]()
 
-- Dance
+
+- Dance : 쓰러진 상대에게 굴욕의 댄스를 선보이세요.
+![Team03 (64 비트, DebugGame PCD3D_SM6) 2025-12-31 13-09-42 (online-video-cutter com) (1)](https://github.com/user-attachments/assets/03740b44-097d-4795-b341-c907618f8136)
