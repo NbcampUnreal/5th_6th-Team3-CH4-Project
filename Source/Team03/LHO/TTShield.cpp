@@ -29,6 +29,14 @@ void ATTShield::BeginPlay ()
 
 void ATTShield::HandleOnThrowAway ()
 {
+	if (HasAuthority ())
+	{
+		MulticastThrowAway ();
+	}
+}
+
+void ATTShield::MulticastThrowAway_Implementation ()
+{
 	DetachFromActor ( FDetachmentTransformRules::KeepWorldTransform );
 
 	if (PickupComponent)
@@ -40,6 +48,15 @@ void ATTShield::HandleOnThrowAway ()
 
 		FVector ThrowDir = GetActorForwardVector () + FVector ( 0 , 0 , 0.5f );
 		PickupComponent->AddImpulse ( ThrowDir * 300.0f , NAME_None , true );
+
+		GetWorld ()->GetTimerManager ().SetTimer
+		(
+			CollisionRecoveryTimerHandle ,
+			this ,
+			&ATTShield::EnablePickupCollision ,
+			1.0f ,
+			false
+		);
 	}
 }
 
@@ -60,4 +77,12 @@ void ATTShield::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 	FAttachmentTransformRules AttachmentRules ( EAttachmentRule::SnapToTarget , true );
 
 	bool bResult = AttachToComponent ( InPickUpCharacter->GetMesh () , AttachmentRules , FName ( TEXT ( "hand_lSocket" ) ) );
+}
+
+void ATTShield::EnablePickupCollision ()
+{
+	if (PickupComponent)
+	{
+		PickupComponent->SetCollisionResponseToChannel ( ECC_Pawn , ECR_Overlap );
+	}
 }
