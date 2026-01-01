@@ -14,6 +14,7 @@
 - **Tools:** - **Version Control:** `Git`
   - **Collaboration:** `Notion`, `Zep`, `Slack`
   - **Documentation:** [프로젝트 노션 페이지](https://www.notion.so/teamsparta/3-2a82dc3ef51480dab073eaa73a8eaa8d) 📝
+- **VPN:** 필수설치 (https://www.radmin-vpn.com/). 📝
 
 ---
 
