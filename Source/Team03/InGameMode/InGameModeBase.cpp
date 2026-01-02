@@ -258,16 +258,13 @@ void AInGameModeBase::EndRound ()
 			}
 			TTPC->ClientShowResult ( WinTeam );
 		}
-		if (HasAuthority ())
-		{
-			GetWorldTimerManager ().SetTimer (
-				EndHandle ,
-				this ,
-				&ThisClass::ServerTravelMap ,
-				5.f ,
-				false
-			);
-		}
+		GetWorldTimerManager ().SetTimer (
+			EndHandle ,
+			this ,
+			&ThisClass::ServerTravelMap ,
+			5.f ,
+			false
+		);
 
 	}
 }
@@ -287,13 +284,13 @@ void AInGameModeBase::Sendportrait ( const FString& PlayerName , UMaterialInstan
 
 void AInGameModeBase::ServerTravelMap ()
 {
-	if (!HasAuthority ())
+	/*if (!HasAuthority ())
 	{
-		return; 
-	}
+		return;
+	}*/
 
 	GetWorld ()->ServerTravel ( TEXT ( "/Game/Maps/LobbyLevel?listen" ) , /*bAbsolute=*/true );
-	
+
 	// 호스트에서만 실행이 된다
 	UKismetSystemLibrary::PrintString ( GetWorld () , TEXT ( "ServerTravelMap" ) , true , true , FLinearColor::Green , 2.f );
 	//GEngine->AddOnScreenDebugMessage ( -1 , 2.f , FColor::Blue , TEXT ( "ServerTravelMap" ) );
