@@ -197,10 +197,10 @@ void ATTPlayerCharacter::StartGhost ()
 			if (GhostChar)
 			{
 				PC->Possess ( GhostChar );
+				PC->SetViewTargetWithBlend ( GhostChar , 0.0f , EViewTargetBlendFunction::VTBlend_Linear , 0.0f , true ); //테스트
 			}
 		}
 	}
-
 }
 
 #pragma region Get,Set
@@ -992,6 +992,8 @@ void ATTPlayerCharacter::KnockOut ()
 	if (bIsStunned) return;
 	UE_LOG ( LogTemp , Warning , TEXT ( "%s is KNOCKED OUT!" ) , *GetName () );
 
+	ServerThrowAway ();
+
 	SetInvincibility ( true );
 	bIsStunned = true;
 	CurrentStun = 0.0f;
@@ -1058,7 +1060,7 @@ void ATTPlayerCharacter::WakeUp ()
 
 void ATTPlayerCharacter::OnRep_ServerRagdollLocation ()
 {
-	if (!bIsStunned || bIsDead ==0 || HasAuthority ()) return;
+	if ((!bIsStunned && bIsDead ==0) || HasAuthority () ) return;
 
 	FVector CurrentLoc = GetMesh ()->GetSocketLocation ( TEXT ( "pelvis" ) );
 
@@ -1151,8 +1153,7 @@ void ATTPlayerCharacter::OnRep_IsDead ()
 {
 	if (bIsDead == 1)
 	{
-		if (CurrentSword) ServerThrowAway ();
-		if (CurrentShield) ServerThrowAway ();
+
 
 		GetMesh ()->SetCollisionProfileName ( TEXT ( "Ragdoll" ) );
 		GetMesh ()->SetSimulatePhysics ( true );
@@ -1174,6 +1175,9 @@ void ATTPlayerCharacter::ServerDeath_Implementation ()
 	if (bIsDead != 0) return;
 
 	bIsDead = 1;
+
+	ServerThrowAway ();
+
 	AInGameModeBase* TTGM = Cast<AInGameModeBase> ( GetWorld ()->GetAuthGameMode () );
 	if (IsValid ( TTGM ))
 	{

@@ -21,6 +21,14 @@ ATTAxe::ATTAxe ()
 
 void ATTAxe::HandleOnThrowAway ()
 {
+	if (HasAuthority ())
+	{
+		MulticastThrowAway ();
+	}
+}
+
+void ATTAxe::MulticastThrowAway_Implementation ()
+{
 	DetachFromActor ( FDetachmentTransformRules::KeepWorldTransform );
 
 	if (PickupComponent)
@@ -28,8 +36,19 @@ void ATTAxe::HandleOnThrowAway ()
 		PickupComponent->SetSimulatePhysics ( true );
 		PickupComponent->SetCollisionEnabled ( ECollisionEnabled::QueryAndPhysics );
 
+		PickupComponent->SetCollisionResponseToChannel ( ECC_Pawn , ECR_Ignore );
+
 		FVector ThrowDir = GetActorForwardVector () + FVector ( 0 , 0 , 0.5f );
 		PickupComponent->AddImpulse ( ThrowDir * 300.0f , NAME_None , true );
+
+		GetWorld ()->GetTimerManager ().SetTimer
+		(
+			CollisionRecoveryTimerHandle ,
+			this ,
+			&ATTAxe::EnablePickupCollision ,
+			1.0f ,
+			false
+		);
 	}
 }
 
@@ -59,3 +78,10 @@ void ATTAxe::HandleOnPickUp ( ATTPlayerCharacter* InPickUpCharacter )
 	bool bResult = AttachToComponent ( InPickUpCharacter->GetMesh () , AttachmentRules , FName ( TEXT ( "hand_rSocket" ) ) );
 }
 
+void ATTAxe::EnablePickupCollision ()
+{
+	if (PickupComponent)
+	{
+		PickupComponent->SetCollisionResponseToChannel ( ECC_Pawn , ECR_Overlap );
+	}
+}
