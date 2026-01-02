@@ -18,8 +18,8 @@ ATTPlayerController::ATTPlayerController ()
 	JumpAction ( nullptr ) ,
 	SprintAction ( nullptr ) ,
 	AttackAction ( nullptr ) ,
-	BlockingAction ( nullptr ),
-	Dance1Action ( nullptr ),
+	BlockingAction ( nullptr ) ,
+	Dance1Action ( nullptr ) ,
 	Dance2Action ( nullptr ) ,
 	Dance3Action ( nullptr ) ,
 	Dance4Action ( nullptr ) ,
@@ -31,7 +31,7 @@ ATTPlayerController::ATTPlayerController ()
 void ATTPlayerController::SetPawn ( APawn* InPawn )
 {
 	Super::SetPawn ( InPawn );
-	
+
 	// ----- Outgame 담당자가 수정함 -----
 	if (InPawn)
 	{
@@ -93,23 +93,23 @@ void ATTPlayerController::BeginPlay ()
 		TTInGameHUD->AddNotification ();
 	}
 
-// ---------- Outgame 담당자가 수정함 ----------
-	if (IsLocalController())
+	// ---------- Outgame 담당자가 수정함 ----------
+	if (IsLocalController ())
 	{
 		// Force Game Input Mode
 		FInputModeGameOnly GameInputMode;
-		SetInputMode(GameInputMode);
+		SetInputMode ( GameInputMode );
 		bShowMouseCursor = false;
 
-		if (UTTGameInstance* GI = Cast<UTTGameInstance>(GetGameInstance()))
+		if (UTTGameInstance* GI = Cast<UTTGameInstance> ( GetGameInstance () ))
 		{
 			int32 HeadIndex = GI->CustomizedHeadIndex;
 			int32 BodyIndex = GI->CustomizedBodyIndex;
-			
-			ServerRPC_InitPlayerInfo(GI->UserNickname, GI->SelectedCharacterRowName, HeadIndex, BodyIndex);
+
+			ServerRPC_InitPlayerInfo ( GI->UserNickname , GI->SelectedCharacterRowName , HeadIndex , BodyIndex );
 		}
 		// ---------- Ingame 담당자가 추가 ----------
-		UE_LOG ( LogTemp , Warning , TEXT ( "ServerAddportrait0" ));
+		UE_LOG ( LogTemp , Warning , TEXT ( "ServerAddportrait0" ) );
 		ServerClientReady ();
 	}
 }
@@ -151,47 +151,47 @@ void ATTPlayerController::PlayerSetUp ()
 }
 
 // ----- Outgame 담당자가 수정함 -----
-void ATTPlayerController::ServerRPC_InitPlayerInfo_Implementation(const FString& Nickname, const FName& CharacterRowName, int32 HeadIndex, int32 BodyIndex)
+void ATTPlayerController::ServerRPC_InitPlayerInfo_Implementation ( const FString& Nickname , const FName& CharacterRowName , int32 HeadIndex , int32 BodyIndex )
 {
-	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState>())
+	if (ATTPlayerState* PS = GetPlayerState<ATTPlayerState> ())
 	{
 		PS->UserNickname = Nickname;
 		PS->SelectedCharacterRowName = CharacterRowName;
 
 		// Force update if needed, but replication will handle it
-		PS->ForceNetUpdate();
-		
+		PS->ForceNetUpdate ();
+
 		// Load and apply Head Mesh
-		const UTTCharactorHeadSkeletalSelect* HeadCDO = GetDefault<UTTCharactorHeadSkeletalSelect>();
-		if (HeadCDO && HeadIndex >= 0 && HeadCDO->PlayerCharacterHeadSkeletalPaths.IsValidIndex(HeadIndex))
+		const UTTCharactorHeadSkeletalSelect* HeadCDO = GetDefault<UTTCharactorHeadSkeletalSelect> ();
+		if (HeadCDO && HeadIndex >= 0 && HeadCDO->PlayerCharacterHeadSkeletalPaths.IsValidIndex ( HeadIndex ))
 		{
 			FSoftObjectPath HeadPath = HeadCDO->PlayerCharacterHeadSkeletalPaths[HeadIndex];
-			if (USkeletalMesh* HeadMesh = Cast<USkeletalMesh>(HeadPath.TryLoad()))
+			if (USkeletalMesh* HeadMesh = Cast<USkeletalMesh> ( HeadPath.TryLoad () ))
 			{
 				PS->PersistedHeadMesh = HeadMesh;
 			}
 		}
 
 		// Load and apply Body Mesh
-		const UTTCharactorSkeletalMeshSelect* BodyCDO = GetDefault<UTTCharactorSkeletalMeshSelect>();
-		if (BodyCDO && BodyIndex >= 0 && BodyCDO->PlayerCharacterSkeletalPaths.IsValidIndex(BodyIndex))
+		const UTTCharactorSkeletalMeshSelect* BodyCDO = GetDefault<UTTCharactorSkeletalMeshSelect> ();
+		if (BodyCDO && BodyIndex >= 0 && BodyCDO->PlayerCharacterSkeletalPaths.IsValidIndex ( BodyIndex ))
 		{
 			FSoftObjectPath BodyPath = BodyCDO->PlayerCharacterSkeletalPaths[BodyIndex];
-			if (USkeletalMesh* BodyMesh = Cast<USkeletalMesh>(BodyPath.TryLoad()))
+			if (USkeletalMesh* BodyMesh = Cast<USkeletalMesh> ( BodyPath.TryLoad () ))
 			{
 				PS->PersistedBodyMesh = BodyMesh;
 			}
 		}
-		
+
 		// Initialize Character Mesh if Pawn exists
-		if (ATTPlayerCharacter* MyCharacter = Cast<ATTPlayerCharacter>(GetPawn()))
+		if (ATTPlayerCharacter* MyCharacter = Cast<ATTPlayerCharacter> ( GetPawn () ))
 		{
-			MyCharacter->InitializeMesh(PS);
+			MyCharacter->InitializeMesh ( PS );
 		}
 	}
 }
 
-bool ATTPlayerController::ServerRPC_InitPlayerInfo_Validate(const FString& Nickname, const FName& CharacterRowName, int32 HeadIndex, int32 BodyIndex)
+bool ATTPlayerController::ServerRPC_InitPlayerInfo_Validate ( const FString& Nickname , const FName& CharacterRowName , int32 HeadIndex , int32 BodyIndex )
 {
 	return true;
 }
@@ -202,7 +202,7 @@ void ATTPlayerController::ActivateChatBox ()
 {
 	if (IsValid ( TTInGameHUD ) && TTInGameHUD->Chat)
 	{
-		TTInGameHUD->Chat->ActivateChat();
+		TTInGameHUD->Chat->ActivateChat ();
 	}
 }
 
@@ -215,7 +215,7 @@ void ATTPlayerController::ServerSendChatMessage_Implementation ( const FString& 
 	{
 		if (ATTPlayerState* TTPS = Cast<ATTPlayerState> ( GetPawn ()->GetPlayerState () ))
 		{
-			const FString NameMessage = TTPS->UserNickname + TEXT(" : ") + Message;
+			const FString NameMessage = TTPS->UserNickname + TEXT ( " : " ) + Message;
 			GM->SendChatMessage ( NameMessage );
 		}
 		else
@@ -243,7 +243,7 @@ void ATTPlayerController::ActivateESCMenu ()
 	if (IsValid ( TTInGameHUD ))
 	{
 		TTInGameHUD->AddESCMenu ();
-		SetShowMouseCursor (true);
+		SetShowMouseCursor ( true );
 		FInputModeUIOnly InputMode;
 		SetInputMode ( InputMode );
 	}
@@ -321,7 +321,7 @@ void ATTPlayerController::SavePlayerSaveData ( const FString& SlotName , int32 U
 void ATTPlayerController::LoadPlayerSaveData ( const FString& SlotName , int32 UserIndex )
 {
 	ATTPlayerCharacter* TTPC = Cast<ATTPlayerCharacter> ( GetPawn () );
-	if (IsValid ( TTPC->Head ) && IsValid ( TTPC->GetMesh () ) && IsValid( TTPC ))
+	if (IsValid ( TTPC->Head ) && IsValid ( TTPC->GetMesh () ) && IsValid ( TTPC ))
 	{
 		// 세이브 데이터를 불러오는 과정
 		USaveGame* LoadGameInstance = UGameplayStatics::LoadGameFromSlot ( SlotName , UserIndex );
@@ -330,8 +330,8 @@ void ATTPlayerController::LoadPlayerSaveData ( const FString& SlotName , int32 U
 
 		UTTSaveGame* TTLoadGameInstance = Cast<UTTSaveGame> ( LoadGameInstance );
 
-		if (!IsValid(TTLoadGameInstance) &&
-			!TTLoadGameInstance->CurrentHeadMeshPath.IsNull () && 
+		if (!IsValid ( TTLoadGameInstance ) &&
+			!TTLoadGameInstance->CurrentHeadMeshPath.IsNull () &&
 			!TTLoadGameInstance->CurrentBodyMeshPath.IsNull ())
 			return;
 
@@ -364,6 +364,30 @@ void ATTPlayerController::EndAnimation ()
 	if (IsValid ( TTInGameHUD ))
 	{
 		TTInGameHUD->EndAnimation ();
+	}
+}
+void ATTPlayerController::ClientShowResult_Implementation ( Teams WinTeam )
+{
+	ATTPlayerState* TTPS = GetPlayerState<ATTPlayerState> ();
+	if (!IsValid ( TTPS ))
+	{
+		return;
+	}
+	if (WinTeam == Teams::None)
+	{
+		// 무승부 노티파이케이션 출력
+		DrawAnimation ();
+		return;
+	}
+	if (TTPS->GetTeam () == WinTeam)
+	{
+		// 승리 노티파이케이션 출력
+		WinAnimation ();
+	}
+	else
+	{
+		// 패배 노티파이케이션 출력
+		LoseAnimation ();
 	}
 }
 void ATTPlayerController::WinAnimation ()
@@ -429,7 +453,7 @@ void ATTPlayerController::ClientAddportrait_Implementation ( const FString& Play
 {
 	if (IsValid ( TTInGameHUD ))
 	{
-		TTInGameHUD->Addportrait ( PlayerName, portrait );
+		TTInGameHUD->Addportrait ( PlayerName , portrait );
 	}
 }
 
